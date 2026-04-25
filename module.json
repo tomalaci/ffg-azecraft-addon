@@ -1,0 +1,29 @@
+{
+    "id": "ffg-azecraft-addon",
+    "title": "FFG Azecraft Addon",
+    "description": "QoL fixes and additions for StarWarsFFG system.",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "Tomass"
+        }
+    ],
+    "compatibility": {
+        "minimum": "13",
+        "verified": "13"
+    },
+    "relationships": {
+        "systems": [
+            {
+                "id": "starwarsffg",
+                "type": "system",
+                "compatibility": {
+                    "minimum": "2.0.0"
+                }
+            }
+        ]
+    },
+    "esmodules": [
+        "main.js"
+    ]
+}
