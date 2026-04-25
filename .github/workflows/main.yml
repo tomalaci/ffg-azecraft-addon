@@ -1,0 +1,67 @@
+name: Release Module
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build release manifest
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          version = tag[1:] if tag.startswith("v") else tag
+          repository = os.environ["REPOSITORY"]
+
+          manifest_path = Path("module.json")
+          release_manifest_path = Path("dist") / "module.json"
+          release_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+
+          with manifest_path.open("r", encoding="utf-8") as handle:
+              manifest = json.load(handle)
+
+          manifest["version"] = version
+          manifest["url"] = f"https://github.com/{repository}"
+          manifest["manifest"] = f"https://github.com/{repository}/releases/latest/download/module.json"
+          manifest["download"] = f"https://github.com/{repository}/releases/download/{tag}/module.zip"
+
+          with release_manifest_path.open("w", encoding="utf-8", newline="\n") as handle:
+              json.dump(manifest, handle, indent=4)
+              handle.write("\n")
+          PY
+
+      - name: Build module archive
+        run: |
+          mkdir -p dist/package
+          rsync -av ./ dist/package/ \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "dist" \
+            --exclude "AGENTS.md"
+          cp dist/module.json dist/package/module.json
+          cd dist/package
+          zip -r ../module.zip .
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/module.json
+            dist/module.zip
+          overwrite_files: true

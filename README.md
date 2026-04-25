@@ -1,6 +1,6 @@
 # FFG Azecraft Addon
 
-Manifest URL: `https://raw.githubusercontent.com/tomalaci/ffg-azecraft-addon/main/module.json`
+Manifest URL: `https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json`
 
 Foundry VTT v13 addon module for the `starwarsffg` system.
 
