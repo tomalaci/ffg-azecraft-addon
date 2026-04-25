@@ -3,6 +3,9 @@
     "title": "FFG Azecraft Addon",
     "description": "QoL fixes and additions for StarWarsFFG system.",
     "version": "0.1.0",
+    "url": "https://github.com/tomalaci/ffg-azecraft-addon",
+    "manifest": "https://raw.githubusercontent.com/tomalaci/ffg-azecraft-addon/main/module.json",
+    "download": "https://github.com/tomalaci/ffg-azecraft-addon/archive/refs/heads/main.zip",
     "authors": [
         {
             "name": "Tomass"
