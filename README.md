@@ -1,5 +1,7 @@
 # FFG Azecraft Addon
 
+Manifest URL: `https://raw.githubusercontent.com/tomalaci/ffg-azecraft-addon/main/module.json`
+
 Foundry VTT v13 addon module for the `starwarsffg` system.
 
 Current scope is narrow: this repo patches the system actor sheet class so the module can replace selected Star Wars FFG NPC actor templates with local versions and ensure biography content is enriched for those overridden sheets.
