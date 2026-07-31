@@ -10,7 +10,10 @@ services:
     command:
       - |
         export FOUNDRY_LICENSE_KEY="$$(cat /run/secrets/foundry_license_key)"
-        exec docker-entrypoint.sh
+        mkdir -p /data/container_cache /data/modules
+        test -s /data/container_cache/foundryvtt-13.351.zip || cp /foundryvtt-13.351.zip /data/container_cache/foundryvtt-13.351.zip
+        ln -sfn /module-src /data/modules/ffg-azecraft-addon
+        exec ./entrypoint.sh resources/app/main.mjs --port=30000 --headless --noupdate --dataPath=/data
     environment:
       CONTAINER_PRESERVE_CONFIG: "true"
       FOUNDRY_HOT_RELOAD: "true"
@@ -26,11 +29,11 @@ services:
         target: /data
       - type: bind
         source: ${HOME}/.local/share/foundry-vtt/Dist/FoundryVTT-Node-13.351.zip
-        target: /data/container_cache/foundryvtt-13.351.zip
+        target: /foundryvtt-13.351.zip
         read_only: true
       - type: bind
         source: .
-        target: /data/modules/ffg-azecraft-addon
+        target: /module-src
         read_only: true
     secrets:
       - foundry_license_key
