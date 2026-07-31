@@ -1,0 +1,40 @@
+services:
+  foundry:
+    image: ghcr.io/felddy/foundryvtt:13.351
+    hostname: ffg-azecraft-foundry
+    init: true
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - |
+        export FOUNDRY_LICENSE_KEY="$$(cat /run/secrets/foundry_license_key)"
+        exec docker-entrypoint.sh
+    environment:
+      CONTAINER_PRESERVE_CONFIG: "true"
+      FOUNDRY_HOT_RELOAD: "true"
+      FOUNDRY_TELEMETRY: "false"
+      FOUNDRY_UPNP: "false"
+      FOUNDRY_VERSION: "13.351"
+      TZ: Europe/Stockholm
+    ports:
+      - "30000:30000"
+    volumes:
+      - type: bind
+        source: ${HOME}/.local/share/foundry-vtt/Data
+        target: /data
+      - type: bind
+        source: ${HOME}/.local/share/foundry-vtt/Dist/FoundryVTT-Node-13.351.zip
+        target: /data/container_cache/foundryvtt-13.351.zip
+        read_only: true
+      - type: bind
+        source: .
+        target: /data/modules/ffg-azecraft-addon
+        read_only: true
+    secrets:
+      - foundry_license_key
+
+secrets:
+  foundry_license_key:
+    file: ${HOME}/.local/share/foundry-vtt/license.txt

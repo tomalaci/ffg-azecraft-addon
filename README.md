@@ -47,6 +47,24 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 - Required system: `starwarsffg`
 - Declared minimum system version: `2.0.0`
 
+## Local Foundry Server
+
+The included [`compose.yml`](compose.yml) runs Foundry VTT `13.351` at
+<http://localhost:30000>. It uses these host files:
+
+- `~/.local/share/foundry-vtt/Data` for persistent Foundry data
+- `~/.local/share/foundry-vtt/Dist/FoundryVTT-Node-13.351.zip` for the Foundry distribution
+- `~/.local/share/foundry-vtt/license.txt` for the license key
+
+The repository is mounted read-only as the installed
+`ffg-azecraft-addon` module, and Foundry's development hot reload is enabled.
+Start and stop the server with:
+
+```sh
+docker compose up -d
+docker compose down
+```
+
 ## Notes
 
 - This repo currently has no build step or packaging pipeline.
