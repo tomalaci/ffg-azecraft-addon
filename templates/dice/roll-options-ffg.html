@@ -115,39 +115,43 @@
       {{/if}}
     </table>
     {{#if hasAzecraftPowerModifiers}}
-    <details>
-    <summary>Power Modifiers</summary>
-    <div class="azecraft-power-modifiers">
+    <section class="azecraft-power-modifiers" aria-labelledby="azecraft-power-modifiers-heading">
+      <h2 id="azecraft-power-modifiers-heading">Power Modifiers</h2>
       {{#each azecraftPowerModifiers as |category|}}
-      <details>
-      <summary>{{category.label}}</summary>
-      <table class="pool-dice-pool">
-        {{#each category.options as |modifier|}}
-        <tr class="flex-group-center">
-          <td>
-            <input
-              type="checkbox"
-              class="azecraft-power-modifier"
-              id="azecraft-{{category.id}}-{{modifier.id}}"
-              data-modifier-key="{{modifier.key}}"
-              data-modifier-id="{{modifier.id}}"
-              data-modifier-label="{{modifier.label}}"
-              data-category-summary="{{category.summaryLabel}}"
-              data-difficulty="{{modifier.difficulty}}"
-              {{checked modifier.checked}}
-            />
-          </td>
-          <td class="pool-text">
-            <label for="azecraft-{{category.id}}-{{modifier.id}}">{{modifier.label}}</label>
-          </td>
-          <td class="pool-text">+{{modifier.difficulty}} Difficulty</td>
-        </tr>
-        {{/each}}
-      </table>
+      <details class="azecraft-power-modifier-category">
+        <summary>{{category.label}}</summary>
+        {{#if category.baseDifficulty}}
+        <p><em>{{category.baseDifficulty}}</em></p>
+        {{/if}}
+        <table class="pool-dice-pool">
+          {{#each category.options as |modifier|}}
+          <tr class="flex-group-center">
+            <td>
+              <input
+                type="checkbox"
+                class="azecraft-power-modifier"
+                id="azecraft-{{category.id}}-{{modifier.id}}"
+                data-modifier-key="{{modifier.key}}"
+                data-modifier-id="{{modifier.id}}"
+                data-modifier-label="{{modifier.label}}"
+                data-category-summary="{{category.summaryLabel}}"
+                data-difficulty="{{modifier.difficulty}}"
+                data-setback="{{modifier.setback}}"
+                data-upgrade-difficulty="{{modifier.upgradeDifficulty}}"
+                data-modifier-text="{{modifier.modifierText}}"
+                {{checked modifier.checked}}
+              />
+            </td>
+            <td class="pool-text">
+              <label for="azecraft-{{category.id}}-{{modifier.id}}">{{modifier.label}}</label>
+            </td>
+            <td class="pool-text">{{modifier.modifierText}}</td>
+          </tr>
+          {{/each}}
+        </table>
       </details>
       {{/each}}
-    </div>
-    </details>
+    </section>
     {{/if}}
     <details>
     <summary>Options</summary>
