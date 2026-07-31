@@ -12,7 +12,7 @@
 
 - Use local .memory folder for managing memory notes.
 - Star Wars FFG system code is available at `.memory/StarWarsFFG`.
-- Prefer Foundry V13-compatible APIs and hooks.
+- Prefer Foundry V13-compatible APIs and hooks (context7)
 - Treat Star Wars FFG system behavior as the primary integration surface.
 - When making changes, inspect the relevant system templates, sheet data flow, and text enrichment/rendering behavior first.
   - Note that some templates are available locally that are slightly modified, meant to replace original ones.
