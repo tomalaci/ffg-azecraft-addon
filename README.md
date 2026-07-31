@@ -56,8 +56,8 @@ The included [`compose.yml`](compose.yml) runs Foundry VTT `13.351` at
 - `~/.local/share/foundry-vtt/Dist/FoundryVTT-Node-13.351.zip` for the Foundry distribution
 - `~/.local/share/foundry-vtt/license.txt` for the license key
 
-The repository is mounted read-only as the installed
-`ffg-azecraft-addon` module, and Foundry's development hot reload is enabled.
+The repository is mounted read-only as the installed `ffg-azecraft-addon`
+module, and Foundry's development hot reload is enabled.
 Start and stop the server with:
 
 ```sh

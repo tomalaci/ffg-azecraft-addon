@@ -10,9 +10,15 @@ services:
     command:
       - |
         export FOUNDRY_LICENSE_KEY="$$(cat /run/secrets/foundry_license_key)"
-        mkdir -p /data/container_cache /data/modules
+        mkdir -p /data/container_cache /data/Data/modules
         test -s /data/container_cache/foundryvtt-13.351.zip || cp /foundryvtt-13.351.zip /data/container_cache/foundryvtt-13.351.zip
-        ln -sfn /module-src /data/modules/ffg-azecraft-addon
+        if [ -L /data/modules/ffg-azecraft-addon ]; then rm /data/modules/ffg-azecraft-addon; fi
+        rmdir /data/modules 2>/dev/null || true
+        if [ -e /data/Data/modules/ffg-azecraft-addon ] && [ ! -L /data/Data/modules/ffg-azecraft-addon ]; then
+          echo "Refusing to replace non-symlink module directory: /data/Data/modules/ffg-azecraft-addon" >&2
+          exit 1
+        fi
+        ln -sfn /module-src /data/Data/modules/ffg-azecraft-addon
         exec ./entrypoint.sh resources/app/main.mjs --port=30000 --headless --noupdate --dataPath=/data
     environment:
       CONTAINER_PRESERVE_CONFIG: "true"
