@@ -8,6 +8,8 @@
  * - Species and career are embedded Items of type "species"/"career"; system.species.value and
  *   system.career.value are legacy text fields, used only as a fallback.
  * - Critical injuries are embedded Items of type "criticalinjury" with system.severity.
+ * - Desire is the Genesys Motivation field system.motivation.desire (rich text, edited on the sheet's
+ *   Basic Information tab); the card shows it as plain text and can write it back as paragraphs.
  */
 
 import { DESIRE_MAX_LENGTH, FLAG_KEY, MODULE_ID, OWNERSHIP, PLACEHOLDER_ART } from "./constants.js";
@@ -61,9 +63,54 @@ export function readDashboardFlags(actor) {
     const flags = actor?.flags?.[MODULE_ID]?.[FLAG_KEY] ?? {};
 
     return {
-        desire: typeof flags.desire === "string" ? flags.desire.slice(0, DESIRE_MAX_LENGTH) : "",
         fullArt: typeof flags.fullArt === "string" && flags.fullArt.trim() ? flags.fullArt.trim() : null
     };
+}
+
+const ENTITIES = { amp: "&", lt: "<", gt: ">", quot: "\"", "#39": "'", apos: "'", nbsp: " " };
+
+/** Rich-text HTML to plain text with paragraph breaks. Pure (no DOM), for display only. */
+export function htmlToText(html) {
+    return String(html ?? "")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/(p|div|li|h[1-6])>/gi, "\n\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&(#39|[a-z]+);/gi, (match, name) => ENTITIES[name.toLowerCase()] ?? match)
+        .replace(/[ \t]+\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+}
+
+/** Plain text to simple paragraph HTML, escaping everything. Pure. */
+export function textToHtml(text) {
+    const escape = value => value.replace(/[&<>"']/g, c => `&${{ "&": "amp", "<": "lt", ">": "gt", "\"": "quot", "'": "#39" }[c]};`);
+    return String(text ?? "")
+        .trim()
+        .split(/\n{2,}/)
+        .filter(Boolean)
+        .map(paragraph => `<p>${escape(paragraph).replace(/\n/g, "<br>")}</p>`)
+        .join("");
+}
+
+/** True when the HTML uses formatting that a plain-text edit would lose (anything but p/br). */
+export function hasRichFormatting(html) {
+    return /<(?!\/?(p|br)\b)[a-z]/i.test(String(html ?? ""));
+}
+
+/**
+ * Actor types whose starwarsffg sheet shows the Motivations block (Strength, Flaw, Desire, Fear).
+ * `system.motivation` is not part of their default data: it only exists once someone has typed
+ * into one of those sheet fields, so a missing field means "empty", not "unsupported".
+ */
+const MOTIVATION_TYPES = new Set(["character", "nemesis", "rival"]);
+
+/** The Genesys Desire motivation, or null when this Actor type has no motivations. */
+export function readDesire(actor) {
+    if (!MOTIVATION_TYPES.has(actor?.type)) return null;
+
+    const desire = actor.system?.motivation?.desire;
+    const html = typeof desire === "string" ? desire : "";
+    return { html, text: htmlToText(html).slice(0, DESIRE_MAX_LENGTH), rich: hasRichFormatting(html) };
 }
 
 function permissionLevel(actor, user) {
@@ -101,6 +148,7 @@ export function buildCharacterCard(slot, actor, user) {
     }
 
     const flags = readDashboardFlags(actor);
+    const desire = readDesire(actor);
     const canEdit = Boolean(actor.canUserModify?.(user, "update"));
     const identity = {
         ...base,
@@ -145,8 +193,10 @@ export function buildCharacterCard(slot, actor, user) {
             ranged: formatNumber(toNumber(stats?.defence?.ranged))
         },
         criticalInjuries,
-        desire: flags.desire,
-        canEditDesire: canEdit
+        hasDesire: Boolean(desire),
+        desire: desire?.text ?? "",
+        desireRich: Boolean(desire?.rich),
+        canEditDesire: canEdit && Boolean(desire)
     };
 
     return card;

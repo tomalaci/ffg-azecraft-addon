@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildCharacterCard, toNumber } from "../scripts/mission-dashboard/actor-adapter.js";
+import { buildCharacterCard, hasRichFormatting, htmlToText, textToHtml, toNumber } from "../scripts/mission-dashboard/actor-adapter.js";
 import { LEVELS, makeActor, makeItem, makeUser } from "./fixtures.js";
 
 const slot = { id: "slot-1", actorUuid: "Actor.a1" };
@@ -73,13 +73,12 @@ test("falls back to legacy species/career text fields", () => {
 });
 
 test("art prefers the full-art flag, then the portrait", () => {
-    const flagged = makeActor({ flags: { "ffg-azecraft-addon": { dashboard: { fullArt: "worlds/x/full.webp", desire: "Fly it" } } } });
+    const flagged = makeActor({ flags: { "ffg-azecraft-addon": { dashboard: { fullArt: "worlds/x/full.webp" } } } });
     const card = buildCharacterCard(slot, flagged, player);
 
     assert.equal(card.art, "worlds/x/full.webp");
     assert.equal(card.portrait, "worlds/x/pc.png");
     assert.equal(card.hasFullArt, true);
-    assert.equal(card.desire, "Fly it");
     assert.equal(buildCharacterCard(slot, makeActor(), player).art, "worlds/x/pc.png");
 });
 
@@ -109,4 +108,33 @@ test("empty, missing and unsupported slots", () => {
     const card = buildCharacterCard(slot, vehicle, player);
     assert.equal(card.availability, "unsupported");
     assert.equal(card.soak, "—");
+});
+
+test("Desire comes from the sheet's Genesys motivation field", () => {
+    const actor = makeActor({ system: { motivation: { desire: "<p>Fly something &amp; crash it.</p><p>Then a cocktail.</p>" } } });
+    const card = buildCharacterCard(slot, actor, player);
+
+    assert.equal(card.hasDesire, true);
+    assert.equal(card.desire, "Fly something & crash it.\n\nThen a cocktail.");
+    assert.equal(card.desireRich, false);
+
+    // A character whose sheet Desire was never filled in has no motivation data yet: still editable.
+    const blank = buildCharacterCard(slot, makeActor(), gm);
+    assert.equal(blank.hasDesire, true);
+    assert.equal(blank.desire, "");
+    assert.equal(blank.canEditDesire, true);
+
+    // Actor types whose sheet has no Motivations (e.g. vehicles) get no Desire section.
+    const vehicle = { ...makeActor(), type: "vehicle" };
+    assert.equal(buildCharacterCard(slot, vehicle, gm).hasDesire, false);
+    assert.equal(buildCharacterCard(slot, vehicle, gm).canEditDesire, false);
+});
+
+test("plain-text Desire edits round-trip through the sheet's HTML safely", () => {
+    const html = textToHtml("Fly <fast> & loud\nno brakes\n\n\n\nSecond");
+    assert.equal(html, "<p>Fly &lt;fast&gt; &amp; loud<br>no brakes</p><p>Second</p>");
+    assert.equal(htmlToText(html), "Fly <fast> & loud\nno brakes\n\nSecond");
+    assert.equal(hasRichFormatting(html), false);
+    assert.equal(hasRichFormatting("<p><strong>bold</strong></p>"), true);
+    assert.equal(hasRichFormatting("<p><a href=\"x\">link</a></p>"), true);
 });

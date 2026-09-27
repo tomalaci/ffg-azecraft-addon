@@ -55,7 +55,8 @@ All of this lives in `actor-adapter.js`:
 | Species / career | Embedded Items of type `species` / `career` | `system.species.value` / `system.career.value` are legacy text fields, empty on every PC in this world; used only as a fallback. |
 | Critical injuries | Embedded Items of type `criticalinjury`, `system.severity` | Sorted by `item.sort`, like the sheet. |
 | Portrait | `actor.img` | |
-| Full art / Desire | `flags["ffg-azecraft-addon"].dashboard.fullArt` / `.desire` | Written with `actor.setFlag` / `unsetFlag` only. |
+| Desire | `system.motivation.desire` (Genesys Motivations, rich text) | The sheet's own field. It is not in the default data of `character`/`nemesis`/`rival`, and only appears once someone types into it, so a missing value means empty. The card shows it through `htmlToText`, saves with `actor.update` and `textToHtml`, and warns before flattening formatting (`hasRichFormatting`). |
+| Full art | `flags["ffg-azecraft-addon"].dashboard.fullArt` | Written with `actor.setFlag` / `unsetFlag` only. Early local builds also stored a separate `dashboard.desire` flag; it is no longer read. |
 
 Missing values (for example Thana T'Serro's `wounds.value` is `null` in this world) show as `—`,
 never as 0. Bars clamp at 100%; the numbers are never clamped.

@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    {{#if (ne card.availability "limited")}}
+    {{#if (and (ne card.availability "limited") card.hasDesire)}}
     <div class="azd-desire">
         <div class="azd-desire-head">
             <span class="azd-section-label">Desire</span>

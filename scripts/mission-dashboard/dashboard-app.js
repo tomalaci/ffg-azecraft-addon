@@ -7,6 +7,7 @@
 
 import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
 import { setDefaultLedger } from "./dashboard-state.js";
+import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
@@ -273,10 +274,28 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         this.render({ parts: ["rail"] });
     }
 
-    static #onEditDesire(event, target) {
+    static async #onEditDesire(event, target) {
         const uuid = target.closest("[data-uuid]")?.dataset.uuid;
         const card = this.controller.view?.cards.find(c => c.uuid === uuid);
         if (!card?.canEditDesire) return;
+
+        // The sheet's Desire is rich text; a plain-text edit here would drop its formatting.
+        if (card.desireRich) {
+            const choice = await DialogV2.wait({
+                window: { title: "Desire has formatting" },
+                content: "<p>This Desire uses formatting (bold, links, lists…) from the character sheet. Editing it here saves plain text and removes that formatting.</p>",
+                buttons: [
+                    { action: "sheet", label: "Edit on the sheet", icon: "fa-solid fa-user", default: true },
+                    { action: "plain", label: "Edit here as plain text", icon: "fa-solid fa-pen" }
+                ]
+            });
+            if (choice === "sheet") {
+                foundry.utils.fromUuidSync(uuid, { strict: false })?.sheet?.render(true);
+                return;
+            }
+            if (choice !== "plain") return;
+        }
+
         this.drafts.set(uuid, { text: card.desire, original: card.desire });
         this.expanded.add(card.slotId);
         this.render({ parts: ["rail"] }).then(() => {
@@ -314,16 +333,19 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             return;
         }
 
-        const text = draft.text.trim().slice(0, DESIRE_MAX_LENGTH);
+        // Normalise through the same HTML round-trip the sheet field will go through.
+        const normalize = raw => htmlToText(textToHtml(raw.trim().slice(0, DESIRE_MAX_LENGTH)));
+        const text = normalize(draft.text);
 
         draft.saving = true;
 
         try {
-            await actor.setFlag(MODULE_ID, "dashboard.desire", text);
+            // The Genesys Desire motivation on the sheet (Basic Information tab) is the one source of truth.
+            await actor.update({ "system.motivation.desire": textToHtml(text) });
 
             // Keep typing that happened while the save was in flight; it is now based on the saved text.
             draft.saving = false;
-            if (draft.text.trim().slice(0, DESIRE_MAX_LENGTH) === text) this.drafts.delete(uuid);
+            if (normalize(draft.text) === text) this.drafts.delete(uuid);
             else draft.original = text;
             this.render({ parts: ["rail"] });
         } catch (error) {

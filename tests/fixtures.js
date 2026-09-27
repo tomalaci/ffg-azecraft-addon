@@ -30,6 +30,7 @@ export function makeActor({ level = LEVELS.OBSERVER, stats, flags = {}, items, i
     return {
         id: "a1",
         uuid: "Actor.a1",
+        type: "character",
         name: "Test Operative",
         img,
         flags,

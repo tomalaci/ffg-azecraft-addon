@@ -10,7 +10,8 @@ The dashboard only shows information that lives elsewhere:
 | Shown on the dashboard | Where it really lives |
 | --- | --- |
 | Name, portrait, wounds, strain, soak, defense, species, career, critical injuries | The character's Actor (the normal character sheet) |
-| Full-body art and Desire | The character's Actor (saved with the character, shared across missions) |
+| Desire | The character sheet's **Motivations → Desire** field (Basic Information tab) |
+| Full-body art | The character's Actor (saved with the character, shared across missions) |
 | Mission summary, current objective, key intel | Journal pages you choose |
 | Which characters, pages and People of Note belong to this mission | The Scene |
 | Fame and faction reputation | The campaign ledger Journal (shared by all GMs and Scenes) |
@@ -124,14 +125,18 @@ still work.
 
 ### Desire (players)
 
-Desire is what you would like your character to pursue or experience in play. It belongs to the
-character, so it carries over to every mission.
+Desire is what you would like your character to pursue or experience in play. It is the same
+field as **Desire** under Motivations on the character sheet's Basic Information tab: editing it
+on either one changes both, and it carries over to every mission.
 
 - The character's owner (and any GM) sees a pencil next to **Desire**. Click it, type up to 500
   characters, and click **Save** (or press Ctrl+Enter). **Cancel** or Escape discards your changes.
 - If someone else changes the Desire while you are typing, your text is kept. A warning shows their
   version, and you can switch to it or save yours over it.
 - Everyone who can see the character's stats can read their Desire.
+- The card shows the Desire as plain text. If the sheet's Desire uses formatting (bold, links,
+  lists), the pencil asks whether to edit it on the sheet instead, because saving from the card
+  stores plain text and would remove that formatting.
 
 ### Full-body art
 
