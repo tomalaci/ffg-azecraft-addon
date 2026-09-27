@@ -170,7 +170,12 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
   an input has focus. The HUD therefore stops no events globally. Verified live: the wheel over
   panels scrolls them without zooming, the wheel over the map zooms, a real mouse drag moves a token,
   and arrow keys and Delete in the Desire editor don't touch the selected token.
-- Parts are `header`, `rail`, `mission` and `intel`. The controller builds a view model, awaiting
+- **Frame.** `frame` is the first part, so it paints behind the others. In framed style (client
+  setting `dashboardStyle`, default `framed`), its two solid, pointer-absorbing blocks form an L
+  around the map window. `frameWindow()` computes that window. `fitSceneToFrame()` pans and zooms
+  (`canvas.animatePan`) so `canvas.dimensions.sceneRect` fits inside it. That runs only on the
+  header button, or once on mount when the Scene flag `fitOnOpen` is set.
+- Parts are `frame`, `header`, `rail`, `mission` and `intel`. The controller builds a view model, awaiting
   UUID resolution and `TextEditor.enrichHTML`, and then renders only the affected parts. Cards and
   the header render immediately; the first mount waits for mission content.
 - Stale results are dropped using a scene generation counter (bumped on sync and unmount) and a

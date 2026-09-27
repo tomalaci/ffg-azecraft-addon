@@ -10,7 +10,7 @@ import { ensureLedgerFolders } from "./ledgers.js";
 
 // Keys are Handlebars partial names; most partials are referenced by their path.
 const TEMPLATES = Object.fromEntries(
-    ["header", "rail", "card", "mission", "intel", "dashboard-config", "campaign", "help"]
+    ["frame", "header", "rail", "card", "mission", "intel", "dashboard-config", "campaign", "help"]
         .map(name => `${TEMPLATE_ROOT}/${name}.hbs`)
         .map(path => [path, path])
 );
@@ -44,6 +44,17 @@ function registerSettings() {
             controller?.app?.applyPreferences();
             controller?.refresh("header", "rail");
         }
+    });
+
+    game.settings.register(MODULE_ID, SETTINGS.style, {
+        name: "Mission dashboard style",
+        hint: "Framed: the squad column and mission bar form a solid frame around the map. Floating: separate panels over the map.",
+        scope: "client",
+        config: true,
+        type: String,
+        choices: { framed: "Framed", floating: "Floating panels" },
+        default: "framed",
+        onChange: () => controller?.app?.applyPreferences()
     });
 
     game.settings.register(MODULE_ID, SETTINGS.missionCollapsed, {

@@ -20,6 +20,13 @@
             </div>
             <p class="hint">{{#if showOnAllScenes}}The dashboard shows on every Scene (module setting). Untick to hide it on this Scene only, e.g. a title screen.{{else}}“Show on every Scene” is off in the module settings, so the dashboard only shows on Scenes where this is ticked.{{/if}} Players can always minimize it on their own screen.</p>
         </div>
+        <div class="form-group">
+            <label for="azd-fit-{{scene.id}}">Fit into the frame when opened</label>
+            <div class="form-fields">
+                <input type="checkbox" id="azd-fit-{{scene.id}}" name="fitOnOpen" {{checked fitOnOpen}}>
+            </div>
+            <p class="hint">For art and landing Scenes: when someone opens this Scene, their view zooms so the whole Scene image sits inside the dashboard frame. Anyone can also use <i class="fa-solid fa-crop-simple" inert></i> in the dashboard header at any time.</p>
+        </div>
         <div class="form-group stacked">
             <label>Squad and mission</label>
             <div class="azd-config-source">

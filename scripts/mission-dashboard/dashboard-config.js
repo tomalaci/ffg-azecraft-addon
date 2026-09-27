@@ -96,6 +96,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     /** Whether the dashboard shows on this Scene, and which config it uses ("campaign" or "scene"). */
     shown = true;
     source = "campaign";
+    fitOnOpen = false;
 
     /** Working copies per source and fingerprints of the stored configs they started from. */
     drafts = {};
@@ -118,6 +119,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         const sceneHasOwn = sceneUsesOwnConfig(this.#flag) || Array.isArray(this.#flag?.party);
 
         this.shown = resolved.shown;
+        this.fitOnOpen = this.#flag?.fitOnOpen === true;
         this.source = resolved.source;
         this.drafts = {
             scene: foundry.utils.deepClone(sceneHasOwn ? sceneStored : campaign),
@@ -193,6 +195,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             scene: this.scene,
             draft: this.draft,
             shown: this.shown,
+            fitOnOpen: this.fitOnOpen,
             isCampaign: this.source === "campaign",
             showOnAllScenes,
             campaignSceneCount: campaignScenes.length,
@@ -258,6 +261,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     #readForm() {
         const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.element).object);
         this.shown = Boolean(data.shown);
+        this.fitOnOpen = Boolean(data.fitOnOpen);
 
         for (const [index, slot] of this.draft.party.entries()) {
             slot.actorUuid = data.party?.[index]?.actorUuid || null;
@@ -391,10 +395,11 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
                 if (configFingerprint(config) !== this.fingerprints.campaign) {
                     await saveCampaignConfig(config, { expectedFingerprint: force ? null : this.fingerprints.campaign });
                 }
-                await saveSceneDashboard(this.scene, { shown: this.shown, source: "campaign" });
+                await saveSceneDashboard(this.scene, { shown: this.shown, fitOnOpen: this.fitOnOpen, source: "campaign" });
             } else {
                 await saveSceneDashboard(this.scene, {
                     shown: this.shown,
+                    fitOnOpen: this.fitOnOpen,
                     source: "scene",
                     config,
                     expectedFingerprint: force ? null : this.fingerprints.scene

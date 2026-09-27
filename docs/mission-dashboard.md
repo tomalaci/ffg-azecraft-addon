@@ -142,7 +142,15 @@ the card falls back to the portrait.
 
 ## Hiding and compact mode (everyone)
 
+By default the squad column and the mission bar form a solid **frame** around the map; the Scene
+shows through the window between them. The client setting *Mission dashboard style* switches to
+separate **floating panels** instead.
+
 These buttons in the dashboard header only affect **your** screen:
+
+- **Crop** (Fit Scene): zooms and pans your view so the whole Scene image sits inside the frame.
+  GMs can tick *Fit into the frame when opened* in a Scene's dashboard configuration (good for art
+  and landing Scenes) so this happens once whenever someone opens that Scene.
 
 - **Eye** (Focus map): hides the dashboard. A small **Dashboard** button stays at the top of the
   screen, just right of the Scene list, to bring it back. You can also bind a key to *Toggle mission dashboard* in Configure Controls.

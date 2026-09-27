@@ -66,7 +66,8 @@ export class DashboardController {
         return {
             hidden: game.settings.get(MODULE_ID, SETTINGS.hidden),
             compact: game.settings.get(MODULE_ID, SETTINGS.compact),
-            missionCollapsed: game.settings.get(MODULE_ID, SETTINGS.missionCollapsed)
+            missionCollapsed: game.settings.get(MODULE_ID, SETTINGS.missionCollapsed),
+            style: game.settings.get(MODULE_ID, SETTINGS.style)
         };
     }
 
@@ -188,8 +189,12 @@ export class DashboardController {
 
     async #render(parts) {
         if (!this.app) {
-            this.app = new MissionDashboardApp(this);
-            await this.app.render({ force: true });
+            const app = this.app = new MissionDashboardApp(this);
+            await app.render({ force: true });
+            // Art/landing Scenes can ask to be fitted into the frame once, when they open.
+            if (app === this.app && this.scene?.flags?.[MODULE_ID]?.dashboard?.fitOnOpen) {
+                requestAnimationFrame(() => app.fitScene());
+            }
             return;
         }
 

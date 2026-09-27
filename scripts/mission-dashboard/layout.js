@@ -48,8 +48,9 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     const autoCompact = height < 900 || width - left - right < 1100;
     const compact = compactPreference === "always" || (compactPreference === "auto" && autoCompact);
 
-    let railWidth = width >= 2200 ? 380 : width >= 1600 ? 330 : 280;
-    if (compact) railWidth = Math.min(railWidth, 260);
+    // Wide enough that character art is a real feature of the frame, not a thumbnail.
+    let railWidth = width >= 2200 ? 480 : width >= 1600 ? 420 : 340;
+    if (compact) railWidth = Math.min(railWidth, 280);
 
     let missionHeight = height >= 1300 ? 260 : height >= 1000 ? 220 : 180;
     if (missionCollapsed) missionHeight = 34;
@@ -150,4 +151,43 @@ export class LayoutWatcher {
 
         this.#element.classList.toggle("azd--compact", compact);
     }
+}
+
+/**
+ * The map "window" left free by the dashboard frame, in screen pixels. Pure.
+ * @returns {{left: number, top: number, right: number, bottom: number}}
+ */
+export function frameWindow(ui, options = {}) {
+    const { values } = computeLayout(ui, options);
+    const px = name => Number.parseFloat(values[name]);
+    const left = px("--azd-left") + px("--azd-rail-width") + GAP;
+    const right = ui.width - Math.max(0, px("--azd-right") - GAP);
+    const bottom = ui.height - (px("--azd-bottom") + px("--azd-mission-height") + GAP);
+    return { left, top: 0, right, bottom };
+}
+
+/**
+ * Pan and zoom this client's canvas so the whole Scene (its background area) fits inside the
+ * frame window. Only ever called explicitly or once when a Scene opens; never continuously.
+ */
+export async function fitSceneToFrame(options = {}) {
+    const rect = canvas?.dimensions?.sceneRect;
+    if (!canvas?.ready || !rect) return;
+
+    const view = frameWindow(measureUI(), options);
+    const width = Math.max(100, view.right - view.left);
+    const height = Math.max(100, view.bottom - view.top);
+    const margin = 0.98;
+    const limits = CONFIG.Canvas ?? {};
+    const scale = Math.min(limits.maxZoom ?? 3, Math.max(limits.minZoom ?? 0.1, Math.min(width / rect.width, height / rect.height) * margin));
+
+    // animatePan centres a world point on the screen; offset it so it centres in the frame window.
+    const offsetX = (view.left + view.right) / 2 - window.innerWidth / 2;
+    const offsetY = (view.top + view.bottom) / 2 - window.innerHeight / 2;
+    await canvas.animatePan({
+        x: rect.x + rect.width / 2 - offsetX / scale,
+        y: rect.y + rect.height / 2 - offsetY / scale,
+        scale,
+        duration: 250
+    });
 }

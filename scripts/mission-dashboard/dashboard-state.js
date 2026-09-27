@@ -268,13 +268,14 @@ function validateOrThrow(config) {
  * kept so the GM can switch back. Refuses if the Scene's own config changed since `expectedFingerprint`.
  * Only this module's flag is written; the rest of the Scene is untouched.
  */
-export async function saveSceneDashboard(scene, { shown, source, config = null, expectedFingerprint = null }) {
+export async function saveSceneDashboard(scene, { shown, source, fitOnOpen = false, config = null, expectedFingerprint = null }) {
     assertGM();
 
     const base = `flags.${MODULE_ID}.${FLAG_KEY}`;
     const update = {
         [`${base}.enabled`]: Boolean(shown),
         [`${base}.source`]: source === "scene" ? "scene" : "campaign",
+        [`${base}.fitOnOpen`]: Boolean(fitOnOpen),
         [`${base}.schemaVersion`]: SCHEMA_VERSION
     };
 

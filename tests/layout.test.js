@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { computeLayout } from "../scripts/mission-dashboard/layout.js";
+import { computeLayout, frameWindow } from "../scripts/mission-dashboard/layout.js";
 
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
 
@@ -37,7 +37,7 @@ test("laptop size with sidebar open switches to compact", () => {
     const { compact, values } = computeLayout(laptop);
 
     assert.equal(compact, true);
-    assert.equal(values["--azd-rail-width"], "260px");
+    assert.equal(values["--azd-rail-width"], "280px");
 });
 
 test("preferences override automatic compact mode and collapse the drawer", () => {
@@ -56,4 +56,10 @@ test("missing UI elements fall back to small margins", () => {
     const { values } = computeLayout({ width: 1600, height: 900 });
     assert.equal(values["--azd-left"], "12px");
     assert.equal(values["--azd-right"], "12px");
+});
+
+test("the frame window is the map area between the rail, bottom bar and sidebar", () => {
+    const view = frameWindow(desktop);
+    // rail 100 + 420 + gap 12; sidebar starts at 1572; bottom bar = hotbar inset 84 + panels 220 + gap 12
+    assert.deepEqual(view, { left: 532, top: 0, right: 1572, bottom: 764 });
 });

@@ -9,7 +9,7 @@ import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS
 import { setDefaultLedger } from "./dashboard-state.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
-import { LayoutWatcher } from "./layout.js";
+import { LayoutWatcher, fitSceneToFrame } from "./layout.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
@@ -50,6 +50,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             openCampaign: MissionDashboardApp.#onOpenCampaign,
             pageEntry: MissionDashboardApp.#onPageEntry,
             openHelp: () => DashboardHelpApp.open(),
+            fitScene: MissionDashboardApp.#onFitScene,
             newEntry: MissionDashboardApp.#onNewEntry,
             newLedger: MissionDashboardApp.#onNewLedger,
             setDefaultLedger: MissionDashboardApp.#onSetDefaultLedger,
@@ -58,6 +59,8 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     };
 
     static PARTS = {
+        // Rendered first so it sits behind the panels.
+        frame: { template: `${TEMPLATE_ROOT}/frame.hbs` },
         header: { template: `${TEMPLATE_ROOT}/header.hbs` },
         rail: { template: `${TEMPLATE_ROOT}/rail.hbs`, scrollable: [".azd-rail-cards"] },
         mission: { template: `${TEMPLATE_ROOT}/mission.hbs`, scrollable: [".azd-objective-body", ".azd-summary-body"] },
@@ -172,6 +175,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const prefs = this.controller.preferences();
         this.element.classList.toggle("azd--hidden", prefs.hidden);
         this.element.classList.toggle("azd--mission-collapsed", prefs.missionCollapsed);
+        this.element.classList.toggle("azd--framed", prefs.style !== "floating");
         this.#layout?.apply();
     }
 
@@ -409,6 +413,20 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const view = this.#panelView(target.dataset.panel);
         const ledger = view?.ledgerUuid ? foundry.utils.fromUuidSync(view.ledgerUuid, { strict: false }) : null;
         if (ledger?.testUserPermission(game.user, "OBSERVER")) ledger.sheet.render(true);
+    }
+
+    static #onFitScene() {
+        return fitSceneToFrame(this.#layoutOptions());
+    }
+
+    #layoutOptions() {
+        const prefs = this.controller.preferences();
+        return { compactPreference: prefs.compact, missionCollapsed: prefs.missionCollapsed };
+    }
+
+    /** Fit the Scene into the frame on this client (used when a Scene opens with "fit on open"). */
+    fitScene() {
+        return fitSceneToFrame(this.#layoutOptions());
     }
 
     static #onConfigure() {
