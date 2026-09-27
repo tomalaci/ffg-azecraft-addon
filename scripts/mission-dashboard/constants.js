@@ -30,7 +30,9 @@ export const SETTINGS = {
     hidden: "dashboardHidden",
     compact: "dashboardCompact",
     missionCollapsed: "dashboardMissionCollapsed",
-    ledger: "campaignLedgerUuid"
+    ledger: "campaignLedgerUuid",
+    campaignDashboard: "campaignDashboard",
+    showOnAllScenes: "showOnAllScenes"
 };
 
 /** Ownership levels, mirrored from CONST.DOCUMENT_OWNERSHIP_LEVELS so pure modules stay testable. */

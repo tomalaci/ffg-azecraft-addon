@@ -4,7 +4,7 @@
  */
 
 import { MISSION_PANELS, MODULE_ID, SETTINGS } from "./constants.js";
-import { isDashboardEnabled, readDashboardConfig, referencedUuids } from "./dashboard-state.js";
+import { isDashboardEnabled, referencedUuids, resolveSceneDashboard } from "./dashboard-state.js";
 import { buildCharacterCard } from "./actor-adapter.js";
 import { buildPanel, buildPeople, missionTitle } from "./mission-data.js";
 import { buildStanding, getLedgerUuid } from "./campaign-reputation.js";
@@ -135,7 +135,7 @@ export class DashboardController {
         if (!parts.size) return;
 
         const generation = this.#sceneGeneration;
-        const config = readDashboardConfig(scene);
+        const { config, source } = resolveSceneDashboard(scene);
         const user = game.user;
         const view = this.view ?? { cards: [], mission: null, intel: null, people: [] };
         const needsMission = parts.has("mission") || parts.has("intel");
@@ -143,6 +143,7 @@ export class DashboardController {
 
         this.#refs = referencedUuids(config);
         view.isGM = user.isGM;
+        view.source = source;
         view.sceneName = scene.navName || scene.name;
 
         if (parts.has("rail") || parts.has("header")) {

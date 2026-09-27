@@ -12,15 +12,29 @@
     {{/if}}
 
     <fieldset>
-        <legend>Scene</legend>
+        <legend>Scene: {{scene.name}}</legend>
         <div class="form-group">
-            <label for="azd-enabled-{{scene.id}}">Show mission dashboard</label>
+            <label for="azd-shown-{{scene.id}}">Show dashboard on this Scene</label>
             <div class="form-fields">
-                <input type="checkbox" id="azd-enabled-{{scene.id}}" name="enabled" {{checked draft.enabled}}>
+                <input type="checkbox" id="azd-shown-{{scene.id}}" name="shown" {{checked shown}}>
             </div>
-            <p class="hint">Shown to everyone viewing <strong>{{scene.name}}</strong>. Each person can still hide it on their own computer.</p>
+            <p class="hint">{{#if showOnAllScenes}}The dashboard shows on every Scene (module setting). Untick to hide it on this Scene only, e.g. a title screen.{{else}}“Show on every Scene” is off in the module settings, so the dashboard only shows on Scenes where this is ticked.{{/if}} Players can always minimize it on their own screen.</p>
+        </div>
+        <div class="form-group stacked">
+            <label>Squad and mission</label>
+            <div class="azd-config-source">
+                <label><input type="radio" name="source" value="campaign" {{checked isCampaign}}> Campaign dashboard <span class="hint">(shared by all {{campaignSceneCount}} Scenes that use it)</span></label>
+                <label><input type="radio" name="source" value="scene" {{checked (not isCampaign)}}> This Scene's own squad and mission <span class="hint">(e.g. a one-off mission)</span></label>
+            </div>
         </div>
     </fieldset>
+
+    {{#if isCampaign}}
+    <p class="azd-config-banner"><i class="fa-solid fa-globe" inert></i> You are editing the <strong>campaign dashboard</strong>. Changes apply to every Scene that uses it.</p>
+    {{else}}
+    <p class="azd-config-banner azd-config-banner--scene"><i class="fa-solid fa-map" inert></i> You are editing <strong>{{scene.name}}</strong>'s own dashboard. Other Scenes are not affected.
+        <button type="button" class="azd-config-inline" data-action="copyToCampaign" data-tooltip="Replace the campaign dashboard with this setup and switch this Scene to it">Use as campaign dashboard</button></p>
+    {{/if}}
 
     <fieldset>
         <legend>Squad</legend>

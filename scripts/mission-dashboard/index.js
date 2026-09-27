@@ -56,6 +56,26 @@ function registerSettings() {
         }
     });
 
+    // World scope: the campaign dashboard shown on every Scene that has no config of its own.
+    game.settings.register(MODULE_ID, SETTINGS.showOnAllScenes, {
+        name: "Show mission dashboard on every Scene",
+        hint: "Show the campaign dashboard on all Scenes, including new ones. A GM can still hide it on a single Scene in its dashboard configuration. When off, it only shows on Scenes where a GM enabled it.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: true,
+        onChange: () => controller?.sync()
+    });
+
+    game.settings.register(MODULE_ID, SETTINGS.campaignDashboard, {
+        name: "Campaign dashboard",
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {},
+        onChange: () => controller?.sync()
+    });
+
     // World scope: the campaign reputation ledger shared by every GM and Scene.
     game.settings.register(MODULE_ID, SETTINGS.ledger, {
         name: "Campaign reputation ledger",
@@ -93,10 +113,15 @@ function registerIntegrations() {
                 if (scene) controller.openConfig(scene);
             }
         }, {
-            name: "Disable Mission Dashboard",
+            name: "Hide Mission Dashboard on this Scene",
             icon: '<i class="fa-solid fa-eye-slash"></i>',
             condition: li => game.user.isGM && isDashboardEnabled(sceneFrom(li)),
             callback: li => setDashboardEnabled(sceneFrom(li), false)
+        }, {
+            name: "Show Mission Dashboard on this Scene",
+            icon: '<i class="fa-solid fa-eye"></i>',
+            condition: li => game.user.isGM && !isDashboardEnabled(sceneFrom(li)),
+            callback: li => setDashboardEnabled(sceneFrom(li), true)
         });
     });
 

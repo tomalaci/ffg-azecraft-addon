@@ -1009,6 +1009,46 @@
     font-weight: 700;
 }
 
+.azd-config .azd-config-source {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.azd-config .azd-config-source label {
+    display: block;
+    flex: none;
+    width: 100%;
+    max-width: none;
+    line-height: 1.6;
+}
+
+.azd-config .azd-config-source input[type="radio"] {
+    margin: 0 6px 0 0;
+    vertical-align: middle;
+}
+
+.azd-config .azd-config-banner {
+    margin: 0 0 8px;
+    padding: 6px 10px;
+    border-left: 3px solid var(--azd-accent);
+    background: rgba(114, 212, 255, 0.08);
+}
+
+.azd-config .azd-config-banner--scene {
+    border-left-color: var(--azd-orange);
+    background: rgba(255, 157, 66, 0.08);
+}
+
+.azd-config .azd-config-inline {
+    display: inline-flex;
+    width: auto;
+    height: 24px;
+    margin-left: 6px;
+    padding: 0 8px;
+    font-size: 12px;
+}
+
 .azd-config .azd-config-panel {
     margin: 6px 0 10px;
 }

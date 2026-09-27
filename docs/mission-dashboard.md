@@ -1,6 +1,6 @@
 # Mission Dashboard: GM and player guide
 
-The mission dashboard is a heads-up display over a normal Foundry Scene. On the left is a column of
+The mission dashboard is a heads-up display shown on **every** Foundry Scene. On the left is a column of
 squad cards. At the bottom are the mission panels: the current objective, a mission summary, and key
 intel with People of Note. The map in the middle stays a normal, playable canvas. Panning and zooming
 move the map, not the dashboard.
@@ -20,15 +20,35 @@ In the game, the **(?)** button in the dashboard header opens a help window with
 player quick start and a short reference for every feature. The configuration and Campaign Standing
 windows have a Help entry too.
 
-## Preparing a mission Scene (GM)
+## Campaign dashboard and per-Scene setups
 
-1. Create a Scene, or duplicate an existing one. Set up the map, tokens, walls, lights and drawings
-   as usual.
-2. Open the dashboard configuration in one of these ways:
-   - Right-click the Scene in the Scenes sidebar and choose **Configure Mission Dashboard**.
-   - Open the Scene's configuration window, open its header menu (⋮) and choose **Mission Dashboard**.
-   - While viewing a Scene that already has a dashboard, click the gear button in the dashboard header.
-3. Tick **Show mission dashboard**.
+Every Scene shows the dashboard, including Scenes created later. Normally all of them share one
+**campaign dashboard**: the squad, mission pages and People of Note are set up once and appear
+everywhere. That fits a campaign that moves between a ship, a hub and battle maps during one
+mission.
+
+A GM can give a Scene **its own squad and mission** instead, for a one-off mission or a side
+party. In that Scene's configuration, choose *This Scene's own squad and mission* under **Squad
+and mission**. It starts as a copy of the campaign dashboard. To promote a Scene's own setup to the
+campaign dashboard, click **Use as campaign dashboard** and save. That Scene switches back to the
+campaign dashboard, but its old setup is kept, so you can switch back to it later.
+
+To keep the dashboard off one Scene (a title card, say), untick **Show dashboard on this Scene** or
+right-click the Scene and choose **Hide Mission Dashboard on this Scene**. **Show Mission Dashboard
+on this Scene** undoes it. The world setting *Show mission dashboard on every Scene* (Configure
+Settings → FFG Azecraft Addon) turns the always-on behaviour off; then only Scenes with the box
+ticked show it.
+
+Minimizing (the eye button) is separate: each person hides the dashboard on their own screen to
+look at the Scene art, and brings it back with the **Dashboard** button.
+
+## Setting up the dashboard (GM)
+
+1. Click the gear button in the dashboard header on any Scene. You can also right-click a Scene in
+   the Scenes sidebar and choose **Configure Mission Dashboard**, or use **Mission Dashboard** in a
+   Scene configuration window's header menu (⋮).
+2. Keep **Squad and mission** on **Campaign dashboard** (or pick the Scene's own setup, see above).
+3. Keep **Show dashboard on this Scene** ticked.
 4. Under **Squad**, choose a character for each slot. Characters from the *Player Characters* Actor
    folder are listed first. There are six slots by default. Use **Add slot**, the arrows and the
    trash button to change the count and order. Empty slots are hidden from players. Each character
@@ -62,7 +82,7 @@ newest entry.
 When the situation moves on, click the **+** on a panel (GMs only). This creates the next page in
 the mission Journal (for example *Current Objective 2*), makes it the current entry, and opens it
 for editing. The previous page is kept unchanged as history, and every viewer jumps to the new
-entry. In the configuration window you can also add pages to a panel's history, reorder them or
+entry. On the campaign dashboard the new entry shows on every Scene. In the configuration window you can also add pages to a panel's history, reorder them or
 remove them. Removing an entry from the history doesn't delete the page.
 
 Players only see history entries they are allowed to read. If the newest page is hidden from
@@ -75,17 +95,12 @@ Use the pages like this:
   stays visible even when the mission panels are collapsed.
 - **Key Intel** holds People, Places and Clues. Normal Actor, Item and Journal links work there.
 
-### Starting a new mission from an old Scene
+### Starting a new mission
 
-Duplicating a Scene keeps its dashboard settings. The copy still points at the **same** mission
-Journal pages, so editing the objective would change both missions. For a new mission, open the
-dashboard configuration on the copy and create or choose a different Journal. Actors, Journals and
-reputation are never copied automatically.
-
-### Turning the dashboard off
-
-Untick **Show mission dashboard** and save, or right-click the Scene and choose
-**Disable Mission Dashboard**. The squad and page choices are kept for next time.
+On the campaign dashboard, start a new mission by creating or choosing a new mission Journal in the
+configuration (or add entries with **+** as the mission moves on). A duplicated Scene keeps its
+settings. If it has its own setup, the copy still points at the **same** Journal pages, so editing
+them changes both. Actors, Journals and reputation are never copied automatically.
 
 ## People of Note (GM)
 

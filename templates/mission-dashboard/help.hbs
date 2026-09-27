@@ -20,11 +20,15 @@
             <p>The mission dashboard is a heads-up display over a normal Scene: squad cards on the left, and the
                 current objective, mission summary and key intel along the bottom. The map in the middle stays a
                 normal, playable map. Panning and zooming move the map, not the dashboard.</p>
+            <p>The dashboard is on <strong>every Scene</strong>. Normally all Scenes share one <strong>campaign
+                dashboard</strong> (squad, mission and People of Note). A GM can give a single Scene its own squad and
+                mission for a one-off mission. To see the Scene art without it, anyone can minimize it on their own screen.</p>
             <p>The dashboard only <em>shows</em> information that lives elsewhere, so it is always up to date:</p>
             <ul>
                 <li><strong>Characters</strong>: their normal Actor and character sheet.</li>
                 <li><strong>Mission text</strong>: pages in a mission Journal.</li>
-                <li><strong>Which characters and pages belong to the mission</strong>: the Scene.</li>
+                <li><strong>Which characters and pages belong to the mission</strong>: the campaign dashboard, or a
+                    Scene's own setup.</li>
                 <li><strong>Fame and reputation</strong>: one campaign ledger shared by every GM and Scene.</li>
             </ul>
         </section>
@@ -32,11 +36,12 @@
         <section data-section="gm-quick-start">
             <h2><i class="fa-solid fa-gear" inert></i> GM quick start</h2>
             <ol>
-                <li>Create or duplicate a Scene and prepare the map, tokens, walls and lights as usual.</li>
-                <li>Open the dashboard configuration: right-click the Scene in the Scenes sidebar and choose
-                    <strong>Configure Mission Dashboard</strong>. You can also use the Scene configuration's header menu,
-                    or the <i class="fa-solid fa-gear" inert></i> button on an existing dashboard.</li>
-                <li>Tick <strong>Show mission dashboard</strong>.</li>
+                <li>Click <i class="fa-solid fa-gear" inert></i> in the dashboard header on any Scene. You can also
+                    right-click a Scene and choose <strong>Configure Mission Dashboard</strong>.</li>
+                <li>Leave <strong>Squad and mission</strong> on <strong>Campaign dashboard</strong>. What you set up
+                    appears on every Scene, including new ones. Pick <em>This Scene's own squad and mission</em> only for
+                    a one-off mission; <strong>Use as campaign dashboard</strong> turns a Scene's own setup into the
+                    campaign one.</li>
                 <li>Under <strong>Squad</strong>, pick a character for each slot. The <em>Player Characters</em> folder
                     is listed first. Add, remove and reorder slots as needed; empty slots are hidden from players.</li>
                 <li>Under <strong>Mission Journal</strong>, click <strong>Create mission Journal</strong>. This creates
@@ -48,8 +53,10 @@
                 <li>During play, use <i class="fa-solid fa-plus" inert></i> on a panel when the objective changes, and
                     the <i class="fa-solid fa-ranking-star" inert></i> button to record Fame and reputation.</li>
             </ol>
-            <p class="azd-help-note">Duplicating a Scene keeps its dashboard, but the copy still uses the <strong>same</strong>
-                mission Journal pages. For a new mission, create or choose a different Journal in the copy's configuration.</p>
+            <p class="azd-help-note">New Scenes need no setup: they show the campaign dashboard. To hide the dashboard on
+                one Scene (e.g. a title screen), untick <strong>Show dashboard on this Scene</strong>, or right-click the
+                Scene and choose <strong>Hide Mission Dashboard on this Scene</strong>. The module setting
+                <em>Show mission dashboard on every Scene</em> switches the always-on behaviour off.</p>
         </section>
 
         <section data-section="player-quick-start">
@@ -117,7 +124,8 @@
                     ‹ 2/3 › arrows appear. Browsing only changes your own screen; <strong>Back to current</strong>
                     returns to the newest.</li>
                 <li>GMs: <i class="fa-solid fa-plus" inert></i> creates the next page (for example <em>Current Objective 2</em>),
-                    makes it current for everyone and opens it for editing. The previous page stays as history,
+                    makes it current for everyone and opens it for editing. On the campaign dashboard the new entry
+                    appears on every Scene. The previous page stays as history,
                     unchanged.</li>
                 <li>GMs can also add, reorder or remove history entries in the configuration. Removing an entry doesn't
                     delete the page.</li>
@@ -198,8 +206,9 @@
                 <li><strong>A Person of Note is missing for players</strong>: set that NPC's Actor to Limited.</li>
                 <li><strong>The squad column is short</strong>: collapse the Scene navigation, or turn on compact cards.</li>
                 <li><strong>The dashboard is gone</strong>: check for the <strong>Dashboard</strong> button at the top of
-                    the screen (it may be hidden on your screen), or ask a GM whether this Scene has the dashboard
-                    enabled.</li>
+                    the screen (you may have minimized it), or ask a GM whether it's hidden on this Scene.</li>
+                <li><strong>This Scene shows a different squad</strong>: it has its own setup. A GM can switch it back to
+                    <em>Campaign dashboard</em> in the configuration.</li>
             </ul>
         </section>
     </div>

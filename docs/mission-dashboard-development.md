@@ -72,12 +72,33 @@ card.
 
 ## Persisted data
 
+### Where the config lives
+
+The same config shape is stored in one of two places:
+
+- the **campaign dashboard**, in the world setting `campaignDashboard` (GM-written). Every Scene
+  without its own config uses it.
+- a **Scene's own config**, in the Scene flag, when `source: "scene"`.
+
+`resolveDashboard(flag, { showOnAllScenes, campaign })` is pure and returns `{ shown, source,
+config }`:
+
+- `shown` is `flag.enabled !== false` when the world setting `showOnAllScenes` (default `true`) is
+  on, and `flag.enabled === true` when it is off.
+- `source` is `"scene"` when `flag.source === "scene"`, or, for legacy flags with no `source`, when
+  the flag holds `party`/`mission`. Otherwise it is `"campaign"`.
+
+Switching a Scene to the campaign dashboard only writes `source`; its own config stays in the flag,
+so it can be switched back. `appendMissionEntry` and `createMissionEntry` write to whichever store
+the Scene uses. Settings `onChange` re-syncs every client, so campaign edits show everywhere.
+
 ### Scene flag: `flags["ffg-azecraft-addon"].dashboard`
 
 ```js
 {
   schemaVersion: 1,
-  enabled: true,
+  enabled: true,                 // false hides it on this Scene; absent means "follow the world setting"
+  source: "campaign" | "scene",  // which config this Scene shows
   party: [{ id: "slot-1", actorUuid: "Actor.<id>" | null }, ...],   // 1..12 slots, 6 by default
   mission: { objective: [uuid...], summary: [uuid...], intel: [uuid...] }, // JournalEntryPage UUIDs, oldest first, max 50
   people: [{ id, actorUuid, role, status, relationship, note }]       // player-visible text only
@@ -102,6 +123,11 @@ card.
   by save time, the GM chooses between overwriting and reloading.
 - A config that references a deleted Actor or page is shown with a placeholder and is never
   rewritten automatically.
+
+### World settings
+
+`showOnAllScenes` (Boolean, default true) and `campaignDashboard` (Object: `party`, `mission`,
+`people`).
 
 ### Client settings (per browser)
 
@@ -128,7 +154,7 @@ card.
 ## Lifecycle and rendering
 
 - The dashboard follows `game.scenes.viewed`, so each client sees the dashboard of the Scene it is
-  looking at. `canvasReady` runs `controller.sync()`; `canvasTearDown` unmounts.
+  looking at (the resolved config: campaign or the Scene's own). `canvasReady` runs `controller.sync()`; `canvasTearDown` unmounts.
 - The HUD is a `HandlebarsApplicationMixin(ApplicationV2)` with `window.frame: false`.
   `_insertElement` prepends it to `#interface`, so it sits above the canvas (z-index 1, `#board` is
   0) and below the core UI columns (z-index 30) and every window.

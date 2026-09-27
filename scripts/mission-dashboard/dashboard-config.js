@@ -1,7 +1,8 @@
 /**
- * GM configuration for one Scene's mission dashboard: enablement, party slots, mission pages and
- * People of Note. Edits a working copy; saving writes only this module's Scene flag and refuses
- * (with an explicit overwrite choice) if someone else saved in the meantime.
+ * GM configuration opened for one Scene: whether the dashboard shows there, and whether the Scene uses
+ * the campaign dashboard (shared by all Scenes) or its own squad, mission pages and People of Note.
+ * Edits working copies of both; saving writes only the store the Scene uses, and refuses (with an
+ * explicit overwrite choice) if someone else saved that store in the meantime.
  */
 
 import {
@@ -12,14 +13,20 @@ import {
     PARTY_FOLDER_NAME,
     PEOPLE_NOTE_MAX_LENGTH,
     PEOPLE_TEXT_MAX_LENGTH,
+    MODULE_ID,
+    SETTINGS,
     TEMPLATE_ROOT
 } from "./constants.js";
 import {
     DashboardConflictError,
     configFingerprint,
     normalizeDashboardConfig,
+    readCampaignConfig,
     readDashboardConfig,
-    saveDashboardConfig,
+    resolveSceneDashboard,
+    saveCampaignConfig,
+    saveSceneDashboard,
+    sceneUsesOwnConfig,
     validateDashboardConfig
 } from "./dashboard-state.js";
 import { SUPPORTED_PAGE_TYPES } from "./mission-data.js";
@@ -88,17 +95,51 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         this.#reload();
     }
 
-    /** Working copy and the fingerprint of the stored config it was based on. */
-    draft;
-    fingerprint;
-    journalUuid = null;
+    /** Whether the dashboard shows on this Scene, and which config it uses ("campaign" or "scene"). */
+    shown = true;
+    source = "campaign";
+
+    /** Working copies per source, fingerprints of the stored configs they started from, chosen Journals. */
+    drafts = {};
+    fingerprints = {};
+    journalUuids = {};
+
+    /** The working copy the form currently edits. */
+    get draft() {
+        return this.drafts[this.source];
+    }
+
+    get journalUuid() {
+        return this.journalUuids[this.source] ?? null;
+    }
+
+    set journalUuid(uuid) {
+        this.journalUuids[this.source] = uuid;
+    }
+
+    get #flag() {
+        return this.scene.flags?.[MODULE_ID]?.dashboard;
+    }
 
     #reload() {
-        const stored = readDashboardConfig(this.scene);
-        this.draft = foundry.utils.deepClone(stored);
-        this.fingerprint = configFingerprint(stored);
-        const newestPage = Object.values(stored.mission).flat().map(resolve).filter(Boolean).at(-1);
-        this.journalUuid = newestPage?.parent?.uuid ?? null;
+        const resolved = resolveSceneDashboard(this.scene);
+        const sceneStored = readDashboardConfig(this.scene);
+        const campaign = readCampaignConfig();
+        // A Scene that never had its own config starts from a copy of the campaign dashboard.
+        const sceneHasOwn = sceneUsesOwnConfig(this.#flag) || Array.isArray(this.#flag?.party);
+
+        this.shown = resolved.shown;
+        this.source = resolved.source;
+        this.drafts = {
+            scene: foundry.utils.deepClone(sceneHasOwn ? sceneStored : campaign),
+            campaign: foundry.utils.deepClone(campaign)
+        };
+        this.fingerprints = { scene: configFingerprint(sceneStored), campaign: configFingerprint(campaign) };
+
+        for (const [key, draft] of Object.entries(this.drafts)) {
+            const newestPage = Object.values(draft.mission).flat().map(resolve).filter(Boolean).at(-1);
+            this.journalUuids[key] = newestPage?.parent?.uuid ?? null;
+        }
     }
 
     static DEFAULT_OPTIONS = {
@@ -126,6 +167,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             removeEntry: DashboardConfigApp.#onRemoveEntry,
             moveEntry: DashboardConfigApp.#onMoveEntry,
             reload: DashboardConfigApp.#onReload,
+            copyToCampaign: DashboardConfigApp.#onCopyToCampaign,
             openHelp: () => DashboardHelpApp.open("gm-quick-start"),
             cancel: DashboardConfigApp.#onCancel
         }
@@ -182,9 +224,16 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             return { ...panel, entries, canAdd: list.length < MAX_PANEL_ENTRIES };
         });
 
+        const showOnAllScenes = game.settings.get(MODULE_ID, SETTINGS.showOnAllScenes);
+        const campaignScenes = game.scenes.filter(scene => !sceneUsesOwnConfig(scene.flags?.[MODULE_ID]?.dashboard));
+
         return {
             scene: this.scene,
             draft: this.draft,
+            shown: this.shown,
+            isCampaign: this.source === "campaign",
+            showOnAllScenes,
+            campaignSceneCount: campaignScenes.length,
             slots: this.draft.party.map((slot, index) => ({
                 ...slot,
                 index,
@@ -236,7 +285,11 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         // Keep the working copy in step with the form so row actions never lose typed values.
         this.element.addEventListener("change", event => {
             this.#readForm();
-            if (event.target.name === "journalUuid") {
+            if (event.target.name === "source") {
+                // The form's fields were read into the previous source's copy; now show the other copy.
+                this.source = event.target.value === "scene" ? "scene" : "campaign";
+                this.render();
+            } else if (event.target.name === "journalUuid") {
                 this.#autoSelectPages();
                 this.render();
             } else if (event.target.matches("select")) {
@@ -248,7 +301,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     /** Copy current form values into the working copy. */
     #readForm() {
         const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.element).object);
-        this.draft.enabled = Boolean(data.enabled);
+        this.shown = Boolean(data.shown);
         this.journalUuid = data.journalUuid || null;
 
         for (const [index, slot] of this.draft.party.entries()) {
@@ -412,6 +465,16 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         this.render();
     }
 
+    /** Make this Scene's own setup the campaign dashboard (applied on save). */
+    static #onCopyToCampaign() {
+        this.#readForm();
+        this.drafts.campaign = foundry.utils.deepClone(this.drafts.scene);
+        this.journalUuids.campaign = this.journalUuids.scene;
+        this.source = "campaign";
+        ui.notifications.info("Copied into the campaign dashboard. Save to apply it to every Scene that uses the campaign dashboard.");
+        this.render();
+    }
+
     static #onCancel() {
         this.close();
     }
@@ -427,8 +490,24 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             return;
         }
 
+        const save = async ({ force = false } = {}) => {
+            if (this.source === "campaign") {
+                if (configFingerprint(config) !== this.fingerprints.campaign) {
+                    await saveCampaignConfig(config, { expectedFingerprint: force ? null : this.fingerprints.campaign });
+                }
+                await saveSceneDashboard(this.scene, { shown: this.shown, source: "campaign" });
+            } else {
+                await saveSceneDashboard(this.scene, {
+                    shown: this.shown,
+                    source: "scene",
+                    config,
+                    expectedFingerprint: force ? null : this.fingerprints.scene
+                });
+            }
+        };
+
         try {
-            await saveDashboardConfig(this.scene, config, { expectedFingerprint: this.fingerprint });
+            await save();
         } catch (error) {
             if (!(error instanceof DashboardConflictError)) {
                 ui.notifications.error(error.message);
@@ -437,7 +516,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
 
             const choice = await DialogV2.wait({
                 window: { title: "Dashboard changed elsewhere" },
-                content: "<p>Someone else saved this Scene's dashboard while you were editing.</p><p>Overwrite their changes with yours, or reload the latest version (your unsaved edits are discarded)?</p>",
+                content: `<p>${foundry.utils.escapeHTML(error.message)}</p><p>Overwrite their changes with yours, or reload the latest version (your unsaved edits are discarded)?</p>`,
                 buttons: [
                     { action: "overwrite", label: "Overwrite", icon: "fa-solid fa-floppy-disk" },
                     { action: "reload", label: "Reload latest", icon: "fa-solid fa-rotate", default: true }
@@ -445,14 +524,16 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             });
 
             if (choice === "overwrite") {
-                await saveDashboardConfig(this.scene, config);
+                await save({ force: true });
             } else {
                 if (choice === "reload") DashboardConfigApp.#onReload.call(this);
                 return;
             }
         }
 
-        ui.notifications.info(`Mission dashboard saved for ${this.scene.name}.`);
+        ui.notifications.info(this.source === "campaign"
+            ? "Campaign dashboard saved."
+            : `Mission dashboard saved for ${this.scene.name}.`);
         this.close();
     }
 

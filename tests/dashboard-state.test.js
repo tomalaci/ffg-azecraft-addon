@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+    resolveDashboard,
+    sceneUsesOwnConfig,
     configFingerprint,
     normalizeDashboardConfig,
     referencedUuids,
@@ -91,4 +93,34 @@ test("referenced uuids for hook relevance", () => {
     assert.deepEqual([...refs.actors], ["Actor.1"]);
     assert.deepEqual([...refs.people], ["Actor.9"]);
     assert.deepEqual([...refs.pages].sort(), ["JournalEntry.j.JournalEntryPage.o1", "JournalEntry.j.JournalEntryPage.o2", "JournalEntry.j.JournalEntryPage.p"]);
+});
+
+const campaign = { party: [{ id: "c1", actorUuid: "Actor.pc" }], mission: { objective: ["Page.c"] } };
+
+test("every Scene shows the campaign dashboard by default, including never-configured ones", () => {
+    const resolved = resolveDashboard(undefined, { showOnAllScenes: true, campaign });
+    assert.equal(resolved.shown, true);
+    assert.equal(resolved.source, "campaign");
+    assert.deepEqual(resolved.config.party.map(s => s.actorUuid), ["Actor.pc"]);
+    assert.deepEqual(resolved.config.mission.objective, ["Page.c"]);
+});
+
+test("a Scene can be hidden, or shown only when enabled if show-on-all is off", () => {
+    assert.equal(resolveDashboard({ enabled: false }, { showOnAllScenes: true, campaign }).shown, false);
+    assert.equal(resolveDashboard(undefined, { showOnAllScenes: false, campaign }).shown, false);
+    assert.equal(resolveDashboard({ enabled: true }, { showOnAllScenes: false, campaign }).shown, true);
+});
+
+test("a Scene's own config is used when chosen, and legacy configured Scenes keep theirs", () => {
+    const own = { source: "scene", party: [{ id: "s1", actorUuid: "Actor.other" }], mission: { objective: ["Page.s"] } };
+    assert.deepEqual(resolveDashboard(own, { showOnAllScenes: true, campaign }).config.mission.objective, ["Page.s"]);
+
+    // Switched back to the campaign dashboard: the Scene's old config is kept but ignored.
+    const back = { ...own, source: "campaign" };
+    assert.equal(resolveDashboard(back, { showOnAllScenes: true, campaign }).source, "campaign");
+
+    // Configured before the campaign dashboard existed (no source field).
+    assert.equal(sceneUsesOwnConfig({ enabled: true, party: [], mission: {} }), true);
+    // Only visibility stored (e.g. hidden from the Scene directory menu): still the campaign dashboard.
+    assert.equal(sceneUsesOwnConfig({ enabled: false, schemaVersion: 1 }), false);
 });
