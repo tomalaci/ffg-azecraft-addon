@@ -1,6 +1,6 @@
 # Character sheet (Mass Effect style)
 
-Player character sheets use the dark Mass Effect style of the mission dashboard instead of the Star
+Character and NPC sheets use the dark Mass Effect style of the mission dashboard instead of the Star
 Wars parchment:
 
 - dark navy panels, thin cyan lines and condensed uppercase headings;
@@ -8,7 +8,10 @@ Wars parchment:
 - skill tables and item/talent lists with cyan header bars;
 - the active tab in orange.
 
-The sheet header no longer has the **Specializations**, **Force Powers** or **Signature
+NPC sheets (minions, rivals and nemeses) use the same style and also have the Biotics and Tech tabs
+below. Their headers no longer have the Force Powers field; the rival / nemesis label is a red tag.
+
+The character sheet header no longer has the **Specializations**, **Force Powers** or **Signature
 Abilities** fields; this campaign doesn't use them. Species and Career are unchanged. No character
 had any of those items when they were removed, so nothing was hidden.
 
@@ -46,7 +49,7 @@ Loadout and presets are stored on the Actor, so everyone who can see the sheet s
 owners (and GMs) can change them.
 
 World setting: **Mass Effect character sheet** (Configure Settings → FFG Azecraft Addon). Turn it
-off to get the parchment look back (the header fields stay removed).
+off to get the parchment look back on all of them (the header fields stay removed).
 
 ## How it works (developers)
 

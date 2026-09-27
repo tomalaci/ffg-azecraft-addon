@@ -18,7 +18,7 @@ The module:
   [docs/mission-dashboard-development.md](docs/mission-dashboard-development.md) for developers.
 - Replaces the Star Wars Light/Dark destiny tracker with a Mass Effect style **Story Points** bar
   (Destiny vs Doom tug of war, names configurable). See [docs/story-points.md](docs/story-points.md).
-- Restyles player character sheets in the same Mass Effect look and removes the unused
+- Restyles character and NPC (minion, rival, nemesis) sheets in the same Mass Effect look and removes the unused
   Specializations / Force Powers / Signature Abilities fields. See
   [docs/character-sheet.md](docs/character-sheet.md).
 - Adds Mass Effect **ammunition upgrades**: apply carried ammo gear to a weapon, with its quality

@@ -1,5 +1,6 @@
 /**
- * Mass Effect style for the starwarsffg character sheet, matching the mission dashboard HUD.
+ * Mass Effect style for the starwarsffg character and NPC (minion, rival, nemesis) sheets, matching
+ * the mission dashboard HUD.
  *
  * The system's sheet stylesheet is unlayered, so it beats anything in Foundry's "modules" CSS layer
  * regardless of specificity. This theme is therefore added as its own (unlayered) <link> and scoped
@@ -11,7 +12,7 @@
 const MODULE_ID = "ffg-azecraft-addon";
 const SETTING = "characterSheetTheme";
 const STYLESHEET = `modules/${MODULE_ID}/styles/character-sheet.css`;
-const THEMED_TYPES = new Set(["character"]);
+const THEMED_TYPES = new Set(["character", "minion", "rival", "nemesis"]);
 
 function enabled() {
     return game.settings.get(MODULE_ID, SETTING);
@@ -29,7 +30,7 @@ function addStylesheet() {
 export function initCharacterSheetTheme() {
     game.settings.register(MODULE_ID, SETTING, {
         name: "Mass Effect character sheet",
-        hint: "Show player character sheets in the dark Mass Effect style of the mission dashboard instead of the Star Wars parchment.",
+        hint: "Show character and NPC (minion, rival, nemesis) sheets in the dark Mass Effect style of the mission dashboard instead of the Star Wars parchment.",
         scope: "world",
         config: true,
         type: Boolean,

@@ -28,7 +28,7 @@ import { PowerPresetEditor } from "./preset-editor.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const TEMPLATE = `modules/${MODULE_ID}/templates/actors/parts/power-tab.hbs`;
-const ACTOR_TYPES = new Set(["character"]);
+const ACTOR_TYPES = new Set(["character", "minion", "rival", "nemesis"]);
 const DISCIPLINES = ["biotics", "tech"];
 
 export const FLAGS = { presets: "powerPresets", loadout: "techLoadout", concentration: "concentration" };

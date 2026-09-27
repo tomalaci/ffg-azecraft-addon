@@ -732,3 +732,54 @@
     background: rgba(255, 157, 66, 0.18);
     color: var(--azcs-orange);
 }
+
+/* -------------------------------------------- */
+/*  NPC sheets (minion, rival, nemesis)          */
+/* -------------------------------------------- */
+
+/* Adversary type label ("Rival" / "Nemesis"): the system paints it dark red, inline for nemeses. */
+.azcs.starwarsffg.sheet.actor .header-name .title-card {
+    display: inline-block;
+    width: auto;
+    margin: 0 0 2px;
+    padding: 0 8px;
+    border: 1px solid rgba(255, 93, 85, 0.55);
+    border-left-width: 3px;
+    background: rgba(255, 93, 85, 0.12) !important;
+    color: var(--azcs-red) !important;
+    font-family: var(--azcs-font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* Minion header: the name and group stats panel. */
+.azcs.starwarsffg.sheet.actor .minion-name {
+    background:
+        linear-gradient(180deg, rgba(114, 212, 255, 0.08), transparent 40px),
+        var(--azcs-panel);
+    box-shadow: inset 0 0 0 1px var(--azcs-line-soft);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+.azcs.starwarsffg.sheet.actor .minion-name h1 {
+    margin: 4px 8px 6px;
+    border-bottom: 1px solid var(--azcs-line);
+}
+
+.azcs.starwarsffg.sheet.actor .minion-name h1 input {
+    height: auto;
+    background: transparent;
+    border: none;
+    color: var(--azcs-text);
+    font-family: var(--azcs-font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .minion-name h1 input:focus {
+    box-shadow: none;
+}

@@ -80,6 +80,8 @@
   (object tab="characteristics" label="SWFFG.TabCharacteristics" icon="fas fa-user-circle" cls=classType)
   (object tab="items" label="SWFFG.TabGear" icon="fas fa-toolbox" cls=classType)
   (object tab="talents" label="SWFFG.TabTalents" icon="fab fa-superpowers" cls=classType)
+  (object tab="biotics" label="Biotics" icon="fa-solid fa-atom" cls=classType)
+  (object tab="tech" label="Tech" icon="fa-solid fa-microchip" cls=classType)
   (object tab="description" label="SWFFG.TabBiography" icon="fas fa-sticky-note" cls=classType)
   (object tab="sources" label="SWFFG.TabSources" icon="fa-light fa-book-open-cover" cls=classType)
   (object tab="tags" label="SWFFG.TabTags" icon="fa-sharp fa-regular fa-tags" cls=classType)
@@ -107,6 +109,13 @@
 
       {{> "systems/starwarsffg/templates/parts/actor/ffg-skills.html"}}
     </div>
+
+    {{!-- Azecraft: Biotics / Tech powers, filled by scripts/powers/power-tabs.js --}}
+
+    <div class="tab biotics" data-group="primary" data-tab="biotics"></div>
+
+    <div class="tab tech" data-group="primary" data-tab="tech"></div>
+
 
     {{!-- Owned Items Tab --}}
     <div class="tab items" data-group="primary" data-tab="items">

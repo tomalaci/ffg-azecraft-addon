@@ -31,24 +31,7 @@
                   {{/each_when}}
                 </td>
               </tr>
-              <tr style="{{#if limited}}display:none;{{/if}}">
-                <td>
-                  {{#if (or (eq actor.flags.starwarsffg.config.enableForcePool undefined) (eq actor.flags.starwarsffg.config.enableForcePool true) )}}
-                  {{localize "SWFFG.ForcePowers"}}:
-                  {{/if}}
-                </td>
-                <td>
-                  {{#if (or (eq actor.flags.starwarsffg.config.enableForcePool undefined) (eq actor.flags.starwarsffg.config.enableForcePool true) )}}
-                  {{#each_when actor.items "type" "forcepower"}}
-                  <div class="forcepower-pill item" data-item-id="{{item._id}}">
-                    {{item.name}} <i class="fas fa-times item-delete"></i>
-                  </div>
-                  {{else}}
-                  <div class="drag-note">{{localize "SWFFG.DragNotes"}}</div>
-                  {{/each_when}}
-                  {{/if}}
-                </td>
-              </tr>
+              {{!-- Azecraft: Force Powers row removed (not used in this campaign). --}}
               </tbody>
             </table>
           </div>
@@ -96,6 +79,8 @@
     (object tab="characteristics" label="SWFFG.TabCharacteristics" icon="fas fa-user-circle" cls=classType)
     (object tab="items" label="SWFFG.TabGear" icon="fas fa-toolbox" cls=classType)
     (object tab="talents" label="SWFFG.TabTalents" icon="fab fa-superpowers" cls=classType)
+    (object tab="biotics" label="Biotics" icon="fa-solid fa-atom" cls=classType)
+    (object tab="tech" label="Tech" icon="fa-solid fa-microchip" cls=classType)
     (object tab="crits" label="SWFFG.TabCrits" icon="fa-solid fa-notes-medical" cls=classType)
     (object tab="general" label="SWFFG.TabGeneral" icon="fas fa-address-card" cls=classType isHidden=true)
     (object tab="description" label="SWFFG.TabBiography" icon="fas fa-sticky-note" cls=classType)
@@ -126,6 +111,13 @@
 
       {{> "systems/starwarsffg/templates/parts/actor/ffg-skills.html"}}
     </div>
+
+    {{!-- Azecraft: Biotics / Tech powers, filled by scripts/powers/power-tabs.js --}}
+
+    <div class="tab biotics" data-group="primary" data-tab="biotics"></div>
+
+    <div class="tab tech" data-group="primary" data-tab="tech"></div>
+
 
     {{!-- Owned Items Tab --}}
     <div class="tab items" data-group="primary" data-tab="items">
