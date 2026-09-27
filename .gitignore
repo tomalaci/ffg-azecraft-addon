@@ -1,3 +1,4 @@
 .memory
 .tmp
 .playwright-mcp/
+node_modules/

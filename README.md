@@ -53,8 +53,8 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 `scripts/mission-dashboard/`, `templates/mission-dashboard/`, `styles/mission-dashboard.css`
 : Mission dashboard feature.
 
-`tests/`
-: Unit tests (`node --test tests/`). `.ai/check` runs them with syntax checks.
+`tests/`, `eslint.config.js`
+: Unit tests and lint config. Run `npm ci` once, then `.ai/check` (or `npm run check`) runs ESLint, syntax checks and the tests.
 
 ## Compatibility
 

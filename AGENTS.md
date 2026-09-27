@@ -24,6 +24,12 @@
   Stage only the files of that change, not unrelated edits.
 - Pushing to `main` does not deploy anything. The hosted server only picks up the module when the user publishes a GitHub release with a version tag (the release workflow builds `module.json`/`module.zip`). Never create releases or tags yourself.
 
+## Checks
+
+- Run `npm ci` once to install the dev-only lint tooling (`node_modules/` is git-ignored and excluded from releases).
+- `.ai/check` (also `npm run check`) runs ESLint (undefined/unused names), syntax checks, manifest validation and the unit tests; it must pass before committing.
+- Foundry runtime globals are declared in `eslint.config.js`; add new ones there rather than disabling rules.
+
 ## Local Testing
 
 - `compose.yml` runs Foundry 13.351 at <http://localhost:30000> with this repo mounted as the installed module.

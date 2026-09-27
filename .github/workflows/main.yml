@@ -57,6 +57,9 @@ jobs:
             --exclude ".ai" \
             --exclude "tests" \
             --exclude "package.json" \
+            --exclude "package-lock.json" \
+            --exclude "eslint.config.js" \
+            --exclude "node_modules" \
             --exclude "compose.yml"
           cp dist/module.json dist/package/module.json
           cd dist/package

@@ -2,8 +2,15 @@
     "name": "ffg-azecraft-addon",
     "private": true,
     "type": "module",
-    "description": "Development-only manifest for running unit tests; not used by Foundry.",
+    "description": "Development-only manifest for linting and unit tests; not used by Foundry.",
     "scripts": {
-        "test": "node --test tests/"
+        "lint": "eslint .",
+        "test": "node --test tests/",
+        "check": ".ai/check"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.11.0",
+        "globals": "^17.12.0"
     }
 }
