@@ -18,6 +18,15 @@ function difficultyModifier(id, label, difficulty, { perRank = false } = {}) {
     };
 }
 
+/** Limit an option to some subtypes of its power (e.g. Anti-Synthetic: Overload only). */
+function onlyFor(option, ...subtypes) {
+    return { ...option, onlyFor: subtypes };
+}
+
+function subtype(id, label, effect = "", extra = {}) {
+    return { id, label, effect, ...extra };
+}
+
 function setbackModifier(id, label) {
     return {
         id,
@@ -145,14 +154,23 @@ export const POWER_MODIFIER_CATALOG = {
                 base: 2,
                 concentration: false,
                 label: "Tech Attack",
+                // Each subtype is readied separately: the sheet keeps one loaded.
+                loadout: true,
+                subtypeLabel: "Element",
+                subtypes: [
+                    subtype("incinerate", "Incinerate", "Burn equal to Knowledge (PhysSci); Sunder against the target's armor.", { icon: "fa-fire" }),
+                    subtype("cryo-blast", "Cryo Blast", "Ensnare equal to Knowledge (PhysSci); spend Triumph to stagger the target for one round.", { icon: "fa-snowflake" }),
+                    subtype("overload", "Overload", "Phasic equal to half Knowledge (PhysSci), rounded up; Sunder against electronic equipment.", { icon: "fa-bolt" }),
+                    subtype("neural-shock", "Neural Shock", "Disorient equal to Knowledge (LifeSci); spend Triumph to stagger for one round; organic targets only.", { icon: "fa-brain" })
+                ],
                 options: [
                     difficultyModifier("blast", "Blast", 1),
                     difficultyModifier("close-combat", "Close Combat", 1),
                     difficultyModifier("deadly", "Deadly", 1),
                     difficultyModifier("impact", "Impact", 1),
                     difficultyModifier("non-lethal", "Non-Lethal", 1),
-                    difficultyModifier("anti-synthetic", "Anti-Synthetic", 1),
-                    difficultyModifier("anti-organic", "Anti-Organic", 1),
+                    onlyFor(difficultyModifier("anti-synthetic", "Anti-Synthetic", 1), "overload"),
+                    onlyFor(difficultyModifier("anti-organic", "Anti-Organic", 1), "incinerate", "cryo-blast", "neural-shock"),
                     difficultyModifier("range", "Range", 1, { perRank: true }),
                     difficultyModifier("priming", "Priming", -1),
                     difficultyModifier("multi-target", "Multi-Target", 2),
@@ -164,6 +182,13 @@ export const POWER_MODIFIER_CATALOG = {
                 base: 2,
                 concentration: true,
                 label: "Tech Construct",
+                subtypeLabel: "Construct",
+                subtypes: [
+                    subtype("barricade", "Barricade"),
+                    subtype("combat-drone", "Combat Drone"),
+                    subtype("decoy", "Decoy"),
+                    subtype("supply-pylon", "Supply Pylon")
+                ],
                 options: [
                     difficultyModifier("range", "Range", 1, { perRank: true }),
                     difficultyModifier("detonate", "Detonate", 1)
@@ -175,6 +200,14 @@ export const POWER_MODIFIER_CATALOG = {
                 base: 2,
                 concentration: true,
                 label: "Tech Sabotage",
+                subtypeLabel: "Sabotage",
+                subtypes: [
+                    subtype("invasion", "Invasion"),
+                    subtype("overheat", "Overheat"),
+                    subtype("energy-drain", "Energy Drain"),
+                    subtype("tactical-scan", "Tactical Scan"),
+                    subtype("vi-hacking", "VI Hacking", "Daunting, or opposed Tech vs. Computers at the GM's discretion.", { base: 4 })
+                ],
                 options: [
                     difficultyModifier("damping", "Damping", 1),
                     difficultyModifier("range", "Range", 1, { perRank: true }),
@@ -187,6 +220,15 @@ export const POWER_MODIFIER_CATALOG = {
                 base: 2,
                 concentration: true,
                 label: "Tech Augment",
+                // Each subtype is readied separately: the sheet keeps one loaded.
+                loadout: true,
+                subtypeLabel: "Mode",
+                subtypes: [
+                    subtype("tech-armor", "Tech Armor", "", { icon: "fa-shield-halved" }),
+                    subtype("charged-melee", "Charged Melee", "", { icon: "fa-hand-fist" }),
+                    subtype("turbocharge", "Turbocharge", "", { icon: "fa-gauge-high" }),
+                    subtype("tactical-cloak", "Tactical Cloak", "", { icon: "fa-user-secret" })
+                ],
                 options: [
                     difficultyModifier("range", "Range", 1, { perRank: true }),
                     difficultyModifier("recon-visor", "Recon Visor", 1),
@@ -223,29 +265,104 @@ export function difficultyLabel(dice) {
     return `${name} (${count} Difficulty ${count === 1 ? "die" : "dice"})`;
 }
 
-/**
- * The powers to show on a character's sheet: the readied list if one was saved, otherwise every
- * power of each discipline the character has ranks in.
- *
- * @param {Record<string, {rank?: number}>} skills  The actor's skills keyed by skill name
- * @param {string[] | null | undefined} readied     Saved power ids, or nothing when never chosen
- */
-export function visiblePowers(skills, readied) {
-    const powers = allPowers();
-    if (Array.isArray(readied)) {
-        const chosen = new Set(readied);
-        return powers.filter(power => chosen.has(power.id));
+/** The powers of one discipline ("biotics" / "tech"). */
+export function powersFor(discipline) {
+    return allPowers().filter(power => power.discipline === discipline);
+}
+
+export function findSubtype(power, subtypeId) {
+    return power?.subtypes?.find(entry => entry.id === subtypeId) ?? null;
+}
+
+/** Base difficulty of a power, or of its subtype when that has its own (VI Hacking). */
+export function baseDifficulty(power, subtypeId = null) {
+    return findSubtype(power, subtypeId)?.base ?? power?.base ?? 2;
+}
+
+/** Whether a power option applies with the given subtype (options without a limit always do). */
+export function optionApplies(option, subtypeId) {
+    return !option.onlyFor || !subtypeId || option.onlyFor.includes(subtypeId);
+}
+
+/** Look up a modifier by its dialog key "<category id>:<option id>". */
+export function findModifier(key) {
+    const [categoryId, optionId] = String(key ?? "").split(":");
+    for (const entry of Object.values(POWER_MODIFIER_CATALOG)) {
+        const category = entry.categories.find(c => c.id === categoryId);
+        const option = category?.options.find(o => o.id === optionId);
+        if (option) return { category, option, key: `${categoryId}:${optionId}` };
     }
-    return powers.filter(power => Number(skills?.[power.skill]?.rank ?? 0) > 0);
+    return null;
+}
+
+/** Modifier keys a power may use: its own options and its discipline's general ones. */
+export function allowedModifierKeys(power, subtypeId = null) {
+    if (!power) return new Set();
+    const general = POWER_MODIFIER_CATALOG[power.discipline].categories.filter(c => c.general);
+    return new Set([...general, power].flatMap(category => category.options
+        .filter(option => optionApplies(option, subtypeId))
+        .map(option => `${category.id}:${option.id}`)));
+}
+
+/** The tech loadout: {power id: subtype id} for powers with a loadout, defaulting to the first subtype. */
+export function normalizeLoadout(raw) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    return Object.fromEntries(allPowers().filter(power => power.loadout).map(power => [
+        power.id,
+        findSubtype(power, source[power.id])?.id ?? power.subtypes[0].id
+    ]));
+}
+
+export const PRESET_NAME_MAX_LENGTH = 60;
+
+/**
+ * Clean a stored preset: a known power, a subtype of that power (or none), and only modifiers the
+ * power allows. Returns null for presets that cannot be used.
+ */
+export function normalizePreset(raw) {
+    const power = findPower(raw?.power);
+    if (!power || typeof raw?.id !== "string" || !raw.id) return null;
+    const subtype = findSubtype(power, raw.subtype)?.id ?? null;
+    const allowed = allowedModifierKeys(power, subtype);
+    const modifiers = [...new Set(Array.isArray(raw.modifiers) ? raw.modifiers : [])].filter(key => allowed.has(key));
+    const name = String(raw.name ?? "").trim().slice(0, PRESET_NAME_MAX_LENGTH) || power.label;
+    return { id: raw.id, name, power: power.id, subtype, modifiers };
+}
+
+export function normalizePresets(raw) {
+    return (Array.isArray(raw) ? raw : []).map(normalizePreset).filter(Boolean);
+}
+
+/**
+ * The dice a power roll starts with once modifiers are applied (before the character's own
+ * pool): Difficulty dice, Setback dice and difficulty upgrades.
+ */
+export function presetDifficulty(powerId, subtypeId = null, modifierKeys = []) {
+    const power = findPower(powerId);
+    let difficulty = baseDifficulty(power, subtypeId);
+    let setback = 0;
+    let upgrades = 0;
+    for (const key of modifierKeys) {
+        const option = findModifier(key)?.option;
+        if (!option) continue;
+        difficulty += option.difficulty ?? 0;
+        setback += option.setback ?? 0;
+        upgrades += option.upgradeDifficulty ?? 0;
+    }
+    return { difficulty: Math.max(0, difficulty), setback, upgrades };
 }
 
 /**
  * The roll dialog's modifier groups for a discipline: its general modifiers and either every power
- * or, when rolling one power, only that power (open).
+ * or, when rolling one power, only that power (open, without options its subtype excludes).
  */
-export function modifierGroups(discipline, powerId = null) {
+export function modifierGroups(discipline, powerId = null, subtypeId = null) {
     const categories = POWER_MODIFIER_CATALOG[discipline]?.categories ?? [];
     return categories
         .filter(category => category.general || !powerId || category.id === powerId)
-        .map(category => ({ ...category, open: Boolean(powerId) && category.id === powerId }));
+        .map(category => ({
+            ...category,
+            options: category.id === powerId ? category.options.filter(option => optionApplies(option, subtypeId)) : category.options,
+            open: Boolean(powerId) && category.id === powerId
+        }));
 }

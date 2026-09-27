@@ -1,0 +1,66 @@
+<section class="azpw azpw--{{discipline}}">
+    <header class="azpw-head">
+        <h3 class="azpw-title"><i class="fa-solid {{#if (eq discipline "tech")}}fa-microchip{{else}}fa-atom{{/if}}" inert></i> {{skill}} powers</h3>
+        <span class="azpw-skills">{{skill}} rank {{rank}}</span>
+    </header>
+
+    <div class="azpw-grid">
+        {{#each powers as |power|}}
+        <div class="azpw-power azpw-power--{{@root.discipline}}">
+            <button type="button" class="azpw-power-roll" data-azpw="roll" data-power="{{power.id}}" {{disabled (not @root.canEdit)}}
+                data-tooltip="Roll {{@root.skill}} for {{power.label}}{{#if power.loaded}} ({{power.loaded.label}}){{/if}}: {{power.text}}">
+                <span class="azpw-power-name">{{power.label}}</span>
+                <span class="azpw-power-meta">
+                    <span class="azpw-dice">{{#each power.dice}}<span class="azpw-die"></span>{{/each}}{{#unless power.dice.length}}—{{/unless}}</span>
+                    <span>{{power.level}}</span>
+                    {{#if power.concentration}}<span class="azpw-tag" data-tooltip="Concentration: stays active while the caster concentrates">Conc.</span>{{/if}}
+                </span>
+            </button>
+            {{#if power.loadoutOptions}}
+            <div class="azpw-loadout" role="group" aria-label="{{power.loadoutLabel}} loaded for {{power.label}}">
+                {{#each power.loadoutOptions as |option|}}
+                <button type="button" class="azpw-load {{#if option.active}}azpw-load--on{{/if}}" data-azpw="load" data-power="{{power.id}}" data-subtype="{{option.id}}"
+                    {{disabled (not @root.canEdit)}} aria-pressed="{{option.active}}"
+                    data-tooltip="{{option.label}}{{#if option.effect}}: {{option.effect}}{{/if}}"><i class="fa-solid {{option.icon}}" inert></i></button>
+                {{/each}}
+                <span class="azpw-load-name">{{power.loaded.label}}</span>
+            </div>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+
+    <header class="azpw-head azpw-head--presets">
+        <h3 class="azpw-title"><i class="fa-solid fa-bookmark" inert></i> Presets</h3>
+        {{#if canEdit}}
+        <button type="button" class="azpw-icon" data-azpw="addPreset" data-discipline="{{discipline}}" data-tooltip="New preset: a power with modifiers ticked in advance"><i class="fa-solid fa-plus" inert></i> Add</button>
+        {{/if}}
+    </header>
+
+    {{#if presets.length}}
+    <ul class="azpw-presets">
+        {{#each presets as |preset|}}
+        <li class="azpw-preset">
+            <button type="button" class="azpw-preset-roll" data-azpw="rollPreset" data-preset="{{preset.id}}" {{disabled (not @root.canEdit)}} data-tooltip="Roll: {{preset.text}}">
+                <span class="azpw-preset-name">{{preset.name}}</span>
+                <span class="azpw-preset-power">{{preset.powerLabel}}{{#if preset.subtypeLabel}} · {{preset.subtypeLabel}}{{#if preset.followsLoadout}} (loaded){{/if}}{{/if}}</span>
+                {{#if preset.modifierLabels.length}}<span class="azpw-preset-mods">{{#each preset.modifierLabels}}<span class="azpw-tag">{{this}}</span>{{/each}}</span>{{/if}}
+            </button>
+            <span class="azpw-dice azpw-preset-dice" aria-label="{{preset.text}}">
+                {{#each preset.dice}}<span class="azpw-die"></span>{{/each}}{{#unless preset.dice.length}}—{{/unless}}
+                {{#if preset.upgrades}}<span class="azpw-upgrade" data-tooltip="Upgrade difficulty {{preset.upgrades}}×">↑{{preset.upgrades}}</span>{{/if}}
+                {{#each preset.setback}}<span class="azpw-setback"></span>{{/each}}
+            </span>
+            {{#if @root.canEdit}}
+            <span class="azpw-preset-tools">
+                <button type="button" class="azpw-icon" data-azpw="editPreset" data-preset="{{preset.id}}" data-tooltip="Edit preset" aria-label="Edit {{preset.name}}"><i class="fa-solid fa-pen" inert></i></button>
+                <button type="button" class="azpw-icon" data-azpw="deletePreset" data-preset="{{preset.id}}" data-tooltip="Delete preset" aria-label="Delete {{preset.name}}"><i class="fa-solid fa-trash" inert></i></button>
+            </span>
+            {{/if}}
+        </li>
+        {{/each}}
+    </ul>
+    {{else}}
+    <p class="azpw-empty">No presets yet.{{#if canEdit}} Use <strong>Add</strong> to save a power with the modifiers you usually pick, e.g. {{#if (eq discipline "tech")}}an Overload with Blast{{else}}a Shockwave with extra Range{{/if}}.{{/if}}</p>
+    {{/if}}
+</section>

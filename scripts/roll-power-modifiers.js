@@ -1,10 +1,10 @@
-import { difficultyLabel, disciplineForSkill, findPower, modifierGroups } from "./powers/power-catalog.js";
+import { baseDifficulty, difficultyLabel, disciplineForSkill, findModifier, findPower, findSubtype, modifierGroups } from "./powers/power-catalog.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const ROLL_OPTIONS_TEMPLATE = `modules/${MODULE_ID}/templates/dice/roll-options-ffg.html`;
 
 /**
- * A power roll started from the character sheet's Powers block. The system's rollSkill opens the
+ * A power roll started from the character sheet's Biotics / Tech tabs. The system's rollSkill opens the
  * dialog asynchronously and cannot carry extra data, so the power is parked here and claimed by
  * the next roll dialog for that skill.
  */
@@ -16,16 +16,20 @@ function claimPendingPower(rollBuilder) {
     if (!pending || Date.now() - pending.at > PENDING_POWER_TTL) return null;
     if (disciplineForSkill(rollBuilder?.roll?.skillName) !== pending.power.discipline) return null;
     pendingPower = null;
-    return pending.power;
+    return pending;
 }
 
 /**
- * Roll a power: the system's skill roll for the power's skill, opened at the power's base
- * difficulty with only that power's (and the general) modifiers listed.
+ * Roll a power: the system's skill roll for the power's skill, opened at the power's (or its
+ * subtype's) base difficulty with only that power's (and the general) modifiers listed.
  * @param {ActorSheet} sheet  The character sheet rolling (rollSkill reads its data)
  * @param {string} powerId    A power id from the catalog, e.g. "biotic-attack"
+ * @param {object} [options]
+ * @param {string|null} [options.subtype]    Subtype id (Tech element, construct, ...)
+ * @param {string[]} [options.modifiers]     Modifier keys to tick in advance ("<category>:<option>")
+ * @param {string} [options.name]            Preset name, shown in the chat flavor
  */
-export async function rollPower(sheet, powerId) {
+export async function rollPower(sheet, powerId, { subtype = null, modifiers = [], name = "" } = {}) {
     const power = findPower(powerId);
     const DiceHelpers = game.ffg?.DiceHelpers;
     if (!power || !DiceHelpers?.rollSkill) return;
@@ -37,30 +41,55 @@ export async function rollPower(sheet, powerId) {
     const cell = row.appendChild(document.createElement("div"));
     const target = cell.appendChild(document.createElement("span"));
 
-    pendingPower = { power, at: Date.now() };
+    pendingPower = { power, subtype: findSubtype(power, subtype), modifiers, name, at: Date.now() };
     await DiceHelpers.rollSkill(sheet, { target, currentTarget: target, preventDefault() {} }, null);
 }
 
-/** Set the pool to the power's base difficulty, keeping anything the system added on top of Average. */
-function applyPowerBase(rollBuilder, power) {
+/** How a power roll is titled: "Preset — Power (Subtype)". */
+function powerTitle({ power, subtype, name }) {
+    const label = subtype ? `${power.label} (${subtype.label})` : power.label;
+    return name && name !== power.label ? `${name} — ${label}` : label;
+}
+
+/**
+ * Set the pool to the power's base difficulty (keeping anything the system added on top of
+ * Average), then tick the preset's modifiers as if clicked.
+ */
+function applyPowerRoll(rollBuilder, pending) {
     const pool = rollBuilder.dicePool;
-    pool.difficulty = Math.max(0, Number(pool.difficulty ?? 0) + power.base - 2);
-    rollBuilder.roll.flavor = [power.label, rollBuilder.roll.flavor].filter(Boolean).join(" | ");
+    pool.difficulty = Math.max(0, Number(pool.difficulty ?? 0) + baseDifficulty(pending.power, pending.subtype?.id) - 2);
+    const effect = pending.subtype?.effect ? `${pending.subtype.label}: ${pending.subtype.effect}` : "";
+    rollBuilder.roll.flavor = [powerTitle(pending), effect, rollBuilder.roll.flavor].filter(Boolean).join(" | ");
+
+    rollBuilder._azecraftPowerModifiers ??= new Map();
+    for (const key of pending.modifiers ?? []) {
+        const found = findModifier(key);
+        if (!found || rollBuilder._azecraftPowerModifiers.has(found.key)) continue;
+        rollBuilder._azecraftPowerModifiers.set(found.key, {
+            id: found.option.id,
+            label: found.option.label,
+            categorySummary: found.category.label,
+            modifierText: found.option.modifierText,
+            appliedChanges: applyModifier(pool, found.option)
+        });
+    }
 }
 
 function getModifierGroups(rollBuilder) {
     const discipline = disciplineForSkill(rollBuilder?.roll?.skillName);
     if (!discipline) return [];
 
-    return modifierGroups(discipline, rollBuilder._azecraftPower?.id ?? null)
+    const pending = rollBuilder._azecraftPower;
+    return modifierGroups(discipline, pending?.power.id ?? null, pending?.subtype?.id ?? null)
         .filter(category => category.options?.length)
         .map(category => ({
             id: category.id,
             label: category.label,
             open: category.open,
-            baseDifficulty: category.base !== undefined
-                ? `Base: ${difficultyLabel(category.base)}${category.baseNote ? `; ${category.baseNote}` : ""}`
-                : "",
+            baseDifficulty: category.base === undefined ? ""
+                : pending?.subtype?.base !== undefined && category.id === pending.power.id
+                    ? `Base (${pending.subtype.label}): ${difficultyLabel(pending.subtype.base)}`
+                    : `Base: ${difficultyLabel(category.base)}${category.baseNote ? `; ${category.baseNote}` : ""}`,
             summaryLabel: category.label,
             options: category.options.map(option => ({
                 ...option,
@@ -188,7 +217,7 @@ function patchGetData(RollBuilderFFG) {
         if (!this._azecraftPowerClaimed) {
             this._azecraftPowerClaimed = true;
             this._azecraftPower = claimPendingPower(this);
-            if (this._azecraftPower) applyPowerBase(this, this._azecraftPower);
+            if (this._azecraftPower) applyPowerRoll(this, this._azecraftPower);
         }
 
         const data = await originalGetData.call(this, ...args);
@@ -198,7 +227,11 @@ function patchGetData(RollBuilderFFG) {
             ...data,
             azecraftPowerModifiers,
             hasAzecraftPowerModifiers: azecraftPowerModifiers.length > 0,
-            azecraftPower: this._azecraftPower ? { label: this._azecraftPower.label, base: difficultyLabel(this._azecraftPower.base) } : null
+            azecraftPower: this._azecraftPower ? {
+                label: powerTitle(this._azecraftPower),
+                base: difficultyLabel(baseDifficulty(this._azecraftPower.power, this._azecraftPower.subtype?.id)),
+                effect: this._azecraftPower.subtype?.effect ?? ""
+            } : null
         };
     };
 

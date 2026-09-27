@@ -1,0 +1,43 @@
+/* Power preset editor (scripts/powers/preset-editor.js). The sheet tabs are styled with the sheet
+ * theme in character-sheet.css. */
+
+.azecraft-power-preset .azpp {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.azecraft-power-preset .azpp-mods {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.azecraft-power-preset .azpp-mods fieldset {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    margin: 0;
+    padding: 4px 8px 6px;
+}
+
+.azecraft-power-preset .azpp-mod {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.azecraft-power-preset .azpp-mod > span:first-of-type {
+    flex: 1;
+}
+
+.azecraft-power-preset .azpp-mod-text {
+    color: var(--color-text-subtle, #999);
+    font-size: var(--font-size-12, 12px);
+}
+
+.azecraft-power-preset .azpp-preview {
+    margin: 0;
+}

@@ -1,0 +1,42 @@
+<div class="azpp">
+    <div class="form-group">
+        <label for="azpp-name">Name</label>
+        <div class="form-fields"><input id="azpp-name" type="text" name="name" value="{{name}}" maxlength="{{nameMax}}" placeholder="{{namePlaceholder}}"></div>
+    </div>
+    <div class="form-group">
+        <label for="azpp-power">{{skill}} power</label>
+        <div class="form-fields">
+            <select id="azpp-power" name="power">
+                {{#each powers as |power|}}<option value="{{power.id}}" {{#if power.selected}}selected{{/if}}>{{power.label}}</option>{{/each}}
+            </select>
+        </div>
+    </div>
+    {{#if subtypes}}
+    <div class="form-group">
+        <label for="azpp-subtype">{{subtypeLabel}}</label>
+        <div class="form-fields">
+            <select id="azpp-subtype" name="subtype">
+                <option value="">{{noSubtypeLabel}}</option>
+                {{#each subtypes as |subtype|}}<option value="{{subtype.id}}" {{#if subtype.selected}}selected{{/if}}>{{subtype.label}}</option>{{/each}}
+            </select>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="azpp-mods">
+        {{#each groups as |group|}}
+        <fieldset>
+            <legend>{{group.label}}</legend>
+            {{#each group.options as |option|}}
+            <label class="azpp-mod">
+                <input type="checkbox" data-modifier="{{option.key}}" {{checked option.checked}}>
+                <span>{{option.label}}</span>
+                <span class="azpp-mod-text">{{option.modifierText}}</span>
+            </label>
+            {{/each}}
+        </fieldset>
+        {{/each}}
+    </div>
+
+    <p class="azpp-preview"><i class="fa-solid fa-dice-d20" inert></i> Starts at <strong>{{preview}}</strong>, before the character's own dice and talents.</p>
+</div>

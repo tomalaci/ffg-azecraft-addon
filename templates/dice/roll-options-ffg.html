@@ -119,6 +119,7 @@
       <h2 id="azecraft-power-modifiers-heading">Power Modifiers</h2>
       {{#if azecraftPower}}
       <p class="azecraft-power-rolling"><strong>{{azecraftPower.label}}</strong>: starts at {{azecraftPower.base}}</p>
+      {{#if azecraftPower.effect}}<p class="azecraft-power-rolling"><em>{{azecraftPower.effect}}</em></p>{{/if}}
       {{/if}}
       {{#each azecraftPowerModifiers as |category|}}
       <details class="azecraft-power-modifier-category" {{#if category.open}}open{{/if}}>
