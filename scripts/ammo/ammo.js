@@ -118,13 +118,29 @@ async function applyAmmo(actor, weapon) {
     const ammo = findAmmo(type);
     if (!ammo) return;
 
-    const source = carried[ammo.id]?.[0];
-    if (!source && !isGM) return;
-    if (source) {
-        if (source.quantity > 1) await source.item.update({ "system.quantity.value": source.quantity - 1 });
-        else await source.item.delete();
+    // Re-read what is carried now (another dialog may have used it up meanwhile).
+    const source = carriedAmmo(actor)[ammo.id]?.[0] ?? null;
+    if (!source && !isGM) {
+        ui.notifications.warn(`No ${ammo.label} Ammo left to apply.`);
+        return;
     }
+
+    // Load the weapon first: if that fails, nothing is used up.
+    const previous = weapon.getFlag(MODULE_ID, FLAG)?.type ?? null;
     await writeAmmo(weapon, ammo.id);
+    if (appliedAmmo(weapon)?.id !== ammo.id) {
+        ui.notifications.error(`Could not load ${weapon.name}; no ammo was used.`);
+        return;
+    }
+    if (source) {
+        try {
+            if (source.quantity > 1) await source.item.update({ "system.quantity.value": source.quantity - 1 });
+            else await source.item.delete();
+        } catch (error) {
+            await writeAmmo(weapon, previous);
+            throw error;
+        }
+    }
     const esc = foundry.utils.escapeHTML;
     await announce(actor, `<strong>${esc(weapon.name)}</strong> loaded with <strong>${ammo.label} Ammo</strong>: ${await ratingText(weapon, ammo)}.${ammo.note ? ` ${ammo.note}` : ""}${source ? "" : " <em>(applied by the GM, none used up)</em>"}`);
 }

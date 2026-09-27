@@ -4,10 +4,10 @@
  * left, the GM's points (default "Doom") in red from the right. Both names are world
  * settings.
  *
- * The system's data and rules stay authoritative: the pool is the system's dPoolLight / dPoolDark
- * world settings, and the system's own tracker keeps running hidden, because it applies players'
- * flips (players cannot write world settings; they ask the active GM's tracker over the system
- * socket) and owns the Group Manager / Request Destiny Roll actions.
+ * The pool is the system's dPoolLight / dPoolDark world settings. Players cannot write world
+ * settings, so a player's spend goes over the module socket to the active GM, who applies spends one
+ * at a time and posts the chat card. The system's own tracker keeps running hidden: it owns the
+ * Group Manager / Request Destiny Roll actions shown in the bar's menu.
  */
 
 import { storyPointsBox } from "./story-layout.js";
@@ -41,6 +41,47 @@ function visibleRect(selector) {
     if (!element) return null;
     const rect = element.getBoundingClientRect();
     return rect.width || rect.height ? rect : null;
+}
+
+const SOCKET = `module.${MODULE_ID}`;
+
+async function writePool(pool) {
+    const { light, dark } = toSystemPool(pool);
+    await game.settings.set(SYSTEM_ID, "dPoolLight", light);
+    await game.settings.set(SYSTEM_ID, "dPoolDark", dark);
+}
+
+/**
+ * Spend one point from a side (GM client only): re-read the pool, move the point, then post the chat
+ * card as the user who spent it. Spends run one at a time, so two players spending at once each
+ * move a point (or the second is told none are left).
+ */
+let useQueue = Promise.resolve();
+function applyUse(side, userId) {
+    const run = async () => {
+        const label = names();
+        const next = usePoint(readPool(), side);
+        const author = game.users.get(userId) ?? game.user;
+        if (!next) {
+            await ChatMessage.create({
+                content: `<div class="azsp-chat azsp-chat--${side}"><div class="azsp-chat-body">No ${foundry.utils.escapeHTML(label[side])} story points left: ${foundry.utils.escapeHTML(author.name)}'s spend did not go through.</div></div>`,
+                whisper: [author.id, ...ChatMessage.getWhisperRecipients("GM").map(user => user.id)]
+            });
+            return;
+        }
+        await writePool(next);
+        const other = side === SIDES.squad ? SIDES.threat : SIDES.squad;
+        await ChatMessage.create({
+            author: author.id,
+            content: `<div class="azsp-chat azsp-chat--${side}">
+                <div class="azsp-chat-title">${foundry.utils.escapeHTML(label[side])} story point used</div>
+                <div class="azsp-chat-body">It passes to ${foundry.utils.escapeHTML(label[other])}.</div>
+                <div class="azsp-chat-pool"><span class="azsp-squad">${foundry.utils.escapeHTML(label.squad)} ${next.squad}</span> · <span class="azsp-threat">${foundry.utils.escapeHTML(label.threat)} ${next.threat}</span></div>
+            </div>`
+        });
+    };
+    useQueue = useQueue.then(run, run);
+    return useQueue;
 }
 
 /** The system's (hidden) destiny tracker, which processes player flips and owns the GM menu. */
@@ -150,46 +191,33 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const side = target.dataset.side;
         if (side === SIDES.threat && !game.user.isGM) return;
 
-        const label = names();
-        const before = readPool();
-        const next = usePoint(before, side);
-        if (!next) {
-            ui.notifications.warn(`No ${label[side]} story points left.`);
+        if (!usePoint(readPool(), side)) {
+            ui.notifications.warn(`No ${names()[side]} story points left.`);
             return;
         }
 
         if (game.user.isGM) {
-            await StoryPointsApp.#writePool(next);
-        } else {
-            if (!game.users.activeGM) {
-                ui.notifications.warn("A GM needs to be online to use a story point.");
-                return;
-            }
-            // The active GM's system tracker applies the flip (players cannot write world settings).
-            game.socket.emit(`system.${SYSTEM_ID}`, { pool: toSystemPool(next) });
+            await applyUse(side, game.user.id);
+            return;
         }
-
-        const other = side === SIDES.squad ? SIDES.threat : SIDES.squad;
-        await ChatMessage.create({
-            user: game.user.id,
-            content: `<div class="azsp-chat azsp-chat--${side}">
-                <div class="azsp-chat-title">${foundry.utils.escapeHTML(label[side])} story point used</div>
-                <div class="azsp-chat-body">It passes to ${foundry.utils.escapeHTML(label[other])}.</div>
-                <div class="azsp-chat-pool"><span class="azsp-squad">${foundry.utils.escapeHTML(label.squad)} ${next.squad}</span> · <span class="azsp-threat">${foundry.utils.escapeHTML(label.threat)} ${next.threat}</span></div>
-            </div>`
-        });
+        if (!game.users.activeGM) {
+            ui.notifications.warn("A GM needs to be online to use a story point.");
+            return;
+        }
+        // Players cannot write world settings: the active GM applies the spend (see initStoryPoints).
+        game.socket.emit(SOCKET, { type: "useStoryPoint", side, userId: game.user.id });
     }
 
     /** GM: move a point to or from one side (the other side gives or takes it). */
     static async #onAdjust(event, target) {
         if (!game.user.isGM) return;
-        await StoryPointsApp.#writePool(shiftPool(readPool(), target.dataset.side, Number(target.dataset.delta)));
+        await writePool(shiftPool(readPool(), target.dataset.side, Number(target.dataset.delta)));
     }
 
     /** GM: grow or shrink the whole pool (see resizePool for which side changes). */
     static async #onResizePool(event, target) {
         if (!game.user.isGM) return;
-        await StoryPointsApp.#writePool(resizePool(readPool(), Number(target.dataset.delta)));
+        await writePool(resizePool(readPool(), Number(target.dataset.delta)));
     }
 
     static #onSystemMenu(event, target) {
@@ -197,11 +225,6 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         systemTracker()?.menu?.[Number(target.dataset.index)]?.callback();
     }
 
-    static async #writePool(pool) {
-        const { light, dark } = toSystemPool(pool);
-        await game.settings.set(SYSTEM_ID, "dPoolLight", light);
-        await game.settings.set(SYSTEM_ID, "dPoolDark", dark);
-    }
 }
 
 /** Re-theme the system's remaining Star Wars wording (Group Manager, destiny roll chat button). */
@@ -259,6 +282,13 @@ export function initStoryPoints() {
 
     Hooks.once("ready", () => {
         if (!game.settings.get(MODULE_ID, SETTINGS.enabled)) return;
+        // Player spends: applied by the active GM only (other GMs ignore them).
+        game.socket.on(SOCKET, data => {
+            if (data?.type !== "useStoryPoint" || game.user !== game.users.activeGM) return;
+            const player = game.users.get(data.userId);
+            if (!player || data.side !== SIDES.squad) return;
+            applyUse(SIDES.squad, player.id);
+        });
         document.body.classList.add("azsp-active");
         app = new StoryPointsApp();
         app.render({ force: true });

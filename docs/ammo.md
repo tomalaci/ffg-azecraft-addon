@@ -15,6 +15,9 @@ three Threat or a Despair).
   removed). A GM can also apply a type nobody carries, for story reasons. A chat message says what
   was loaded and the resulting quality, e.g. "Avenger loaded with Incendiary Ammo: Burn 2."
   Applying another type replaces the current one.
+- **An ally's weapon.** Players apply ammo from their own sheet to their own weapons. To load an
+  engaged ally's weapon, the GM applies it from the ally's sheet (as "none carried") and the
+  player who handed it over lowers their own ammo quantity on the Gear tab.
 - **While loaded.** The weapon shows the ammo under its name, and its qualities (weapon sheet and
   roll chat card) include the upgrade by the rules:
 

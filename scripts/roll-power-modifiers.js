@@ -4,19 +4,22 @@ const MODULE_ID = "ffg-azecraft-addon";
 const ROLL_OPTIONS_TEMPLATE = `modules/${MODULE_ID}/templates/dice/roll-options-ffg.html`;
 
 /**
- * A power roll started from the character sheet's Biotics / Tech tabs. The system's rollSkill opens the
- * dialog asynchronously and cannot carry extra data, so the power is parked here and claimed by
- * the next roll dialog for that skill.
+ * Power rolls started from the sheet's Biotics / Tech tabs. The system's rollSkill opens the dialog
+ * asynchronously and cannot carry extra data, so each power is queued here and claimed, in order,
+ * by the next roll dialog for the same actor and discipline (two quick clicks open two dialogs, each
+ * with its own power).
  */
-let pendingPower = null;
+const pendingPowers = [];
 const PENDING_POWER_TTL = 5000;
 
 function claimPendingPower(rollBuilder) {
-    const pending = pendingPower;
-    if (!pending || Date.now() - pending.at > PENDING_POWER_TTL) return null;
-    if (disciplineForSkill(rollBuilder?.roll?.skillName) !== pending.power.discipline) return null;
-    pendingPower = null;
-    return pending;
+    const now = Date.now();
+    while (pendingPowers.length && now - pendingPowers[0].at > PENDING_POWER_TTL) pendingPowers.shift();
+    const discipline = disciplineForSkill(rollBuilder?.roll?.skillName);
+    const actorId = rollBuilder?.roll?.data?.actor?._id ?? null;
+    const index = pendingPowers.findIndex(pending => pending.power.discipline === discipline
+        && (!pending.actorId || !actorId || pending.actorId === actorId));
+    return index < 0 ? null : pendingPowers.splice(index, 1)[0];
 }
 
 /**
@@ -41,7 +44,7 @@ export async function rollPower(sheet, powerId, { subtype = null, modifiers = []
     const cell = row.appendChild(document.createElement("div"));
     const target = cell.appendChild(document.createElement("span"));
 
-    pendingPower = { power, subtype: findSubtype(power, subtype), modifiers, name, at: Date.now() };
+    pendingPowers.push({ power, subtype: findSubtype(power, subtype), modifiers, name, actorId: sheet.actor?.id ?? null, at: Date.now() });
     await DiceHelpers.rollSkill(sheet, { target, currentTarget: target, preventDefault() {} }, null);
 }
 
@@ -160,10 +163,25 @@ function applyModifier(dicePool, modifier) {
     };
 }
 
+/**
+ * Undo a modifier. An upgrade turned Difficulty dice into Challenge dice: turn a Challenge die back
+ * only while one is left (the player may have downgraded it by hand meanwhile). Dice that were
+ * added or removed outright are removed or added back.
+ */
 function removeModifier(dicePool, appliedChanges) {
-    for (const die of ["difficulty", "challenge", "setback"]) {
-        dicePool[die] = Math.max(0, Number(dicePool[die] ?? 0) - Number(appliedChanges[die] ?? 0));
+    const num = key => Number(dicePool[key] ?? 0);
+    const applied = key => Number(appliedChanges[key] ?? 0);
+    const converted = Math.min(Math.max(0, applied("challenge")), Math.max(0, -applied("difficulty")));
+
+    for (let i = 0; i < converted; i++) {
+        if (num("challenge") <= 0) break;
+        dicePool.challenge = num("challenge") - 1;
+        dicePool.difficulty = num("difficulty") + 1;
     }
+
+    dicePool.challenge = Math.max(0, num("challenge") - (applied("challenge") - converted));
+    dicePool.difficulty = Math.max(0, num("difficulty") - (applied("difficulty") + converted));
+    dicePool.setback = Math.max(0, num("setback") - applied("setback"));
 }
 
 function getPropertyDescriptor(object, property) {
