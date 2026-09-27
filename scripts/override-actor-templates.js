@@ -7,8 +7,10 @@
  */
 
 const MODULE_ID = "ffg-azecraft-addon";
-const OVERRIDDEN_ACTOR_TYPES = new Set(["minion", "rival", "nemesis"]);
+const OVERRIDDEN_ACTOR_TYPES = new Set(["character", "minion", "rival", "nemesis"]);
 const TEMPLATE_OVERRIDES = {
+    // Character: the system template without the Specializations / Force Powers / Signature Abilities rows.
+    character: `modules/${MODULE_ID}/templates/actors/ffg-character-sheet.html`,
     minion: `modules/${MODULE_ID}/templates/actors/ffg-minion-sheet.html`,
     rival: `modules/${MODULE_ID}/templates/actors/ffg-rival-sheet.html`,
     nemesis: `modules/${MODULE_ID}/templates/actors/ffg-nemesis-sheet.html`

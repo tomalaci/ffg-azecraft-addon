@@ -1,0 +1,456 @@
+/* Azecraft: Mass Effect style for the starwarsffg character sheet (matches the mission dashboard).
+ * Loaded as an unlayered stylesheet (see scripts/character-sheet-theme.js) and scoped to `.azcs`. */
+
+.azcs {
+    --azcs-bg: #070c15;
+    --azcs-panel: rgba(17, 28, 46, 0.92);
+    --azcs-panel-2: rgba(12, 20, 34, 0.95);
+    --azcs-line: rgba(116, 200, 255, 0.6);
+    --azcs-line-soft: rgba(116, 200, 255, 0.22);
+    --azcs-text: #e7eef7;
+    --azcs-muted: #95a6ba;
+    --azcs-accent: #72d4ff;
+    --azcs-orange: #ff9d42;
+    --azcs-red: #ff5d55;
+    --azcs-blue: #4fb7ff;
+    --azcs-font-heading: "Roboto Condensed", "Arial Narrow", "Signika", sans-serif;
+}
+
+/* -------------------------------------------- */
+/*  Window                                      */
+/* -------------------------------------------- */
+
+.azcs.app {
+    border: 1px solid var(--azcs-line-soft);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.azcs.app .window-header {
+    background: linear-gradient(90deg, #0d1829, #111f35 60%, #0d1829);
+    border-bottom: 1px solid var(--azcs-line);
+    color: var(--azcs-text);
+}
+
+.azcs.app .window-header .window-title {
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azcs.app .window-header a,
+.azcs.app .window-header button {
+    color: var(--azcs-muted);
+}
+
+.azcs.app .window-header a:hover,
+.azcs.app .window-header button:hover {
+    color: var(--azcs-orange);
+}
+
+.azcs.starwarsffg.sheet.actor .window-content {
+    background:
+        repeating-linear-gradient(0deg, rgba(114, 212, 255, 0.02) 0 1px, transparent 1px 4px),
+        radial-gradient(ellipse at 20% 0%, rgba(114, 212, 255, 0.08), transparent 55%),
+        linear-gradient(160deg, #0c1626 0%, var(--azcs-bg) 70%);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor,
+.azcs.starwarsffg.sheet.actor .window-content label,
+.azcs.starwarsffg.sheet.actor .window-content p,
+.azcs.starwarsffg.sheet.actor .window-content td,
+.azcs.starwarsffg.sheet.actor .window-content th,
+.azcs.starwarsffg.sheet.actor .window-content span,
+.azcs.starwarsffg.sheet.actor .window-content div {
+    color: var(--azcs-text);
+}
+
+/* The system sets a red scrollbar-color on each scrolling pane, so set ours on every element. */
+.azcs.starwarsffg.sheet.actor .window-content,
+.azcs.starwarsffg.sheet.actor .window-content * {
+    scrollbar-color: rgba(116, 200, 255, 0.45) transparent;
+}
+
+/* Some system tab panes are ~8px wider than their box, which shows a stray horizontal scrollbar. */
+.azcs.starwarsffg.sheet.actor .sheet-body > .tab {
+    overflow-x: hidden;
+}
+
+/* Inputs and selects: dark fields with a thin cyan underline. */
+.azcs.starwarsffg.sheet.actor input[type="text"],
+.azcs.starwarsffg.sheet.actor input[type="number"],
+.azcs.starwarsffg.sheet.actor input:not([type]),
+.azcs.starwarsffg.sheet.actor select,
+.azcs.starwarsffg.sheet.actor textarea {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--azcs-line-soft);
+    border-radius: 0;
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor input:focus,
+.azcs.starwarsffg.sheet.actor select:focus,
+.azcs.starwarsffg.sheet.actor textarea:focus {
+    border-color: var(--azcs-orange);
+    box-shadow: 0 0 0 1px var(--azcs-orange);
+    outline: none;
+}
+
+.azcs.starwarsffg.sheet.actor input:disabled,
+.azcs.starwarsffg.sheet.actor input[readonly] {
+    color: var(--azcs-muted);
+}
+
+.azcs.starwarsffg.sheet.actor option {
+    background: #0d1624;
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor input[type="checkbox"] {
+    accent-color: var(--azcs-accent);
+}
+
+.azcs.starwarsffg.sheet.actor a,
+.azcs.starwarsffg.sheet.actor .fas,
+.azcs.starwarsffg.sheet.actor .fa-solid,
+.azcs.starwarsffg.sheet.actor .fa-regular {
+    color: var(--azcs-accent);
+}
+
+.azcs.starwarsffg.sheet.actor a:hover {
+    color: var(--azcs-orange);
+    text-shadow: none;
+}
+
+/* -------------------------------------------- */
+/*  Header                                      */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .sheet-header .profile-img {
+    border: 1px solid var(--azcs-line);
+    box-shadow: 0 0 12px rgba(114, 212, 255, 0.25);
+    background: var(--azcs-panel-2);
+    object-fit: cover;
+}
+
+.azcs.starwarsffg.sheet.actor .header-description-block {
+    background:
+        linear-gradient(180deg, rgba(114, 212, 255, 0.08), transparent 40px),
+        var(--azcs-panel);
+    box-shadow: inset 0 0 0 1px var(--azcs-line-soft);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+/* The removed Specs / Force Powers / Signature rows left a tall empty block: fit it to its content. */
+.azcs.starwarsffg.sheet.actor .header-name.header-description-block {
+    height: auto;
+    min-height: 0;
+    padding-bottom: 8px;
+}
+
+.azcs.starwarsffg.sheet.actor .header-name h2 {
+    border-bottom: 1px solid var(--azcs-line);
+}
+
+.azcs.starwarsffg.sheet.actor .header-name h2 input {
+    background: transparent;
+    border: none;
+    color: var(--azcs-text);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .character-details-table td {
+    color: var(--azcs-muted);
+    font-family: var(--azcs-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .species-pill,
+.azcs.starwarsffg.sheet.actor .career-pill,
+.azcs.starwarsffg.sheet.actor .specialization-pill {
+    background: rgba(114, 212, 255, 0.1);
+    border: 1px solid var(--azcs-line);
+    border-radius: 0;
+    color: var(--azcs-text);
+    text-transform: none;
+}
+
+.azcs.starwarsffg.sheet.actor .drag-note {
+    border: 1px dashed var(--azcs-line-soft);
+    border-radius: 0;
+    color: var(--azcs-muted);
+}
+
+/* -------------------------------------------- */
+/*  Stat blocks (wounds, strain, soak, defense…) */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .block-background {
+    background: var(--azcs-panel);
+    box-shadow: inset 0 0 0 1px var(--azcs-line-soft);
+    border-radius: 0;
+}
+
+.azcs.starwarsffg.sheet.actor .block-title,
+.azcs.starwarsffg.sheet.actor .block-header {
+    background: linear-gradient(90deg, rgba(114, 212, 255, 0.22), rgba(114, 212, 255, 0.06));
+    border-radius: 0;
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .block-background input,
+.azcs.starwarsffg.sheet.actor .block-background select {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--azcs-line-soft);
+    color: var(--azcs-text);
+    font-weight: 700;
+}
+
+/* The THRESHOLD / CURRENT / MELEE / RANGED labels under split blocks. */
+.azcs.starwarsffg.sheet.actor .block-background-shadow,
+.azcs.starwarsffg.sheet.actor .shadow-right {
+    background: rgba(79, 183, 255, 0.25);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .shadow-left {
+    background: rgba(255, 93, 85, 0.22);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .block-background-shadow *,
+.azcs.starwarsffg.sheet.actor .shadow-left *,
+.azcs.starwarsffg.sheet.actor .shadow-right * {
+    color: var(--azcs-text);
+    font-family: var(--azcs-font-heading);
+    letter-spacing: 0.08em;
+}
+
+/* -------------------------------------------- */
+/*  Tabs (right-hand strip)                     */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .sheet-tabs .item,
+.azcs.starwarsffg.sheet.actor nav.sheet-tabs a.item {
+    background: var(--azcs-panel-2);
+    border: 1px solid var(--azcs-line-soft);
+    color: var(--azcs-muted);
+}
+
+.azcs.starwarsffg.sheet.actor .sheet-tabs .item:hover {
+    color: var(--azcs-orange);
+}
+
+.azcs.starwarsffg.sheet.actor .sheet-tabs .item.active {
+    background: linear-gradient(90deg, rgba(255, 157, 66, 0.35), rgba(255, 157, 66, 0.12));
+    border-color: var(--azcs-orange);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .sheet-tabs .item i {
+    color: inherit;
+}
+
+.azcs.starwarsffg.sheet.actor .sheet-body {
+    background: rgba(9, 15, 26, 0.55);
+    border: 1px solid var(--azcs-line-soft);
+}
+
+/* -------------------------------------------- */
+/*  Characteristics                             */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .characteristic-item {
+    background: var(--azcs-panel);
+    box-shadow: inset 0 0 0 1px var(--azcs-line-soft);
+    border-radius: 0;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.azcs.starwarsffg.sheet.actor .characteristic {
+    background: radial-gradient(circle at 50% 35%, #1b3150, #0b1422 70%);
+    border: 2px solid var(--azcs-line);
+    box-shadow: 0 0 10px rgba(114, 212, 255, 0.3);
+}
+
+.azcs.starwarsffg.sheet.actor .characteristic input,
+.azcs.starwarsffg.sheet.actor .characteristic .characteristic-value {
+    background: transparent;
+    border: none;
+    color: var(--azcs-text);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+}
+
+.azcs.starwarsffg.sheet.actor .characteristic-label {
+    background: transparent;
+    border-top: 1px solid var(--azcs-line-soft);
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+/* -------------------------------------------- */
+/*  Skills                                      */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .skillTypeGrid,
+.azcs.starwarsffg.sheet.actor .skillColumnGrid {
+    background: var(--azcs-panel-2);
+    border: 1px solid var(--azcs-line-soft);
+}
+
+/* Header cells of each skill table (General Skills / CS / Rank / Roll). */
+.azcs.starwarsffg.sheet.actor .skillTypeGrid .pure-u-12-24:not(.skill .pure-u-12-24),
+.azcs.starwarsffg.sheet.actor .skillTypeGrid .pure-u-3-24:not(.skill .pure-u-3-24),
+.azcs.starwarsffg.sheet.actor .skillTypeGrid .pure-u-6-24:not(.skill .pure-u-6-24) {
+    background: rgba(114, 212, 255, 0.14);
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .skill {
+    border-bottom: 1px solid rgba(116, 200, 255, 0.08);
+}
+
+.azcs.starwarsffg.sheet.actor .skill:hover {
+    background: rgba(114, 212, 255, 0.08);
+}
+
+.azcs.starwarsffg.sheet.actor .skill .skill-name,
+.azcs.starwarsffg.sheet.actor .skill .skill-name * {
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .skill .skill-characteristic,
+.azcs.starwarsffg.sheet.actor .skill i {
+    color: var(--azcs-muted);
+}
+
+.azcs.starwarsffg.sheet.actor .careerskill-rank,
+.azcs.starwarsffg.sheet.actor .skill input[type="text"],
+.azcs.starwarsffg.sheet.actor .skill input[type="number"] {
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--azcs-text);
+    text-align: center;
+}
+
+/* -------------------------------------------- */
+/*  Item, talent and ability lists              */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .items-header,
+.azcs.starwarsffg.sheet.actor .talents-header,
+.azcs.starwarsffg.sheet.actor .grid.grid-3col,
+.azcs.starwarsffg.sheet.actor .attributes-header {
+    background: linear-gradient(90deg, rgba(114, 212, 255, 0.2), rgba(114, 212, 255, 0.05));
+    border: none;
+    border-left: 3px solid var(--azcs-accent);
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .items-header *,
+.azcs.starwarsffg.sheet.actor .talents-header * {
+    color: var(--azcs-accent);
+}
+
+.azcs.starwarsffg.sheet.actor .item-list .item,
+.azcs.starwarsffg.sheet.actor li.item {
+    border-bottom: 1px solid rgba(116, 200, 255, 0.1);
+}
+
+.azcs.starwarsffg.sheet.actor li.item:hover {
+    background: rgba(114, 212, 255, 0.06);
+}
+
+/* -------------------------------------------- */
+/*  Text blocks and editors                     */
+/* -------------------------------------------- */
+
+.azcs.starwarsffg.sheet.actor .popout-editor,
+.azcs.starwarsffg.sheet.actor .editor,
+.azcs.starwarsffg.sheet.actor .editor-content {
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .editor-content a.content-link {
+    background: rgba(114, 212, 255, 0.12);
+    border-color: var(--azcs-line-soft);
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor a.editor-edit {
+    background: var(--azcs-panel);
+    border: 1px solid var(--azcs-line);
+    color: var(--azcs-accent);
+}
+
+/* Tables (Obligation / Duty / XP log / Active Effects). */
+.azcs.starwarsffg.sheet.actor table {
+    background: var(--azcs-panel-2);
+    border: 1px solid var(--azcs-line-soft);
+}
+
+/* A very specific system rule paints thead grey (six classes deep); the theme's cells are translucent,
+ * so the thead itself must be cleared. */
+.azcs.starwarsffg.sheet.actor thead {
+    background: transparent !important;
+}
+
+.azcs.starwarsffg.sheet.actor thead th,
+.azcs.starwarsffg.sheet.actor thead td {
+    background: rgba(114, 212, 255, 0.16);
+    border: none;
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-shadow: none;
+}
+
+.azcs.starwarsffg.sheet.actor tbody tr:nth-child(even) {
+    background: rgba(114, 212, 255, 0.04);
+}
+
+.azcs.starwarsffg.sheet.actor tr.effect-row,
+.azcs.starwarsffg.sheet.actor tr.change-row {
+    background: rgba(114, 212, 255, 0.05);
+}
+
+/* Buttons inside the sheet. */
+.azcs.starwarsffg.sheet.actor .window-content button {
+    background: rgba(114, 212, 255, 0.08);
+    border: 1px solid var(--azcs-line-soft);
+    border-radius: 0;
+    color: var(--azcs-text);
+}
+
+.azcs.starwarsffg.sheet.actor .window-content button:hover {
+    border-color: var(--azcs-orange);
+    color: var(--azcs-orange);
+    box-shadow: none;
+}
+
+.azcs.app .window-resizable-handle {
+    background: var(--azcs-panel);
+    border: 1px solid var(--azcs-line-soft);
+    color: var(--azcs-accent);
+}
