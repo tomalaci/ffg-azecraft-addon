@@ -48,6 +48,14 @@ VI Hacking starts at Daunting. Use the pencil to edit and the bin to delete.
 Loadout and presets are stored on the Actor, so everyone who can see the sheet sees them; its
 owners (and GMs) can change them.
 
+## Star Wars parts removed
+
+The sheets (character and NPC) no longer show Star Wars-only parts: the Force Pool, Force Powers
+and Signature Abilities on the Talents tab, the Force Powers header field, and the character's
+Obligation / Duty / Morality tab. The medical counter on the Gear tab is labelled "Medi-gel". No
+actor used any of these when they were removed. Mass Effect features the sheets lack are added by
+this addon instead (e.g. the Biotics / Tech tabs).
+
 World setting: **Mass Effect character sheet** (Configure Settings → FFG Azecraft Addon). Turn it
 off to get the parchment look back on all of them (the header fields stay removed).
 
@@ -64,8 +72,10 @@ off to get the parchment look back on all of them (the header fields stay remove
   (within 5 s, same discipline), moves the difficulty from Average to the base, ticks the preset's
   modifiers and narrows the modifier list.
 - **Template.** `templates/actors/ffg-character-sheet.html` is the starwarsffg 2.0.3 template with
-  the Specializations / Force Powers / Signature Abilities rows removed and empty Biotics and Tech tabs
-  added; everything else is unchanged. It is swapped in by `scripts/override-actor-templates.js`, the same mechanism as the
+  the Specializations / Force Powers / Signature Abilities rows, the Force Pool, Force Powers and
+  Signature Abilities lists and the Obligation tab removed, the medical counter labelled
+  "Medi-gel", and empty Biotics and Tech tabs added; everything else is unchanged. The NPC templates
+  have the same removals. It is swapped in by `scripts/override-actor-templates.js`, the same mechanism as the
   NPC templates. When the system updates, re-copy its template, remove those rows and add the Biotics and Tech tabs again.
 - **Styles.** `styles/character-sheet.css` is added as an **unlayered** `<link>` at `setup` by
   `scripts/character-sheet-theme.js`. The system's `mandar.css` is unlayered too, so a stylesheet
