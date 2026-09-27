@@ -10,6 +10,10 @@ in the dashboard's style. The rules are the same as before (Genesys story points
 
 Both names can be changed (see Settings below).
 
+It sits right of the player list, in the corner under the mission dashboard's squad column, and
+fills the space there. When that corner is too narrow (small or narrow screens), the bar turns
+vertical: Doom on top, Destiny at the bottom, and the controls beside it.
+
 The bar is a tug of war. Each segment is one point: Destiny fills from the left in blue, Doom
 fills from the right in red. As the players spend Destiny, the blue shrinks and the red grows.
 

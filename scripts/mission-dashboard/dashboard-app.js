@@ -266,12 +266,33 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             const portrait = event.target.closest(".azd-card-art img, .azd-person-img");
             if (portrait) this.#portraitDoubleClick(portrait);
         });
+
+        // Rail fade edges follow the scroll position (scroll events do not bubble: capture them).
+        this.element.addEventListener("scroll", event => {
+            if (event.target.classList?.contains("azd-rail-cards")) this.#updateRailEdges();
+        }, true);
+        document.addEventListener("azecraft:layout", this.#onLayout);
+
         this.#layout.start();
+    }
+
+    #onLayout = () => this.#updateRailEdges();
+
+    /** Show the rail's top / bottom fade only where cards are scrolled out of view. */
+    #updateRailEdges() {
+        const rail = this.element?.querySelector(".azd-rail");
+        const cards = rail?.querySelector(".azd-rail-cards");
+        if (!cards) return;
+        const above = cards.scrollTop > 1;
+        const below = cards.scrollTop + cards.clientHeight < cards.scrollHeight - 1;
+        rail.toggleAttribute("data-more-above", above);
+        rail.toggleAttribute("data-more-below", below);
     }
 
     async _onRender(context, options) {
         await super._onRender(context, options);
         this.applyPreferences();
+        this.#updateRailEdges();
     }
 
     applyPreferences() {
@@ -283,6 +304,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     _onClose(options) {
+        document.removeEventListener("azecraft:layout", this.#onLayout);
         this.#layout?.stop();
         this.#layout = null;
         super._onClose(options);

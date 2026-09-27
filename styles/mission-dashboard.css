@@ -377,6 +377,64 @@
     pointer-events: auto;
 }
 
+/* Fade edges: cards scroll under a glowing edge line with a flickering static band, top (just
+ * under the header) and bottom. They show only where more cards are scrolled out of view. */
+#azecraft-mission-dashboard .azd-rail {
+    --azd-fade: 34px;
+    --azd-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='48'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.7' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.85 0 0 0 0 1 0 0 0 4 -2.35'/%3E%3C/filter%3E%3Crect width='160' height='48' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+#azecraft-mission-dashboard .azd-rail::before,
+#azecraft-mission-dashboard .azd-rail::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    height: var(--azd-fade);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    background:
+        var(--azd-noise),
+        linear-gradient(var(--azd-fade-dir), rgba(114, 212, 255, 0.28), rgba(114, 212, 255, 0) 10px),
+        linear-gradient(var(--azd-fade-dir), #0a1220 0%, rgba(10, 18, 32, 0.85) 30%, rgba(10, 18, 32, 0) 100%);
+    background-size: 160px 48px, auto, auto;
+    -webkit-mask-image: linear-gradient(var(--azd-fade-dir), #000 35%, transparent);
+    mask-image: linear-gradient(var(--azd-fade-dir), #000 35%, transparent);
+}
+
+#azecraft-mission-dashboard .azd-rail::before {
+    --azd-fade-dir: to bottom;
+    top: 0;
+    border-top: 1px solid var(--azd-line);
+    box-shadow: 0 -1px 8px rgba(114, 212, 255, 0.45);
+}
+
+#azecraft-mission-dashboard .azd-rail::after {
+    --azd-fade-dir: to top;
+    bottom: 0;
+    border-bottom: 1px solid var(--azd-line);
+    box-shadow: 0 1px 8px rgba(114, 212, 255, 0.45);
+}
+
+#azecraft-mission-dashboard .azd-rail[data-more-above]::before,
+#azecraft-mission-dashboard .azd-rail[data-more-below]::after {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    #azecraft-mission-dashboard .azd-rail::before,
+    #azecraft-mission-dashboard .azd-rail::after {
+        animation: azd-static 900ms steps(6) infinite;
+    }
+}
+
+@keyframes azd-static {
+    0% { background-position: 0 0, 0 0, 0 0; }
+    100% { background-position: 480px 144px, 0 0, 0 0; }
+}
+
 #azecraft-mission-dashboard .azd-rail-empty {
     margin: 0;
     padding: 8px 12px;

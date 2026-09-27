@@ -10,6 +10,7 @@
  * socket) and owns the Group Manager / Request Destiny Roll actions.
  */
 
+import { storyPointsBox } from "./story-layout.js";
 import { SIDES, shiftPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -32,6 +33,14 @@ function names() {
 
 function readPool() {
     return fromSystemPool(game.settings.get(SYSTEM_ID, "dPoolLight"), game.settings.get(SYSTEM_ID, "dPoolDark"));
+}
+
+/** An element's box on screen, or null when it is missing or not displayed. */
+function visibleRect(selector) {
+    const element = document.querySelector(selector);
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return rect.width || rect.height ? rect : null;
 }
 
 /** The system's (hidden) destiny tracker, which processes player flips and owns the GM menu. */
@@ -92,11 +101,14 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _onFirstRender(context, options) {
         await super._onFirstRender(context, options);
-        // Sit just above the player list, like the tracker it replaces.
+        // Sit right of the player list, in the corner under the dashboard's squad rail.
         this.#observer = new ResizeObserver(this.#onResize);
-        const players = document.getElementById("players");
-        if (players) this.#observer.observe(players);
+        for (const id of ["players", "players-active", "hotbar"]) {
+            const element = document.getElementById(id);
+            if (element) this.#observer.observe(element);
+        }
         window.addEventListener("resize", this.#onResize);
+        document.addEventListener("azecraft:layout", this.#onResize);
     }
 
     async _onRender(context, options) {
@@ -107,15 +119,26 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     _onClose(options) {
         this.#observer?.disconnect();
         window.removeEventListener("resize", this.#onResize);
+        document.removeEventListener("azecraft:layout", this.#onResize);
         super._onClose(options);
     }
 
     #position() {
-        const players = document.getElementById("players")?.getBoundingClientRect();
-        const controls = document.getElementById("scene-controls")?.getBoundingClientRect();
-        const bottom = players?.height ? window.innerHeight - players.top + 8 : 16;
-        this.element?.style.setProperty("--azsp-bottom", `${Math.round(bottom)}px`);
-        this.element?.style.setProperty("--azsp-left", `${Math.round(controls?.left ?? 16)}px`);
+        const element = this.element;
+        if (!element) return;
+        const box = storyPointsBox({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            players: visibleRect("#players-active") ?? visibleRect("#players"),
+            controls: visibleRect("#scene-controls"),
+            hotbar: visibleRect("#hotbar"),
+            rail: document.querySelector("#azecraft-mission-dashboard:not(.azd--hidden)") ? visibleRect("#azecraft-mission-dashboard .azd-rail") : null
+        });
+        element.classList.toggle("azsp--vertical", box.vertical);
+        element.style.setProperty("--azsp-left", `${box.left}px`);
+        element.style.setProperty("--azsp-bottom", `${box.bottom}px`);
+        element.style.setProperty("--azsp-width", `${box.width}px`);
+        element.style.setProperty("--azsp-max-height", `${box.maxHeight}px`);
     }
 
     /* -------------------------------------------- */

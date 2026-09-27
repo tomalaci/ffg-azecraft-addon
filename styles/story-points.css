@@ -23,7 +23,7 @@ body.azsp-active #destiny-tracker {
     left: var(--azsp-left, 16px);
     bottom: var(--azsp-bottom, 120px);
     z-index: 2;
-    width: 330px;
+    width: var(--azsp-width, 330px);
     margin: 0;
     padding: 0;
     color: var(--azsp-text);
@@ -98,8 +98,8 @@ body.azsp-active #destiny-tracker {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex: 0 0 82px;
-    width: 82px;
+    flex: 0 0 76px;
+    width: 76px;
     height: auto;
     margin: 0;
     padding: 2px 0;
@@ -201,8 +201,8 @@ body.azsp-active #destiny-tracker {
 
 /* GM: one wide + under each side, pulling a point over from the other side. */
 #azecraft-story-points .azsp-take {
-    flex: 0 0 82px;
-    width: 82px;
+    flex: 0 0 76px;
+    width: 76px;
     height: 22px;
     font-size: 13px;
 }
@@ -230,6 +230,104 @@ body.azsp-active #destiny-tracker {
     font-family: var(--azsp-font-heading);
     font-size: 9px;
     letter-spacing: 0.1em;
+}
+
+/* -------------------------------------------- */
+/*  Vertical bar (narrow screens): Doom on top, Destiny at the bottom, controls on the right. */
+/* -------------------------------------------- */
+
+#azecraft-story-points.azsp--vertical .azsp-panel {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto minmax(60px, 1fr) auto;
+    grid-template-areas:
+        "head head"
+        "threat take-threat"
+        "bar capacity"
+        "squad take-squad";
+    gap: 4px;
+    max-height: min(var(--azsp-max-height, 320px), 320px);
+    height: min(var(--azsp-max-height, 320px), 320px);
+}
+
+#azecraft-story-points.azsp--vertical .azsp-row,
+#azecraft-story-points.azsp--vertical .azsp-gm {
+    display: contents;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-head {
+    grid-area: head;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-bottom: 0;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-title { font-size: 10px; }
+
+#azecraft-story-points.azsp--vertical .azsp-side {
+    width: auto;
+    flex: none;
+    padding: 1px 0;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-side--threat {
+    grid-area: threat;
+    border-right: 1px solid var(--azsp-line-soft);
+    border-top: 3px solid var(--azsp-threat);
+}
+
+#azecraft-story-points.azsp--vertical .azsp-side--squad {
+    grid-area: squad;
+    border-left: 1px solid var(--azsp-line-soft);
+    border-bottom: 3px solid var(--azsp-squad);
+}
+
+#azecraft-story-points.azsp--vertical .azsp-count { font-size: 16px; }
+
+/* Segments stack upwards: Destiny from the bottom, Doom from the top. */
+#azecraft-story-points.azsp--vertical .azsp-bar {
+    grid-area: bar;
+    flex-direction: column-reverse;
+    min-height: 0;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-seg {
+    width: 100%;
+    min-height: 3px;
+    transform: skewY(-12deg);
+}
+
+#azecraft-story-points.azsp--vertical .azsp-bar-empty {
+    writing-mode: vertical-rl;
+    align-self: center;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-take {
+    width: 26px;
+    height: auto;
+    flex: none;
+}
+
+#azecraft-story-points.azsp--vertical .azsp-take--threat {
+    grid-area: take-threat;
+    border-right: 1px solid var(--azsp-line-soft);
+    border-top: 3px solid var(--azsp-threat);
+}
+
+#azecraft-story-points.azsp--vertical .azsp-take--squad {
+    grid-area: take-squad;
+    border-left: 1px solid var(--azsp-line-soft);
+    border-bottom: 3px solid var(--azsp-squad);
+}
+
+/* Capacity: + above the total, − below, beside the middle of the bar. */
+#azecraft-story-points.azsp--vertical .azsp-capacity {
+    grid-area: capacity;
+    display: flex;
+    flex-direction: column-reverse;
+    align-self: center;
+    align-items: center;
+    gap: 3px;
 }
 
 @media (prefers-reduced-motion: no-preference) {

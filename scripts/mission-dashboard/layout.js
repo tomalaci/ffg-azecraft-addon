@@ -9,6 +9,7 @@ const WATCHED_SELECTORS = [
     "#scene-controls",
     "#scene-navigation-active",
     "#players",
+    "#players-active",
     "#hotbar",
     "#sidebar",
     "#destiny-tracker",
@@ -138,9 +139,12 @@ export function measureUI() {
         controls: visibleRect("#scene-controls"),
         navActive: visibleRect("#scene-navigation-active"),
         navExpand: visibleRect("#scene-navigation-expand"),
-        players: visibleRect("#players"),
-        // The story point bar (or the system's destiny tracker it replaces) sits bottom-left.
-        destiny: visibleRect("#azecraft-story-points") ?? visibleRect("#destiny-tracker"),
+        // Only the always-visible part of the player list: expanding it (the inactive players above)
+        // floats over the rail instead of pushing the frame up.
+        players: visibleRect("#players-active") ?? visibleRect("#players"),
+        // The system's destiny tracker, when the addon's story point bar is off. The story point bar
+        // sits beside the player list, inside the space reserved for it.
+        destiny: visibleRect("#destiny-tracker"),
         hotbar: visibleRect("#hotbar"),
         sidebar: visibleRect("#sidebar")
     };
@@ -215,6 +219,8 @@ export class LayoutWatcher {
         }
 
         this.#element.classList.toggle("azd--compact", compact);
+        // The story point bar fits itself into the corner left under the rail.
+        document.dispatchEvent(new CustomEvent("azecraft:layout"));
     }
 }
 
