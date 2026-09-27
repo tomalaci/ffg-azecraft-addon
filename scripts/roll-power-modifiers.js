@@ -1,217 +1,66 @@
+import { difficultyLabel, disciplineForSkill, findPower, modifierGroups } from "./powers/power-catalog.js";
+
 const MODULE_ID = "ffg-azecraft-addon";
 const ROLL_OPTIONS_TEMPLATE = `modules/${MODULE_ID}/templates/dice/roll-options-ffg.html`;
 
-function difficultyModifier(id, label, difficulty, { perRank = false } = {}) {
-    const sign = difficulty > 0 ? "+" : "−";
-    const amount = Math.abs(difficulty);
+/**
+ * A power roll started from the character sheet's Powers block. The system's rollSkill opens the
+ * dialog asynchronously and cannot carry extra data, so the power is parked here and claimed by
+ * the next roll dialog for that skill.
+ */
+let pendingPower = null;
+const PENDING_POWER_TTL = 5000;
 
-    return {
-        id,
-        label,
-        difficulty,
-        modifierText: `${sign}${amount} Difficulty ${amount === 1 ? "die" : "dice"}${perRank ? " per rank" : ""}`
-    };
+function claimPendingPower(rollBuilder) {
+    const pending = pendingPower;
+    if (!pending || Date.now() - pending.at > PENDING_POWER_TTL) return null;
+    if (disciplineForSkill(rollBuilder?.roll?.skillName) !== pending.power.discipline) return null;
+    pendingPower = null;
+    return pending.power;
 }
 
-function setbackModifier(id, label) {
-    return {
-        id,
-        label,
-        setback: 1,
-        modifierText: "+1 Setback die"
-    };
+/**
+ * Roll a power: the system's skill roll for the power's skill, opened at the power's base
+ * difficulty with only that power's (and the general) modifiers listed.
+ * @param {ActorSheet} sheet  The character sheet rolling (rollSkill reads its data)
+ * @param {string} powerId    A power id from the catalog, e.g. "biotic-attack"
+ */
+export async function rollPower(sheet, powerId) {
+    const power = findPower(powerId);
+    const DiceHelpers = game.ffg?.DiceHelpers;
+    if (!power || !DiceHelpers?.rollSkill) return;
+
+    // rollSkill finds the skill from the clicked element's ancestors ([data-ability]).
+    const holder = document.createElement("div");
+    holder.dataset.ability = power.skill;
+    const row = holder.appendChild(document.createElement("div"));
+    const cell = row.appendChild(document.createElement("div"));
+    const target = cell.appendChild(document.createElement("span"));
+
+    pendingPower = { power, at: Date.now() };
+    await DiceHelpers.rollSkill(sheet, { target, currentTarget: target, preventDefault() {} }, null);
 }
 
-function upgradeModifier(id, label) {
-    return {
-        id,
-        label,
-        upgradeDifficulty: 1,
-        modifierText: "Upgrade difficulty once"
-    };
-}
-
-const POWER_MODIFIER_CATALOG = {
-    biotics: {
-        categories: [
-            {
-                id: "biotic-general",
-                label: "General Biotics",
-                options: [
-                    setbackModifier("no-free-hand", "No free hand"),
-                    setbackModifier("heavy-armor-or-shield", "Armor grants +2 soak or more, or carrying a shield"),
-                    upgradeModifier("disrupted-concentration", "Concentration is disrupted")
-                ]
-            },
-            {
-                id: "biotic-attack",
-                label: "Biotic Attack",
-                baseDifficulty: "Base: Easy (1 Difficulty die)",
-                options: [
-                    difficultyModifier("blast", "Blast", 1),
-                    difficultyModifier("close-combat", "Close Combat", 1),
-                    difficultyModifier("reave", "Reave", 1),
-                    difficultyModifier("annihilation", "Annihilation", 1),
-                    difficultyModifier("lift", "Lift", 1),
-                    difficultyModifier("shockwave", "Shockwave", 1),
-                    difficultyModifier("non-lethal", "Non-Lethal", 1),
-                    difficultyModifier("pull", "Pull", 1),
-                    difficultyModifier("charge", "Charge", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("priming", "Priming", -1),
-                    difficultyModifier("warp", "Warp", 2),
-                    difficultyModifier("detonating", "Detonating", 2)
-                ]
-            },
-            {
-                id: "biotic-augment",
-                label: "Biotic Augment",
-                baseDifficulty: "Base: Average (2 Difficulty dice)",
-                options: [
-                    difficultyModifier("speed", "Speed", 1),
-                    difficultyModifier("biotic-warrior", "Biotic Warrior", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("levitate", "Levitate", 1),
-                    difficultyModifier("warp-ammunition", "Warp Ammunition", 1),
-                    difficultyModifier("additional-target", "Additional Target", 2)
-                ]
-            },
-            {
-                id: "biotic-barrier",
-                label: "Biotic Barrier",
-                baseDifficulty: "Base: Easy (1 Difficulty die)",
-                options: [
-                    difficultyModifier("additional-target", "Additional Target", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("add-defense", "Add Defense", 2),
-                    difficultyModifier("empowered", "Empowered", 2),
-                    difficultyModifier("backlash", "Backlash", 2)
-                ]
-            },
-            {
-                id: "biotic-domination",
-                label: "Biotic Domination",
-                baseDifficulty: "Base: Average (2 Difficulty dice), or opposed Biotics vs. Discipline",
-                options: [
-                    difficultyModifier("enervate", "Enervate", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("additional-target", "Additional Target", 2),
-                    difficultyModifier("confusion", "Confusion", 2),
-                    difficultyModifier("stasis", "Stasis", 3),
-                    difficultyModifier("mind-control", "Mind Control", 3)
-                ]
-            },
-            {
-                id: "biotic-telekinesis",
-                label: "Biotic Telekinesis",
-                baseDifficulty: "Base: Easy (1 Difficulty die)",
-                options: [
-                    difficultyModifier("silhouette", "Silhouette", 1, { perRank: true }),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("fine-control", "Fine Control", 1),
-                    difficultyModifier("throw", "Throw", 2)
-                ]
-            }
-        ]
-    },
-    tech: {
-        categories: [
-            {
-                id: "tech-general",
-                label: "General Tech",
-                options: [
-                    setbackModifier("no-free-hand", "No free hand"),
-                    setbackModifier("biotic-barrier", "Target is protected by Biotic Barrier"),
-                    upgradeModifier("electronic-interference", "Electronic interference")
-                ]
-            },
-            {
-                id: "tech-attack",
-                label: "Tech Attack",
-                baseDifficulty: "Base: Average (2 Difficulty dice)",
-                options: [
-                    difficultyModifier("blast", "Blast", 1),
-                    difficultyModifier("close-combat", "Close Combat", 1),
-                    difficultyModifier("deadly", "Deadly", 1),
-                    difficultyModifier("impact", "Impact", 1),
-                    difficultyModifier("non-lethal", "Non-Lethal", 1),
-                    difficultyModifier("anti-synthetic", "Anti-Synthetic", 1),
-                    difficultyModifier("anti-organic", "Anti-Organic", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("priming", "Priming", -1),
-                    difficultyModifier("multi-target", "Multi-Target", 2),
-                    difficultyModifier("detonating", "Detonating", 2)
-                ]
-            },
-            {
-                id: "tech-construct",
-                label: "Tech Construct",
-                baseDifficulty: "Base: Average (2 Difficulty dice)",
-                options: [
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("detonate", "Detonate", 1)
-                ]
-            },
-            {
-                id: "tech-sabotage",
-                label: "Tech Sabotage",
-                baseDifficulty: "Base: Average (2 Difficulty dice); VI Hacking: Daunting (4 Difficulty dice)",
-                options: [
-                    difficultyModifier("damping", "Damping", 1),
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("additional-target", "Additional Target", 2),
-                    difficultyModifier("malfunction", "Malfunction", 2)
-                ]
-            },
-            {
-                id: "tech-augment",
-                label: "Tech Augment",
-                baseDifficulty: "Base: Average (2 Difficulty dice)",
-                options: [
-                    difficultyModifier("range", "Range", 1, { perRank: true }),
-                    difficultyModifier("recon-visor", "Recon Visor", 1),
-                    difficultyModifier("overcharge-shields", "Overcharge Shields", 2),
-                    difficultyModifier("additional-target", "Additional Target", 2)
-                ]
-            }
-        ]
-    }
-};
-
-function normalizeSkillName(value) {
-    return String(value ?? "")
-        .toLowerCase()
-        .replace(/[^a-z]/g, "");
-}
-
-function getPowerKeyForRoll(rollBuilder) {
-    const skillName = normalizeSkillName(rollBuilder?.roll?.skillName);
-
-    if (skillName.includes("biotic")) {
-        return "biotics";
-    }
-
-    if (skillName.includes("tech")) {
-        return "tech";
-    }
-
-    return null;
+/** Set the pool to the power's base difficulty, keeping anything the system added on top of Average. */
+function applyPowerBase(rollBuilder, power) {
+    const pool = rollBuilder.dicePool;
+    pool.difficulty = Math.max(0, Number(pool.difficulty ?? 0) + power.base - 2);
+    rollBuilder.roll.flavor = [power.label, rollBuilder.roll.flavor].filter(Boolean).join(" | ");
 }
 
 function getModifierGroups(rollBuilder) {
-    const powerKey = getPowerKeyForRoll(rollBuilder);
-    const power = POWER_MODIFIER_CATALOG[powerKey];
+    const discipline = disciplineForSkill(rollBuilder?.roll?.skillName);
+    if (!discipline) return [];
 
-    if (!power?.categories?.length) {
-        return [];
-    }
-
-    return power.categories
+    return modifierGroups(discipline, rollBuilder._azecraftPower?.id ?? null)
         .filter(category => category.options?.length)
         .map(category => ({
             id: category.id,
             label: category.label,
-            baseDifficulty: category.baseDifficulty,
+            open: category.open,
+            baseDifficulty: category.base !== undefined
+                ? `Base: ${difficultyLabel(category.base)}${category.baseNote ? `; ${category.baseNote}` : ""}`
+                : "",
             summaryLabel: category.label,
             options: category.options.map(option => ({
                 ...option,
@@ -336,13 +185,20 @@ function patchGetData(RollBuilderFFG) {
     }
 
     RollBuilderFFG.prototype.getData = async function (...args) {
+        if (!this._azecraftPowerClaimed) {
+            this._azecraftPowerClaimed = true;
+            this._azecraftPower = claimPendingPower(this);
+            if (this._azecraftPower) applyPowerBase(this, this._azecraftPower);
+        }
+
         const data = await originalGetData.call(this, ...args);
         const azecraftPowerModifiers = getModifierGroups(this);
 
         return {
             ...data,
             azecraftPowerModifiers,
-            hasAzecraftPowerModifiers: azecraftPowerModifiers.length > 0
+            hasAzecraftPowerModifiers: azecraftPowerModifiers.length > 0,
+            azecraftPower: this._azecraftPower ? { label: this._azecraftPower.label, base: difficultyLabel(this._azecraftPower.base) } : null
         };
     };
 

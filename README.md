@@ -8,7 +8,9 @@ The module:
 
 - Replaces selected Star Wars FFG NPC actor sheet templates with local versions and enriches their
   biography content.
-- Adds Biotics and Tech power modifiers to the dice roll dialog.
+- Adds Biotics and Tech power modifiers to the dice roll dialog, and a **Powers** tab on character
+  sheets that rolls a power at its base difficulty with only its modifiers
+  (see [docs/character-sheet.md](docs/character-sheet.md#powers-tab)).
 - Adds a **mission dashboard**: a Mass Effect style HUD over a Scene with squad cards (stats,
   critical injuries, full art, player Desires), mission summary and objective from Journal pages,
   key intel with People of Note, and campaign-wide Fame and faction reputation. See

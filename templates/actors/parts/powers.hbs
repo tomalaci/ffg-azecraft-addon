@@ -1,0 +1,46 @@
+<section class="azpw" data-azpw>
+    <header class="azpw-head">
+        <h3 class="azpw-title"><i class="fa-solid fa-atom" inert></i> Powers</h3>
+        <span class="azpw-skills">
+            {{#each disciplines as |discipline|}}<span class="azpw-skill azpw-skill--{{discipline.key}}">{{discipline.skill}} {{discipline.rank}}</span>{{/each}}
+        </span>
+        {{#if canEdit}}
+        <button type="button" class="azpw-icon {{#if editing}}azpw-icon--on{{/if}}" data-azpw-action="manage" data-tooltip="{{#if editing}}Done{{else}}Choose readied powers{{/if}}" aria-label="Choose readied powers" aria-pressed="{{editing}}"><i class="fa-solid {{#if editing}}fa-check{{else}}fa-gear{{/if}}" inert></i></button>
+        {{/if}}
+    </header>
+
+    {{#if editing}}
+    <div class="azpw-manage">
+        {{#each disciplines as |discipline|}}
+        <fieldset class="azpw-group">
+            <legend>{{discipline.skill}}</legend>
+            {{#each discipline.powers as |power|}}
+            <label class="azpw-check"><input type="checkbox" data-azpw-ready="{{power.id}}" {{checked power.readied}}> {{power.label}}</label>
+            {{/each}}
+        </fieldset>
+        {{/each}}
+        <p class="azpw-hint">
+            {{#if automatic}}Showing every power of the skills this character has ranks in. Tick powers to choose them yourself.
+            {{else}}Showing the powers ticked here. <button type="button" class="azpw-link" data-azpw-action="automatic">Show by skill ranks instead</button>{{/if}}
+        </p>
+    </div>
+    {{/if}}
+
+    {{#if powers.length}}
+    <div class="azpw-grid">
+        {{#each powers as |power|}}
+        <button type="button" class="azpw-power azpw-power--{{power.discipline}}" data-azpw-roll="{{power.id}}" {{disabled (not @root.canRoll)}}
+            data-tooltip="Roll {{power.skill}} for {{power.label}}: {{power.baseText}}, with its optional effects in the dice dialog">
+            <span class="azpw-power-name">{{power.label}}</span>
+            <span class="azpw-power-meta">
+                <span class="azpw-dice" aria-label="{{power.baseText}}">{{#each power.dice}}<span class="azpw-die"></span>{{/each}}{{#unless power.dice.length}}—{{/unless}}</span>
+                <span>{{power.baseName}}</span>
+                {{#if power.concentration}}<span class="azpw-tag" data-tooltip="Concentration: stays active while the caster concentrates">Conc.</span>{{/if}}
+            </span>
+        </button>
+        {{/each}}
+    </div>
+    {{else}}
+    <p class="azpw-empty">No powers readied.{{#if canEdit}} Use <i class="fa-solid fa-gear" inert></i> to choose Biotics or Tech powers.{{/if}}</p>
+    {{/if}}
+</section>

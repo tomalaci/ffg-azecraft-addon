@@ -117,8 +117,11 @@
     {{#if hasAzecraftPowerModifiers}}
     <section class="azecraft-power-modifiers" aria-labelledby="azecraft-power-modifiers-heading">
       <h2 id="azecraft-power-modifiers-heading">Power Modifiers</h2>
+      {{#if azecraftPower}}
+      <p class="azecraft-power-rolling"><strong>{{azecraftPower.label}}</strong>: starts at {{azecraftPower.base}}</p>
+      {{/if}}
       {{#each azecraftPowerModifiers as |category|}}
-      <details class="azecraft-power-modifier-category">
+      <details class="azecraft-power-modifier-category" {{#if category.open}}open{{/if}}>
         <summary>{{category.label}}</summary>
         {{#if category.baseDifficulty}}
         <p><em>{{category.baseDifficulty}}</em></p>

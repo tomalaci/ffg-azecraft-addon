@@ -4,6 +4,7 @@ import { initMissionDashboard } from "./scripts/mission-dashboard/index.js";
 import { initStoryPoints } from "./scripts/story-points/story-points.js";
 import { initCharacterSheetTheme } from "./scripts/character-sheet-theme.js";
 import { initDefaultArt } from "./scripts/default-art/default-art.js";
+import { initPowerBlock } from "./scripts/powers/power-block.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -14,4 +15,5 @@ Hooks.once("init", () => {
     initStoryPoints();
     initCharacterSheetTheme();
     initDefaultArt();
+    initPowerBlock();
 });
