@@ -2,14 +2,17 @@
 
 starwarsffg gives every new actor Star Wars placeholder art: a stormtrooper for minions, an Imperial
 officer for rivals, Darth Vader for nemeses, and so on. The addon replaces these placeholders with
-its own abstract, Mass Effect style tokens (`assets/default-art/`):
+its own abstract, Mass Effect style tokens (`assets/default-art/`).
+
+All types share the character's hexagon-and-figure emblem. Adversaries have a "?" on the head and
+stars for their tier:
 
 | Type | Art |
 | --- | --- |
-| Minion | One grey-blue chevron |
-| Rival | Two orange chevrons |
-| Nemesis | Three red chevrons and a star |
-| Character | Cyan hexagon with a figure |
+| Minion | Grey-blue figure with "?", one star |
+| Rival | Orange figure with "?", two stars |
+| Nemesis | Red figure with "?", three stars |
+| Character | Cyan figure |
 | Vehicle | Cyan ship silhouette |
 
 New actors get this art for both the portrait and the prototype token. An actor created with art
