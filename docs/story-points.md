@@ -3,30 +3,34 @@
 The Star Wars Light/Dark destiny tracker at the bottom left is replaced by a **Story Points** bar
 in the dashboard's style. The rules are the same as before (Genesys story points):
 
-- **Squad** points (blue, the system's Light side) are the players'. Spend one for a story
-  advantage, and it passes to the GM.
-- **Threat** points (red, the system's Dark side) are the GM's. Spend one for a story setback, and
-  it passes back to the squad.
+- **Momentum** points (blue, the system's Light side) are the players'. Spend one to push the story
+  in your favour, and it passes to the GM.
+- **Complication** points (red, the system's Dark side) are the GM's. Spend one for a story setback,
+  and it passes back to the players.
 
-The bar is a tug of war. Each segment is one point: squad points fill from the left in blue, threat
-points fill from the right in red. As the squad spends points, the blue shrinks and the red grows.
+Both names can be changed (see Settings below).
+
+The bar is a tug of war. Each segment is one point: Momentum fills from the left in blue,
+Complication fills from the right in red. As the players spend Momentum, the blue shrinks and the
+red grows.
 
 ## Using it
 
-- **Players:** click the blue **Squad** box to spend a squad point. A GM must be online, because
+- **Players:** click the blue **Momentum** box to spend a Momentum point. A GM must be online, because
   the active GM's client applies the change.
 - **GMs:**
-  - Click the red **Threat** box to spend a threat point.
+  - Click the red **Complication** box to spend a Complication point.
   - Use − / + under each side to remove or add points (e.g. at the start of a session).
   - The two buttons at the top open the system's **Group Manager** and **Request story point
     roll** (the system's destiny roll).
-- Every spend posts a short chat card, e.g. "Squad story point used, it passes to Threat.
-  Squad 2 · Threat 4".
+- Every spend posts a short chat card, e.g. "Momentum story point used, it passes to
+  Complication. Momentum 2 · Complication 4".
 
 ## Settings (Configure Settings → FFG Azecraft Addon, world)
 
 - **Mass Effect story points:** on by default. Turn it off to get the original tracker back.
-- **Story points: players' side name** (default *Squad*) and **GM's side name** (default *Threat*).
+- **Story points: players' side name** (default *Momentum*) and **GM's side name** (default
+  *Complication*).
   These names also replace "Light"/"Dark" in the system's own screens, such as the Group Manager.
 
 ## How it works (developers)

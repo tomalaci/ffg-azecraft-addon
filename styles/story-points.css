@@ -23,7 +23,7 @@ body.azsp-active #destiny-tracker {
     left: var(--azsp-left, 16px);
     bottom: var(--azsp-bottom, 120px);
     z-index: 2;
-    width: 300px;
+    width: 330px;
     margin: 0;
     padding: 0;
     color: var(--azsp-text);
@@ -98,8 +98,8 @@ body.azsp-active #destiny-tracker {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex: 0 0 58px;
-    width: 58px;
+    flex: 0 0 82px;
+    width: 82px;
     height: auto;
     margin: 0;
     padding: 2px 0;
@@ -133,7 +133,7 @@ body.azsp-active #destiny-tracker {
 #azecraft-story-points .azsp-side--threat .azsp-count { color: var(--azsp-threat); }
 
 #azecraft-story-points .azsp-name {
-    max-width: 54px;
+    max-width: 78px;
     overflow: hidden;
     color: var(--azsp-muted);
     font-family: var(--azsp-font-heading);

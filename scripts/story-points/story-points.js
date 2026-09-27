@@ -1,7 +1,8 @@
 /**
  * Mass Effect themed story points: replaces the starwarsffg Light/Dark destiny tracker's look and
- * wording with a tug-of-war bar (squad points in blue from the left, threat points in red from the
- * right).
+ * wording with a tug-of-war bar: the players' points (default name "Momentum") in blue from the
+ * left, the GM's points (default "Complication") in red from the right. Both names are world
+ * settings.
  *
  * The system's data and rules stay authoritative: the pool is the system's dPoolLight / dPoolDark
  * world settings, and the system's own tracker keeps running hidden, because it applies players'
@@ -24,8 +25,8 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 function names() {
     return {
-        squad: game.settings.get(MODULE_ID, SETTINGS.squadName) || "Squad",
-        threat: game.settings.get(MODULE_ID, SETTINGS.threatName) || "Threat"
+        squad: game.settings.get(MODULE_ID, SETTINGS.squadName) || "Momentum",
+        threat: game.settings.get(MODULE_ID, SETTINGS.threatName) || "Complication"
     };
 }
 
@@ -206,7 +207,7 @@ export function initStoryPoints() {
         scope: "world",
         config: true,
         type: String,
-        default: "Squad",
+        default: "Momentum",
         onChange: reload
     });
     game.settings.register(MODULE_ID, SETTINGS.threatName, {
@@ -215,7 +216,7 @@ export function initStoryPoints() {
         scope: "world",
         config: true,
         type: String,
-        default: "Threat",
+        default: "Complication",
         onChange: reload
     });
 
