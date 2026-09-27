@@ -12,15 +12,15 @@
   </defs>
   <circle cx="256" cy="256" r="248" fill="url(#bg)"/>
   <circle cx="256" cy="256" r="200" fill="url(#glow)"/>
-  <g fill="none" stroke="#8aa4c0" stroke-width="10" stroke-linecap="butt" opacity="0.9"><path d="M401.30 441.97 A236 236 0 0 1 110.70 441.97"/><path d="M70.03 401.30 A236 236 0 0 1 70.03 110.70"/><path d="M110.70 70.03 A236 236 0 0 1 401.30 70.03"/><path d="M441.97 110.70 A236 236 0 0 1 441.97 401.30"/></g>
   <circle cx="256" cy="256" r="218" fill="none" stroke="#72d4ff" stroke-width="2" opacity="0.35"/>
+  <g fill="none" stroke="#8aa4c0" stroke-width="10" opacity="0.9"><path d="M401.30 441.97 A236 236 0 0 1 110.70 441.97"/><path d="M70.03 401.30 A236 236 0 0 1 70.03 110.70"/><path d="M110.70 70.03 A236 236 0 0 1 401.30 70.03"/><path d="M441.97 110.70 A236 236 0 0 1 441.97 401.30"/></g>
+  <g stroke="#72d4ff" stroke-width="4" opacity="0.5"><line x1="460.00" y1="256.00" x2="482.00" y2="256.00"/><line x1="256.00" y1="460.00" x2="256.00" y2="482.00"/><line x1="52.00" y1="256.00" x2="30.00" y2="256.00"/><line x1="256.00" y1="52.00" x2="256.00" y2="30.00"/></g>
   <g stroke="#72d4ff" stroke-width="4" opacity="0.5">
     <line x1="256" y1="30" x2="256" y2="52"/><line x1="256" y1="460" x2="256" y2="482"/>
     <line x1="30" y1="256" x2="52" y2="256"/><line x1="460" y1="256" x2="482" y2="256"/>
   </g>
-  <path d="M256 110 L372 177 L372 311 L256 378 L140 311 L140 177 Z" fill="none" stroke="#8aa4c0" stroke-width="12" stroke-linejoin="round"/>
+  <polygon points="256.00,110.00 372.05,177.00 372.05,311.00 256.00,378.00 139.95,311.00 139.95,177.00" fill="none" stroke="#8aa4c0" stroke-width="12" stroke-linejoin="round"/>
   <circle cx="256" cy="208" r="44" fill="#8aa4c0"/>
   <path d="M184 322 C184 270 214 258 256 258 C298 258 328 270 328 322 Z" fill="#8aa4c0"/>
   <path d="M240.4 191.6 C240.4 170.0 271.6 170.0 271.6 190.4 C271.6 203.6 256 203.6 256 218.0" fill="none" stroke="#0b1422" stroke-width="10.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="256" cy="234.8" r="6.6" fill="#0b1422"/>
-  <g fill="#8aa4c0" stroke="#05090f" stroke-width="3"><polygon points="256.00,398.00 263.41,417.81 284.53,418.73 267.98,431.89 273.63,452.27 256.00,440.60 238.37,452.27 244.02,431.89 227.47,418.73 248.59,417.81"/></g>
 </svg>
