@@ -1,0 +1,48 @@
+<div class="azsp-panel" aria-label="Story points">
+    <div class="azsp-head">
+        <span class="azsp-title"><i class="fa-solid fa-scale-balanced" inert></i> Story points</span>
+        {{#if menu.length}}
+        <span class="azsp-menu">
+            {{#each menu as |item|}}
+            <button type="button" class="azsp-icon" data-action="systemMenu" data-index="{{item.index}}" data-tooltip="{{item.name}}" aria-label="{{item.name}}">{{{item.icon}}}</button>
+            {{/each}}
+        </span>
+        {{/if}}
+    </div>
+
+    <div class="azsp-row">
+        <button type="button" class="azsp-side azsp-side--squad" data-action="use" data-side="squad" {{disabled (not canUseSquad)}}
+            data-tooltip="Use a {{label.squad}} point for a story advantage (it passes to {{label.threat}})" aria-label="Use a {{label.squad}} story point">
+            <span class="azsp-count">{{pool.squad}}</span>
+            <span class="azsp-name">{{label.squad}}</span>
+        </button>
+
+        <div class="azsp-bar" role="img" aria-label="{{label.squad}} {{pool.squad}}, {{label.threat}} {{pool.threat}}" style="--azsp-share: {{squadPercent}}%">
+            {{#if empty}}
+            <span class="azsp-bar-empty">No story points</span>
+            {{else}}
+            {{#each segments as |segment|}}<span class="azsp-seg azsp-seg--{{segment.side}}{{#if segment.edge}} azsp-seg--edge{{/if}}"></span>{{/each}}
+            {{/if}}
+        </div>
+
+        <button type="button" class="azsp-side azsp-side--threat" data-action="use" data-side="threat" {{disabled (not canUseThreat)}}
+            data-tooltip="{{#if isGM}}Use a {{label.threat}} point for a story setback (it passes to {{label.squad}}){{else}}{{label.threat}}: the GM's story points{{/if}}" aria-label="{{label.threat}} story points">
+            <span class="azsp-count">{{pool.threat}}</span>
+            <span class="azsp-name">{{label.threat}}</span>
+        </button>
+    </div>
+
+    {{#if isGM}}
+    <div class="azsp-gm">
+        <span>
+            <button type="button" class="azsp-icon" data-action="adjust" data-side="squad" data-delta="-1" data-tooltip="Remove a {{label.squad}} point" aria-label="Remove a {{label.squad}} point">−</button>
+            <button type="button" class="azsp-icon" data-action="adjust" data-side="squad" data-delta="1" data-tooltip="Add a {{label.squad}} point" aria-label="Add a {{label.squad}} point">+</button>
+        </span>
+        <span class="azsp-muted">GM</span>
+        <span>
+            <button type="button" class="azsp-icon" data-action="adjust" data-side="threat" data-delta="-1" data-tooltip="Remove a {{label.threat}} point" aria-label="Remove a {{label.threat}} point">−</button>
+            <button type="button" class="azsp-icon" data-action="adjust" data-side="threat" data-delta="1" data-tooltip="Add a {{label.threat}} point" aria-label="Add a {{label.threat}} point">+</button>
+        </span>
+    </div>
+    {{/if}}
+</div>

@@ -14,6 +14,8 @@ The module does three things:
   key intel with People of Note, and campaign-wide Fame and faction reputation. See
   [docs/mission-dashboard.md](docs/mission-dashboard.md) for GMs and players and
   [docs/mission-dashboard-development.md](docs/mission-dashboard-development.md) for developers.
+- Replaces the Star Wars Light/Dark destiny tracker with a Mass Effect style **Story Points** bar
+  (Squad vs Threat tug of war). See [docs/story-points.md](docs/story-points.md).
 
 ## Current Behavior
 

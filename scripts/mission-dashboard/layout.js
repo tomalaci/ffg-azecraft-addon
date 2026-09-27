@@ -11,7 +11,8 @@ const WATCHED_SELECTORS = [
     "#players",
     "#hotbar",
     "#sidebar",
-    "#destiny-tracker"
+    "#destiny-tracker",
+    "#azecraft-story-points"
 ];
 
 const GAP = 12;
@@ -138,7 +139,8 @@ export function measureUI() {
         navActive: visibleRect("#scene-navigation-active"),
         navExpand: visibleRect("#scene-navigation-expand"),
         players: visibleRect("#players"),
-        destiny: visibleRect("#destiny-tracker"),
+        // The story point bar (or the system's destiny tracker it replaces) sits bottom-left.
+        destiny: visibleRect("#azecraft-story-points") ?? visibleRect("#destiny-tracker"),
         hotbar: visibleRect("#hotbar"),
         sidebar: visibleRect("#sidebar")
     };
