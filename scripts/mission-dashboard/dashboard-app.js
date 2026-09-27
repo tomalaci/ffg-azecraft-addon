@@ -15,6 +15,8 @@ import { artOverflow, artViewStyle, normalizeArtView, panArtView, zoomArtView, D
 
 const ART_VIEW_KEY = `${MODULE_ID}.artView`;
 const DRAG_THRESHOLD = 4;
+/** How long a portrait click waits for a second click before showing the art instead of the sheet. */
+const DOUBLE_CLICK_DELAY = 250;
 const ZOOM_BUTTON_STEP = 0.25;
 const ZOOM_WHEEL_STEP = 0.1;
 
@@ -241,6 +243,13 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             if (art) return this.#panArt(event, art);
         });
 
+        // Portraits: a click shows the art, a double click opens the sheet. (Card art clicks come
+        // from #panArt, which tells a click from a pan.)
+        this.element.addEventListener("click", event => {
+            const img = event.target.closest(".azd-person-img");
+            if (img) this.#portraitClick(img);
+        });
+
         // Shift + wheel over card art zooms it; a plain wheel still scrolls the squad column.
         this.element.addEventListener("wheel", event => {
             if (!event.shiftKey) return;
@@ -253,6 +262,8 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
         this.element.addEventListener("dblclick", event => {
             if (event.target.closest("[data-divider]")) game.settings.set(MODULE_ID, SETTINGS.columns, DEFAULT_COLUMNS);
+            const portrait = event.target.closest(".azd-card-art img, .azd-person-img");
+            if (portrait) this.#portraitDoubleClick(portrait);
         });
         this.#layout.start();
     }
@@ -576,7 +587,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     /**
-     * Drag card art to pan it inside its fixed box; a click without dragging opens the sheet.
+     * Drag card art to pan it inside its fixed box; a click without dragging counts as a portrait click.
      * The position is saved in this browser per Actor, together with the image it applies to.
      */
     #panArt(event, img) {
@@ -607,14 +618,44 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             if (panning) {
                 if (uuid) saveArtView(uuid, img.dataset.artSrc, view);
             } else {
-                const actor = uuid ? foundry.utils.fromUuidSync(uuid, { strict: false }) : null;
-                if (actor?.testUserPermission(game.user, "LIMITED")) actor.sheet?.render(true);
+                this.#portraitClick(img);
             }
         };
 
         img.addEventListener("pointermove", move);
         img.addEventListener("pointerup", end, { once: true });
         img.addEventListener("pointercancel", end, { once: true });
+    }
+
+    #portraitClickTimer = null;
+
+    /** A single portrait click shows the art, unless a second click (a double click) follows. */
+    #portraitClick(img) {
+        clearTimeout(this.#portraitClickTimer);
+        this.#portraitClickTimer = setTimeout(() => {
+            this.#portraitClickTimer = null;
+            this.#showArt(img);
+        }, DOUBLE_CLICK_DELAY);
+    }
+
+    #portraitDoubleClick(img) {
+        clearTimeout(this.#portraitClickTimer);
+        this.#portraitClickTimer = null;
+        const actor = MissionDashboardApp.#resolve(img.closest("[data-uuid]")?.dataset.uuid);
+        if (actor?.testUserPermission(game.user, "LIMITED")) actor.sheet?.render(true);
+    }
+
+    /** Show the art the dashboard displays (full-body art or portrait) in Foundry's image viewer. */
+    #showArt(img) {
+        const src = img.getAttribute("src");
+        if (!src || src === PLACEHOLDER_ART) return;
+        const actor = MissionDashboardApp.#resolve(img.closest("[data-uuid]")?.dataset.uuid);
+        const canSee = actor?.testUserPermission(game.user, "LIMITED");
+        new foundry.applications.apps.ImagePopout({
+            src,
+            uuid: canSee ? actor.uuid : undefined,
+            window: { title: canSee ? actor.name : "Art" }
+        }).render({ force: true });
     }
 
     /** Zoom card art by a step (0 resets to the default view); saved in this browser. */

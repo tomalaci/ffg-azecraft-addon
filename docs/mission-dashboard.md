@@ -116,14 +116,16 @@ In the configuration, click **Add person**, choose the NPC's Actor, and fill in 
   Ownership) to **Limited** for all players. Limited shows the name and portrait but not the sheet
   details.
 - Everything typed into these fields can be read by players. Keep secrets in the GM Notes page.
-- Clicking a name or portrait opens the Actor's sheet if the user is allowed to.
+- Clicking a name opens the Actor's sheet if the user is allowed to. Clicking a portrait shows it
+  full size; double-clicking it opens the sheet.
 
 The Key Intel page is shown under the People of Note cards, so free-form people, places and clues
 still work.
 
 ## Character cards
 
-- Click a character's **name** or **art** to open their sheet.
+- Click a character's **name**, or double-click their **art**, to open their sheet.
+- Click a character's **art** to view it full size (GMs can show it to players from there).
 - Click a **critical injury** to open that injury.
 - **Wounds** and **Strain** show the current value against the threshold, exactly as on the sheet.
   A value above the threshold is shown in red and marked *over*. The bar stops at full, but the
@@ -162,7 +164,7 @@ separate **floating panels** instead.
 
 The three mission tabs form one bar. Drag the line between two tabs to resize them (each keeps at
 least 180px), and double-click a line to reset to equal widths. Drag a character's art to choose
-which part of the picture shows in its card; a plain click still opens the sheet. Zoom it with the
+which part of the picture shows in its card; a plain click shows it full size and a double click opens the sheet. Zoom it with the
 magnifier buttons that appear on hover, or Shift + mouse wheel over the art (1× fills the box
 exactly, up to 4×); the reset button returns to the default of 1.5×, centred, from the top. All of
 this is saved in your browser only, and an art view is forgotten when that character's art changes.
