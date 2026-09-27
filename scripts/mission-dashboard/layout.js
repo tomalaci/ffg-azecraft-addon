@@ -31,7 +31,7 @@ function visibleRect(selector) {
  * Pure sizing rules. `ui` holds measured rects (or null) and the viewport size.
  * @returns {object} CSS pixel values and layout mode
  */
-export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar }, { compactPreference = "auto", missionCollapsed = false } = {}) {
+export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar }, { compactPreference = "auto", missionCollapsed = false, framed = true } = {}) {
     const left = Math.round((controls?.right ?? 0) + GAP);
     const top = Math.round(Math.max(GAP, (navActive?.bottom ?? 0) + 8));
     // The SWFFG destiny tracker is a movable window; it only constrains the rail while docked low.
@@ -55,12 +55,15 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     let missionHeight = height >= 1300 ? 260 : height >= 1000 ? 220 : 180;
     if (missionCollapsed) missionHeight = 34;
 
+    // Framed: the squad column ends where the mission tabs begin, so both edges line up.
+    const railEnd = framed ? Math.max(railBottom, bottom + missionHeight) : railBottom;
+
     return {
         compact,
         values: {
             "--azd-left": `${left}px`,
             "--azd-top": `${top}px`,
-            "--azd-rail-bottom": `${railBottom}px`,
+            "--azd-rail-bottom": `${railEnd}px`,
             "--azd-right": `${right}px`,
             "--azd-bottom": `${bottom}px`,
             "--azd-rail-width": `${railWidth}px`,

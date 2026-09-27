@@ -166,6 +166,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     async _prepareContext() {
         const partyGroups = actorGroups();
         const peopleGroups = actorGroups({ npcFirst: true });
+        const knownActor = uuid => !uuid || Boolean(resolve(uuid));
         const panels = MISSION_PANELS.map(panel => {
             const selected = this.draft.ledgers[panel.key];
             const ledgers = ledgersFor(panel.key).reverse();

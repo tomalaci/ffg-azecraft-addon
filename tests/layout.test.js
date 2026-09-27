@@ -19,7 +19,7 @@ const desktop = {
 };
 
 test("desktop layout clears the core UI and is not compact", () => {
-    const { compact, values } = computeLayout(desktop);
+    const { compact, values } = computeLayout(desktop, { framed: false });
 
     assert.equal(compact, false);
     assert.equal(values["--azd-left"], "100px");
@@ -48,7 +48,7 @@ test("preferences override automatic compact mode and collapse the drawer", () =
 });
 
 test("a destiny tracker moved away from the bottom does not shrink the rail", () => {
-    const { values } = computeLayout({ ...desktop, destiny: rect(0, 300, 200, 102) });
+    const { values } = computeLayout({ ...desktop, destiny: rect(0, 300, 200, 102) }, { framed: false });
     assert.equal(values["--azd-rail-bottom"], "127px");
 });
 
@@ -62,4 +62,11 @@ test("the frame window is the map area between the rail, bottom bar and sidebar"
     const view = frameWindow(desktop);
     // rail 100 + 420 + gap 12; sidebar starts at 1572; bottom bar = hotbar inset 84 + panels 220 + gap 12
     assert.deepEqual(view, { left: 532, top: 0, right: 1572, bottom: 764 });
+});
+
+test("framed: the squad column ends where the mission tabs begin", () => {
+    const { values } = computeLayout(desktop);
+    // hotbar inset 84 + mission panels 220 = 304 from the bottom, the top edge of the tabs
+    assert.equal(values["--azd-rail-bottom"], "304px");
+    assert.equal(computeLayout(desktop, { missionCollapsed: true }).values["--azd-rail-bottom"], "127px");
 });

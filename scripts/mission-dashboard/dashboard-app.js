@@ -161,7 +161,8 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
         this.#layout = new LayoutWatcher(this.element, () => ({
             compactPreference: this.controller.preferences().compact,
-            missionCollapsed: this.controller.preferences().missionCollapsed
+            missionCollapsed: this.controller.preferences().missionCollapsed,
+            framed: this.controller.preferences().style !== "floating"
         }));
         this.#layout.start();
     }
@@ -421,7 +422,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     #layoutOptions() {
         const prefs = this.controller.preferences();
-        return { compactPreference: prefs.compact, missionCollapsed: prefs.missionCollapsed };
+        return { compactPreference: prefs.compact, missionCollapsed: prefs.missionCollapsed, framed: prefs.style !== "floating" };
     }
 
     /** Fit the Scene into the frame on this client (used when a Scene opens with "fit on open"). */
