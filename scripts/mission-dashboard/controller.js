@@ -7,6 +7,7 @@ import { MISSION_PANELS, MODULE_ID, SETTINGS } from "./constants.js";
 import { isDashboardEnabled, referencedUuids, resolveSceneDashboard } from "./dashboard-state.js";
 import { buildCharacterCard } from "./actor-adapter.js";
 import { buildPanel, buildPeople, missionTitle } from "./mission-data.js";
+import { ledgerPanel } from "./ledgers.js";
 import { buildStanding, getLedgerUuid } from "./campaign-reputation.js";
 import { MissionDashboardApp } from "./dashboard-app.js";
 import { DashboardConfigApp } from "./dashboard-config.js";
@@ -47,8 +48,11 @@ export class DashboardController {
     #timer = null;
     #campaignApp = null;
 
-    /** Which history entry this client is viewing per mission panel; null means the newest. */
-    #entryIndex = {};
+    /**
+     * What this client is viewing per tab: `ledger` (null = the default) and `index` into that
+     * ledger's entries (null = the newest). Local only; never shared.
+     */
+    #panelView = {};
 
     /* -------------------------------------------- */
     /*  Lifecycle                                   */
@@ -70,8 +74,8 @@ export class DashboardController {
     sync() {
         this.#sceneGeneration++;
         this.#missionSeq++;
-        // Config or Scene changed (e.g. a new entry was added): everyone returns to the newest entries.
-        this.#entryIndex = {};
+        // Config or Scene changed (e.g. a new default ledger): everyone returns to the defaults.
+        this.#panelView = {};
         const scene = this.scene;
 
         if (!scene || !isDashboardEnabled(scene)) {
@@ -151,7 +155,7 @@ export class DashboardController {
         }
 
         if (parts.has("header")) {
-            view.title = missionTitle(config, scene, user);
+            view.title = missionTitle({ summary: view.mission?.summary, objective: view.mission?.objective }, scene);
             view.standing = this.#standingSummary();
         }
 
@@ -168,7 +172,7 @@ export class DashboardController {
 
         const seq = this.#missionSeq;
         const [summary, objective, intel] = await Promise.all(
-            ["summary", "objective", "intel"].map(key => buildPanel(key, config.mission[key], user, this.#entryIndex[key] ?? null))
+            ["summary", "objective", "intel"].map(key => buildPanel(key, config.ledgers[key], user, this.#panelView[key]))
         );
 
         // Dropped if the Scene changed, the HUD unmounted, or a newer mission refresh was queued.
@@ -177,7 +181,7 @@ export class DashboardController {
         view.mission = { summary, objective, objectiveText: plainText(objective.html) };
         view.intel = intel;
         view.people = buildPeople(config, user);
-        view.title = missionTitle(config, scene, user);
+        view.title = missionTitle({ summary, objective }, scene);
         // The first mount waits for mission content so no placeholder text flashes.
         await this.#render(this.app ? ["mission", "intel", "header"] : ALL_PARTS);
     }
@@ -214,7 +218,18 @@ export class DashboardController {
         if (!panel || panel.count < 1) return;
 
         const next = step === 0 ? null : Math.min(Math.max(0, panel.index + step), panel.count - 1);
-        this.#entryIndex[panelKey] = next === panel.count - 1 ? null : next;
+        this.#panelView[panelKey] = { ledger: panel.ledgerUuid, index: next === panel.count - 1 ? null : next };
+        this.refresh(panelKey === "intel" ? "intel" : "mission");
+    }
+
+    /**
+     * Switch one tab to another ledger on this client only, starting at its newest entry.
+     * @param {string} panelKey
+     * @param {string|null} ledgerUuid   null returns to the default ledger
+     */
+    showLedger(panelKey, ledgerUuid) {
+        if (!MISSION_PANELS.some(p => p.key === panelKey)) return;
+        this.#panelView[panelKey] = { ledger: ledgerUuid || null, index: null };
         this.refresh(panelKey === "intel" ? "intel" : "mission");
     }
 
@@ -263,16 +278,16 @@ export class DashboardController {
         const onEffect = effect => onActor(effect.parent?.documentName === "Item" ? effect.parent.parent : effect.parent);
         for (const hook of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(hook, onEffect);
 
+        // Any change to a mission ledger (new entry, edit, ownership, rename) can change a tab.
         const onPage = page => {
-            if (this.#refs.pages.has(page.uuid)) this.refresh("mission", "intel");
+            if (ledgerPanel(page.parent)) this.refresh("mission", "intel");
             if (page.parent?.uuid === getLedgerUuid()) this.#onLedgerChanged();
         };
 
         for (const hook of ["createJournalEntryPage", "updateJournalEntryPage", "deleteJournalEntryPage"]) Hooks.on(hook, onPage);
 
         const onEntry = entry => {
-            const affectsMission = [...this.#refs.pages].some(uuid => uuid.startsWith(`${entry.uuid}.`));
-            if (affectsMission) this.refresh("mission", "intel");
+            if (ledgerPanel(entry)) this.refresh("mission", "intel");
             if (entry.uuid === getLedgerUuid()) this.#onLedgerChanged();
         };
 

@@ -6,6 +6,7 @@ import { MODULE_ID, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
 import { isDashboardEnabled, setDashboardEnabled } from "./dashboard-state.js";
 import { DashboardController } from "./controller.js";
 import { DashboardHelpApp } from "./help-app.js";
+import { ensureLedgerFolders } from "./ledgers.js";
 
 // Keys are Handlebars partial names; most partials are referenced by their path.
 const TEMPLATES = Object.fromEntries(
@@ -15,6 +16,7 @@ const TEMPLATES = Object.fromEntries(
 );
 TEMPLATES["azd-page-state"] = `${TEMPLATE_ROOT}/page-state.hbs`;
 TEMPLATES["azd-panel-tools"] = `${TEMPLATE_ROOT}/panel-tools.hbs`;
+TEMPLATES["azd-ledger-bar"] = `${TEMPLATE_ROOT}/ledger-bar.hbs`;
 
 let controller = null;
 
@@ -146,6 +148,13 @@ export function initMissionDashboard() {
     controller.registerHooks();
 
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates(TEMPLATES));
+
+    // The "Mission Dashboard" Journal folders are created once, by the active GM only.
+    Hooks.once("ready", () => {
+        if (game.users.activeGM?.isSelf) {
+            ensureLedgerFolders().catch(error => console.warn("Azecraft | Could not create mission ledger folders", error));
+        }
+    });
 
     const module = game.modules.get(MODULE_ID);
     module.api = {

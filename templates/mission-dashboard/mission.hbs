@@ -4,6 +4,7 @@
             <span class="azd-section-label"><i class="fa-solid fa-crosshairs" inert></i> Current objective</span>
             {{> "azd-panel-tools" panel=mission.objective key="objective" label="Current objective"}}
         </div>
+        {{> "azd-ledger-bar" panel=mission.objective key="objective" label="Current objective"}}
         <div class="azd-objective-collapsed">{{mission.objectiveText}}</div>
         <div class="azd-panel-body azd-objective-body azd-journal-content">
             {{> "azd-page-state" panel=mission.objective}}
@@ -14,6 +15,7 @@
             <span class="azd-section-label"><i class="fa-solid fa-file-lines" inert></i> Mission summary</span>
             {{> "azd-panel-tools" panel=mission.summary key="summary" label="Mission summary"}}
         </div>
+        {{> "azd-ledger-bar" panel=mission.summary key="summary" label="Mission summary"}}
         <div class="azd-panel-body azd-summary-body azd-journal-content">
             {{> "azd-page-state" panel=mission.summary}}
         </div>

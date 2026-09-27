@@ -6,7 +6,8 @@
  */
 
 import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
-import { createMissionEntry } from "./dashboard-state.js";
+import { setDefaultLedger } from "./dashboard-state.js";
+import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { LayoutWatcher } from "./layout.js";
 
@@ -49,7 +50,10 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             openCampaign: MissionDashboardApp.#onOpenCampaign,
             pageEntry: MissionDashboardApp.#onPageEntry,
             openHelp: () => DashboardHelpApp.open(),
-            newEntry: MissionDashboardApp.#onNewEntry
+            newEntry: MissionDashboardApp.#onNewEntry,
+            newLedger: MissionDashboardApp.#onNewLedger,
+            setDefaultLedger: MissionDashboardApp.#onSetDefaultLedger,
+            openLedger: MissionDashboardApp.#onOpenLedger
         }
     };
 
@@ -113,6 +117,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         await super._onFirstRender(context, options);
 
         // Delegated listeners on the persistent root survive part re-renders.
+        // Ledger switcher: a local choice, like paging.
+        this.element.addEventListener("change", event => {
+            const select = event.target.closest("select[data-ledger-panel]");
+            if (select) this.controller.showLedger(select.dataset.ledgerPanel, select.value);
+        });
+
         this.element.addEventListener("input", event => {
             const textarea = event.target.closest("textarea[data-desire-for]");
             if (!textarea) return;
@@ -322,24 +332,83 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         this.controller.showEntry(target.dataset.panel, Number(target.dataset.step));
     }
 
+    #panelView(key) {
+        const view = this.controller.view;
+        return key === "intel" ? view?.intel : view?.mission?.[key];
+    }
+
+    /** Add the next entry to the ledger being viewed; it becomes the newest (default) entry. */
     static async #onNewEntry(event, target) {
+        if (!game.user.isGM) return;
+        const panel = MISSION_PANELS.find(p => p.key === target.dataset.panel);
+        const view = this.#panelView(panel?.key);
+        if (!panel) return;
+        if (!view?.ledgerUuid) return MissionDashboardApp.#onNewLedger.call(this, event, target);
+
+        const confirmed = await DialogV2.confirm({
+            window: { title: `New ${panel.label.toLowerCase()} entry` },
+            content: `<p>Add a new entry to <strong>${foundry.utils.escapeHTML(view.ledgerName)}</strong>? It becomes the newest entry, which everyone sees by default.</p><p class="hint">Earlier entries stay available with ‹ ›.</p>`
+        });
+        if (!confirmed) return;
+
+        try {
+            const page = await createLedgerEntry(view.ledgerUuid);
+            this.controller.showLedger(panel.key, view.ledgerUuid);
+            page.sheet.render(true);
+        } catch (error) {
+            ui.notifications.error(error.message);
+        }
+    }
+
+    /** Create a ledger for a tab in the module's Journal folder, optionally as this Scene's default. */
+    static async #onNewLedger(event, target) {
         if (!game.user.isGM) return;
         const panel = MISSION_PANELS.find(p => p.key === target.dataset.panel);
         const scene = game.scenes.viewed;
         if (!panel || !scene) return;
 
-        const confirmed = await DialogV2.confirm({
-            window: { title: `New ${panel.label.toLowerCase()} entry` },
-            content: `<p>Create a new “${foundry.utils.escapeHTML(panel.pageName)}” page in the mission Journal and show it as the current ${foundry.utils.escapeHTML(panel.label.toLowerCase())}?</p><p class="hint">The current entry stays available as history. Its page is not changed.</p>`
+        const source = this.controller.view?.source === "scene" ? `${scene.name}'s own dashboard` : "the campaign dashboard";
+        const escape = foundry.utils.escapeHTML;
+        const result = await DialogV2.input({
+            window: { title: `New ${panel.folderName.toLowerCase()} ledger` },
+            content: `<div class="form-group"><label>Name</label><div class="form-fields"><input type="text" name="name" maxlength="120" placeholder="e.g. Operation Glass Horizon" required autofocus></div></div>
+                <div class="form-group"><label>Players can read it</label><div class="form-fields"><input type="checkbox" name="playersCanRead" checked></div>
+                <p class="hint">Untick to prepare it privately; change the Journal's ownership later to reveal it.</p></div>
+                <div class="form-group"><label>Make it the default</label><div class="form-fields"><input type="checkbox" name="makeDefault" checked></div>
+                <p class="hint">Default ${escape(panel.label.toLowerCase())} ledger for ${escape(source)}.</p></div>
+                <p class="hint">Stored in the “Mission Dashboard › ${escape(panel.folderName)}” Journal folder.</p>`,
+            ok: { label: "Create", icon: "fa-solid fa-book-medical" }
         });
-        if (!confirmed) return;
+        if (!result?.name?.trim()) return;
 
         try {
-            const page = await createMissionEntry(scene, panel.key);
-            page.sheet.render(true);
+            const ledger = await createLedger(panel.key, result.name, { playersCanRead: Boolean(result.playersCanRead) });
+            if (result.makeDefault) await setDefaultLedger(scene, panel.key, ledger.uuid);
+            this.controller.showLedger(panel.key, ledger.uuid);
+            ledger.pages.contents[0]?.sheet.render(true);
         } catch (error) {
             ui.notifications.error(error.message);
         }
+    }
+
+    static async #onSetDefaultLedger(event, target) {
+        if (!game.user.isGM) return;
+        const view = this.#panelView(target.dataset.panel);
+        const scene = game.scenes.viewed;
+        if (!view?.ledgerUuid || !scene) return;
+
+        try {
+            await setDefaultLedger(scene, target.dataset.panel, view.ledgerUuid);
+            ui.notifications.info(`“${view.ledgerName}” is now the default ledger.`);
+        } catch (error) {
+            ui.notifications.error(error.message);
+        }
+    }
+
+    static #onOpenLedger(event, target) {
+        const view = this.#panelView(target.dataset.panel);
+        const ledger = view?.ledgerUuid ? foundry.utils.fromUuidSync(view.ledgerUuid, { strict: false }) : null;
+        if (ledger?.testUserPermission(game.user, "OBSERVER")) ledger.sheet.render(true);
     }
 
     static #onConfigure() {

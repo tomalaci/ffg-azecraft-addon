@@ -53,42 +53,34 @@ look at the Scene art, and brings it back with the **Dashboard** button.
    folder are listed first. There are six slots by default. Use **Add slot**, the arrows and the
    trash button to change the count and order. Empty slots are hidden from players. Each character
    can only be in one slot.
-5. Under **Mission Journal**:
-   - If you don't have a mission Journal yet, click **Create mission Journal**. It creates
-     `Mission: <title>` with *Summary*, *Current Objective*, *Key Intel* and *GM Notes* pages and
-     selects the first three. The new Journal starts **hidden from players**, so you can prepare it in
-     private.
-   - Or choose an existing Journal. Every page whose name contains Summary, Objective or Intel is
-     pre-selected, in Journal order, so *Current Objective* and *Current Objective 2* become that
-     panel's history. You can change any selection manually. Text and image pages are supported.
-   - Under each page choice, the form says which players can read it.
-   - When the mission is ready to reveal, click **Share with players**. This sets the Journal's
-     default ownership to Observer. Pages with their own ownership keep it; *GM Notes* stays GM-only.
+5. Under **Mission ledgers**, the default ledger per tab is chosen (see below). Leave it on *Most
+   recent ledger*, or click the book button to create one.
 6. Optionally add **People of Note** (see below).
-7. Click **Save**. Everyone viewing the Scene now sees the dashboard.
+7. Click **Save**.
 
-Write the mission content in the Journal as usual. The dashboard updates as soon as a page is saved.
-Secret blocks in a page are only shown to people who own that page (normally the GMs). The pencil
-button on each panel opens the source page's editor.
+### Ledgers and entries
 
-### Objective history
+Each tab (Current Objective, Mission Summary, Key Intel) shows a **ledger**: a Journal whose pages
+are that tab's entries, oldest first. The module keeps ledgers in its own Journal folder,
+**Mission Dashboard**, with the subfolders **Objectives**, **Mission Summaries** and **Key Intel**.
+The active GM's client creates these folders automatically. Your other Journals are never touched.
+You can rename or move the folders and ledgers; they're recognized by a hidden tag, not by name.
 
-Each panel (Current Objective, Mission Summary, Key Intel) keeps a **history of pages**. The newest
-page is shown by default. When a panel has more than one entry, ‹ and › arrows with a counter such
-as `2/3` appear in its header. Everyone can browse earlier entries; this only changes their own
-screen. An *Earlier entry* banner with **Back to current** shows when you are not looking at the
-newest entry.
+- **What everyone sees first**: the newest entry of the tab's default ledger. If no default is set,
+  the most recently created ledger is used.
+- **Switching and browsing (everyone)**: the dropdown under a tab's title switches ledgers (★ marks
+  the default), and ‹ 2/3 › browses entries. This only changes your own screen. An *Earlier entry*
+  banner with **Back to current** shows when you're not on the newest entry.
+- **New entry (GM, +)**: adds the next page (e.g. *Objective 3*) to the ledger you're viewing and
+  opens it for editing. It becomes the newest entry for everyone; earlier entries stay as history.
+- **New ledger (GM, book button)**: creates a ledger in the right folder for a new operation or side
+  job. It can become the default, and you can leave it hidden from players while you prepare it.
+- **Set as default (GM, ☆)**: makes the ledger you're viewing the tab's default. The default is
+  stored with the dashboard setup: the campaign dashboard, or a Scene's own setup.
+- **Permissions**: players only see ledgers and entries they can read. Secret blocks in an entry are
+  only shown to GMs. The pencil button opens the entry's editor.
 
-When the situation moves on, click the **+** on a panel (GMs only). This creates the next page in
-the mission Journal (for example *Current Objective 2*), makes it the current entry, and opens it
-for editing. The previous page is kept unchanged as history, and every viewer jumps to the new
-entry. On the campaign dashboard the new entry shows on every Scene. In the configuration window you can also add pages to a panel's history, reorder them or
-remove them. Removing an entry from the history doesn't delete the page.
-
-Players only see history entries they are allowed to read. If the newest page is hidden from
-players, they keep seeing the previous readable one, and the hidden page isn't counted.
-
-Use the pages like this:
+Use the tabs like this:
 
 - **Summary** answers “why are we here?”
 - **Current Objective** answers “what do we do next?” Keep it short. It is highlighted in orange and
@@ -97,10 +89,10 @@ Use the pages like this:
 
 ### Starting a new mission
 
-On the campaign dashboard, start a new mission by creating or choosing a new mission Journal in the
-configuration (or add entries with **+** as the mission moves on). A duplicated Scene keeps its
-settings. If it has its own setup, the copy still points at the **same** Journal pages, so editing
-them changes both. Actors, Journals and reputation are never copied automatically.
+Create a new ledger on each tab (it can become the default right away), or add entries with **+**
+as the mission moves on. Old ledgers stay available in the dropdown. A duplicated Scene keeps its
+settings, including a Scene's own default ledgers. Actors, Journals and reputation are never copied
+automatically.
 
 ## People of Note (GM)
 

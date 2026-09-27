@@ -4,17 +4,19 @@ export const SCHEMA_VERSION = 1;
 
 export const DEFAULT_SLOT_COUNT = 6;
 export const MAX_SLOT_COUNT = 12;
-export const MAX_PANEL_ENTRIES = 50;
 
 /**
- * Mission panels in display order. Each holds an ordered list of Journal page UUIDs (oldest first).
- * `pageName` names new entries; `pattern` pre-selects pages when a GM picks a Journal.
+ * Mission panels (tabs) in display order. Each tab shows one ledger at a time: a module-managed
+ * Journal whose pages are the tab's entries, oldest first. `pageName` names new entries and
+ * `folderName` is the tab's subfolder under the "Mission Dashboard" Journal folder.
  */
 export const MISSION_PANELS = [
-    { key: "objective", label: "Current objective", pageName: "Current Objective", pattern: /objective/i },
-    { key: "summary", label: "Mission summary", pageName: "Summary", pattern: /summary|brief/i },
-    { key: "intel", label: "Key intel", pageName: "Key Intel", pattern: /intel/i }
+    { key: "objective", label: "Current objective", pageName: "Objective", folderName: "Objectives" },
+    { key: "summary", label: "Mission summary", pageName: "Summary", folderName: "Mission Summaries" },
+    { key: "intel", label: "Key intel", pageName: "Intel", folderName: "Key Intel" }
 ];
+
+export const LEDGER_ROOT_FOLDER_NAME = "Mission Dashboard";
 export const DESIRE_MAX_LENGTH = 500;
 export const PEOPLE_TEXT_MAX_LENGTH = 120;
 export const PEOPLE_NOTE_MAX_LENGTH = 500;

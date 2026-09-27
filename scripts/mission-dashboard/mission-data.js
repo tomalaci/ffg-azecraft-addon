@@ -1,13 +1,14 @@
 /**
- * Mission panels (summary, current objective, key intel) and People of Note.
+ * Mission tabs (current objective, mission summary, key intel) and People of Note.
  *
- * Each panel is an ordered list of explicitly referenced JournalEntryPage UUIDs, oldest first; the
- * newest is shown by default and earlier ones are history. Access is checked per user (page
- * ownership inherits from its JournalEntry) before any content is enriched or inserted, and entries
- * a player cannot read are left out of their history entirely.
+ * Each tab shows one ledger (a module-managed Journal) at a time: the viewer's own choice, else the
+ * configured default, else the most recent ledger. Its pages are the entries, oldest first, and the
+ * newest is shown by default. Access is checked per user (page ownership inherits from its Journal)
+ * before any content is enriched or inserted; ledgers and entries a player cannot read are left out.
  */
 
 import { OWNERSHIP } from "./constants.js";
+import { chooseLedger, ledgerPages, visibleLedgers } from "./ledgers.js";
 
 export const SUPPORTED_PAGE_TYPES = new Set(["text", "image"]);
 
@@ -84,13 +85,20 @@ export function selectEntry(uuids, accessOf, isGM, requested = null) {
 }
 
 /**
- * Build a panel view model for one entry of a panel's history.
+ * Build a tab's view model: ledger choice, pager, and the chosen entry's enriched content.
  * Titles of restricted or missing pages are only shown to GMs.
+ * @param {string} kind                 Tab key
+ * @param {string|null} defaultLedger   Configured default ledger UUID
+ * @param {User} user
+ * @param {{ledger?: string|null, index?: number|null}} [view]  This client's selection
  */
-export async function buildPanel(kind, uuids, user, requestedIndex = null) {
-    const pages = new Map(uuids.map(uuid => [uuid, resolveUuid(uuid)]));
+export async function buildPanel(kind, defaultLedger, user, { ledger: choice = null, index: requestedIndex = null } = {}) {
+    const ledgers = visibleLedgers(kind, user);
+    const ledgerUuid = chooseLedger(ledgers.map(l => l.uuid), defaultLedger, choice);
+    const ledger = ledgers.find(l => l.uuid === ledgerUuid) ?? null;
+    const pages = new Map(ledgerPages(ledger).map(page => [page.uuid, page]));
     const accessOf = uuid => pageAccess(uuid, pages.get(uuid), user);
-    const entry = selectEntry(uuids, accessOf, user.isGM, requestedIndex);
+    const entry = selectEntry([...pages.keys()], accessOf, user.isGM, requestedIndex);
     const page = entry.uuid ? pages.get(entry.uuid) : null;
     const access = entry.uuid ? accessOf(entry.uuid) : "unassigned";
     const panel = {
@@ -102,6 +110,13 @@ export async function buildPanel(kind, uuids, user, requestedIndex = null) {
         html: "",
         empty: false,
         canEdit: false,
+        // Ledger switcher
+        ledgerUuid,
+        ledgerName: ledger?.name ?? null,
+        hasLedger: Boolean(ledger),
+        isDefaultLedger: Boolean(ledger) && (ledgerUuid === defaultLedger || (!defaultLedger && ledger === ledgers.at(-1))),
+        defaultIsSet: Boolean(defaultLedger),
+        ledgers: ledgers.map(l => ({ uuid: l.uuid, name: l.name, selected: l.uuid === ledgerUuid, isDefault: l.uuid === defaultLedger })).reverse(),
         // Pager: 1-based position among the entries this user may see.
         position: entry.index + 1,
         count: entry.count,
@@ -117,7 +132,6 @@ export async function buildPanel(kind, uuids, user, requestedIndex = null) {
         panel.html = await renderPageContent(page);
         panel.empty = !panel.html.replace(/<[^>]*>|&nbsp;|\s/g, "").length && !/<img/i.test(panel.html);
         panel.canEdit = page.canUserModify(user, "update");
-        panel.entryName = page.parent?.name ?? null;
     } else if (user.isGM && page) {
         panel.title = page.name;
     }
@@ -125,16 +139,14 @@ export async function buildPanel(kind, uuids, user, requestedIndex = null) {
     return panel;
 }
 
-/** Mission title: the summary page's Journal name when readable, otherwise the Scene's navigation name. */
-export function missionTitle(config, scene, user) {
-    const uuids = [...config.mission.summary, ...config.mission.objective].reverse();
-    const page = uuids.map(resolveUuid).find(p => p && pageAccess(p.uuid, p, user) === "available");
-
-    if (page?.parent) {
-        // "Mission: X" is the conventional Journal name; the header already says "Mission".
-        return page.parent.name.replace(/^mission\s*[:\-–—]\s*/i, "") || page.parent.name;
-    }
-
+/**
+ * Mission title: the name of the summary ledger being shown (else the objective ledger), otherwise
+ * the Scene's navigation name.
+ */
+export function missionTitle(panels, scene) {
+    const name = panels.summary?.ledgerName ?? panels.objective?.ledgerName;
+    // The header already says "Mission", so drop a "Mission: " prefix.
+    if (name) return name.replace(/^mission\s*[:\-–—]\s*/i, "") || name;
     return scene?.navName || scene?.name || "";
 }
 

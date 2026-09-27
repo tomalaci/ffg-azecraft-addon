@@ -6,7 +6,7 @@
         <button type="button" data-action="jump" data-target="cards">Squad cards</button>
         <button type="button" data-action="jump" data-target="desire">Desire &amp; art</button>
         <button type="button" data-action="jump" data-target="mission">Mission panels</button>
-        <button type="button" data-action="jump" data-target="history">Entry history</button>
+        <button type="button" data-action="jump" data-target="history">Ledgers &amp; entries</button>
         <button type="button" data-action="jump" data-target="people">People of Note</button>
         <button type="button" data-action="jump" data-target="reputation">Fame &amp; reputation</button>
         <button type="button" data-action="jump" data-target="screen">Your screen</button>
@@ -26,7 +26,8 @@
             <p>The dashboard only <em>shows</em> information that lives elsewhere, so it is always up to date:</p>
             <ul>
                 <li><strong>Characters</strong>: their normal Actor and character sheet.</li>
-                <li><strong>Mission text</strong>: pages in a mission Journal.</li>
+                <li><strong>Mission text</strong>: ledgers, i.e. Journals in the <em>Mission Dashboard</em> Journal
+                    folder, one per operation per tab.</li>
                 <li><strong>Which characters and pages belong to the mission</strong>: the campaign dashboard, or a
                     Scene's own setup.</li>
                 <li><strong>Fame and reputation</strong>: one campaign ledger shared by every GM and Scene.</li>
@@ -44,11 +45,10 @@
                     campaign one.</li>
                 <li>Under <strong>Squad</strong>, pick a character for each slot. The <em>Player Characters</em> folder
                     is listed first. Add, remove and reorder slots as needed; empty slots are hidden from players.</li>
-                <li>Under <strong>Mission Journal</strong>, click <strong>Create mission Journal</strong>. This creates
-                    Summary, Current Objective, Key Intel and GM Notes pages and selects them. You can also choose an
-                    existing Journal.</li>
-                <li>Write the mission in the Journal. It starts hidden from players; click <strong>Share with
-                    players</strong> when you're ready. GM Notes always stays GM-only.</li>
+                <li>On each tab (objective, summary, intel), click <i class="fa-solid fa-book-medical" inert></i>
+                    <strong>New ledger</strong> and name it after the operation. It is filed under the <em>Mission
+                    Dashboard</em> Journal folder, becomes the default and opens its first entry for writing. Untick
+                    <em>Players can read it</em> to prepare it privately.</li>
                 <li>Optionally add <strong>People of Note</strong>, then click <strong>Save</strong>.</li>
                 <li>During play, use <i class="fa-solid fa-plus" inert></i> on a panel when the objective changes, and
                     the <i class="fa-solid fa-ranking-star" inert></i> button to record Fame and reputation.</li>
@@ -112,25 +112,30 @@
                 <li><strong>Key intel</strong> holds people, places and clues, with People of Note cards at the top.</li>
                 <li>Everything is normal Journal content: links to Actors and Journals, images and formatting all work.
                     Secret blocks are only shown to GMs.</li>
-                <li>GMs: <i class="fa-solid fa-pen-to-square" inert></i> opens the page's editor. Changes appear for
+                <li>GMs: <i class="fa-solid fa-pen-to-square" inert></i> opens the entry's editor. Changes appear for
                     everyone as soon as you save.</li>
             </ul>
         </section>
 
         <section data-section="history">
-            <h2><i class="fa-solid fa-clock-rotate-left" inert></i> Entry history</h2>
+            <h2><i class="fa-solid fa-book-open" inert></i> Ledgers &amp; entries</h2>
             <ul>
-                <li>Each mission panel keeps a history of pages, and the newest one is shown. With more than one entry,
-                    ‹ 2/3 › arrows appear. Browsing only changes your own screen; <strong>Back to current</strong>
-                    returns to the newest.</li>
-                <li>GMs: <i class="fa-solid fa-plus" inert></i> creates the next page (for example <em>Current Objective 2</em>),
-                    makes it current for everyone and opens it for editing. On the campaign dashboard the new entry
-                    appears on every Scene. The previous page stays as history,
-                    unchanged.</li>
-                <li>GMs can also add, reorder or remove history entries in the configuration. Removing an entry doesn't
-                    delete the page.</li>
-                <li>Players only see entries they can read. If the newest page is hidden from them, they keep seeing the
-                    previous one.</li>
+                <li>Each tab shows a <strong>ledger</strong>: a Journal whose pages are that tab's entries. The newest
+                    entry of the default ledger is what everyone sees first.</li>
+                <li><strong>Switch ledgers</strong> with the dropdown under the tab title (★ marks the default), and
+                    <strong>browse entries</strong> with ‹ 2/3 ›. Both only change your own screen; <strong>Back to
+                    current</strong> returns to the newest entry.</li>
+                <li>GMs: <i class="fa-solid fa-plus" inert></i> adds the next entry (e.g. <em>Objective 3</em>) to the
+                    ledger you're viewing. It becomes the newest entry for everyone, and earlier entries stay as history.</li>
+                <li>GMs: <i class="fa-solid fa-book-medical" inert></i> creates a new ledger, for example for a new
+                    operation or a side job. <i class="fa-regular fa-star" inert></i> makes the ledger you're viewing the
+                    default for this dashboard (the campaign dashboard, or this Scene's own). With no default set, the
+                    most recently created ledger is shown.</li>
+                <li>Ledgers live in <em>Mission Dashboard › Objectives / Mission Summaries / Key Intel</em> in the
+                    Journal sidebar; rename, reorder or edit their pages there as usual. Your other Journals are never
+                    touched.</li>
+                <li>Players only see ledgers and entries they can read. A ledger created with <em>Players can read
+                    it</em> unticked is hidden until you change its ownership.</li>
             </ul>
         </section>
 
@@ -185,7 +190,8 @@
             <table class="azd-help-table">
                 <thead><tr><th>Action</th><th>Who</th></tr></thead>
                 <tbody>
-                    <tr><td>Configure the dashboard, add history entries</td><td>GMs</td></tr>
+                    <tr><td>Configure the dashboard, create ledgers and entries</td><td>GMs</td></tr>
+                    <tr><td>Switch ledgers and browse entries</td><td>Everyone, for themselves</td></tr>
                     <tr><td>See a card's stats and Desire</td><td>Observer or higher on that character</td></tr>
                     <tr><td>See only name and art</td><td>Limited on that character</td></tr>
                     <tr><td>Edit Desire or art</td><td>The character's owners and GMs</td></tr>
@@ -200,7 +206,7 @@
             <h2>Tips &amp; troubleshooting</h2>
             <ul>
                 <li><strong>A panel says “Classified” or “No briefing available”</strong>: the page isn't shared with
-                    players yet. Use <em>Share with players</em> in the configuration, or change the Journal's ownership.</li>
+                    players yet. Change the ledger Journal's ownership (right-click it in the Journal sidebar).</li>
                 <li><strong>A character card is missing for a player</strong>: empty slots are hidden. A card for a
                     deleted Actor shows as unavailable.</li>
                 <li><strong>A Person of Note is missing for players</strong>: set that NPC's Actor to Limited.</li>

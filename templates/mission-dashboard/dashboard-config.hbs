@@ -64,60 +64,25 @@
     </fieldset>
 
     <fieldset>
-        <legend>Mission Journal</legend>
+        <legend>Mission ledgers</legend>
+        <p class="hint">Each tab shows a <strong>ledger</strong>: a Journal whose pages are that tab's entries, newest shown first. Ledgers are kept in the “Mission Dashboard” Journal folder. Everyone can switch between the ledgers they can read, and page through entries, on their own screen; the default below is what everyone sees first.</p>
+        {{#each panels as |panel|}}
         <div class="form-group">
-            <label>Journal</label>
+            <label>{{panel.label}}</label>
             <div class="form-fields">
-                <select name="journalUuid">
-                    <option value="">— Choose a Journal —</option>
-                    {{#each journals as |journal|}}
-                    <option value="{{journal.uuid}}" {{#if (eq journal.uuid @root.journalUuid)}}selected{{/if}}>{{journal.name}}</option>
+                <select name="ledgers.{{panel.key}}" aria-label="Default {{panel.label}} ledger">
+                    <option value="">— Most recent ledger —</option>
+                    {{#each panel.options as |option|}}
+                    <option value="{{option.uuid}}" {{#if (eq option.uuid panel.selected)}}selected{{/if}}>{{option.name}}</option>
                     {{/each}}
                 </select>
-                {{#if journalUuid}}<button type="button" class="icon fa-solid fa-book-open" data-action="openJournal" data-tooltip="Open Journal" aria-label="Open Journal"></button>{{/if}}
+                <button type="button" class="icon fa-solid fa-book-medical" data-action="newLedger" data-panel="{{panel.key}}" data-tooltip="New ledger" aria-label="New {{panel.label}} ledger"></button>
+                <button type="button" class="icon fa-solid fa-book-open" data-action="openLedger" data-panel="{{panel.key}}" data-tooltip="Open ledger Journal" aria-label="Open {{panel.label}} ledger" {{disabled (not panel.shownName)}}></button>
             </div>
-            <p class="hint">Choosing a Journal pre-selects pages whose names contain Summary, Objective and Intel. The page selections are what is saved.</p>
-        </div>
-        <p class="hint">Each panel keeps a history of pages, oldest first. The last page is shown as current; players can browse earlier ones. The <i class="fa-solid fa-plus" inert></i> button on a dashboard panel adds the next page for you.</p>
-        {{#each panels as |panel|}}
-        <div class="azd-config-panel">
-            <div class="azd-config-panel-head">
-                <strong>{{panel.label}}</strong>
-                <button type="button" data-action="addEntry" data-panel="{{panel.key}}" {{disabled (not panel.canAdd)}}><i class="fa-solid fa-plus" inert></i> Add page</button>
-            </div>
-            {{#if panel.entries.length}}
-            <ol class="azd-config-rows">
-                {{#each panel.entries as |entry|}}
-                <li>
-                    <div class="azd-config-row">
-                        <span class="azd-config-index">{{entry.number}}</span>
-                        <select name="mission.{{panel.key}}.{{entry.index}}" aria-label="{{panel.label}} page {{entry.number}}">
-                            <option value="">— None —</option>
-                            {{#each entry.options as |option|}}
-                            <option value="{{option.uuid}}" {{#if (eq option.uuid entry.selected)}}selected{{/if}} {{disabled option.disabled}}>{{option.name}}</option>
-                            {{/each}}
-                        </select>
-                        {{#if entry.last}}<span class="azd-config-current" data-tooltip="Shown as the current entry">current</span>{{/if}}
-                        <button type="button" class="icon fa-solid fa-arrow-up" data-action="moveEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" data-direction="-1" {{disabled entry.first}} aria-label="Move earlier"></button>
-                        <button type="button" class="icon fa-solid fa-arrow-down" data-action="moveEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" data-direction="1" {{disabled entry.last}} aria-label="Move later"></button>
-                        <button type="button" class="icon fa-solid fa-trash" data-action="removeEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" aria-label="Remove from history" data-tooltip="Remove from history (the page itself is kept)"></button>
-                    </div>
-                    {{#if entry.missing}}<p class="hint azd-config-bad">This page no longer exists.</p>{{/if}}
-                    {{#if (and entry.playerAccess (ne entry.playerAccess "All players can read"))}}<p class="hint">{{entry.playerAccess}}</p>{{/if}}
-                </li>
-                {{/each}}
-            </ol>
-            {{else}}
-            <p class="hint">No pages.</p>
-            {{/if}}
+            {{#if panel.missing}}<p class="hint azd-config-bad">The default ledger no longer exists; the most recent ledger is shown instead.</p>{{/if}}
+            {{#if panel.shownName}}<p class="hint">Shows “{{panel.shownName}}”{{#if panel.playerAccess}} · {{panel.playerAccess}}{{/if}}</p>{{else}}<p class="hint">No ledger yet.</p>{{/if}}
         </div>
         {{/each}}
-        <div class="azd-config-buttons">
-            <button type="button" data-action="createJournal"><i class="fa-solid fa-book-medical" inert></i> Create mission Journal</button>
-            {{#if journalHiddenFromPlayers}}
-            <button type="button" data-action="shareJournal"><i class="fa-solid fa-users" inert></i> Share with players</button>
-            {{/if}}
-        </div>
     </fieldset>
 
     <fieldset>

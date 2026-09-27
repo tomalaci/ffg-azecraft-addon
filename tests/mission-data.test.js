@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { pageAccess, selectEntry } from "../scripts/mission-dashboard/mission-data.js";
+import { chooseLedger } from "../scripts/mission-dashboard/ledgers.js";
 import { LEVELS, makePage, makeUser } from "./fixtures.js";
 
 const player = makeUser();
@@ -51,4 +52,14 @@ test("players never page through entries they cannot read; GMs see all", () => {
 
     // A newest entry that is hidden from players leaves the previous readable one current for them.
     assert.equal(selectEntry(["old", "secret"], access, false).uuid, "old");
+});
+
+test("a tab shows the viewer's choice, else the default ledger, else the most recent one", () => {
+    const visible = ["L.old", "L.mid", "L.new"];
+    assert.equal(chooseLedger(visible, null), "L.new");
+    assert.equal(chooseLedger(visible, "L.mid"), "L.mid");
+    assert.equal(chooseLedger(visible, "L.mid", "L.old"), "L.old");
+    // A choice or default the viewer cannot see (hidden or deleted) falls back.
+    assert.equal(chooseLedger(visible, "L.hidden", "L.gone"), "L.new");
+    assert.equal(chooseLedger([], "L.mid"), null);
 });

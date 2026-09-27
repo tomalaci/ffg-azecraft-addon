@@ -7,7 +7,7 @@
 {{#if (eq panel.access "available")}}
     {{#if panel.empty}}<p class="azd-muted">Nothing written yet.</p>{{else}}{{{panel.html}}}{{/if}}
 {{else if (eq panel.access "unassigned")}}
-    <p class="azd-muted">{{#if panel.isGM}}No page assigned. Use <i class="fa-solid fa-gear" inert></i> to choose one, or <i class="fa-solid fa-plus" inert></i> to create one.{{else}}No briefing available.{{/if}}</p>
+    <p class="azd-muted">{{#if panel.isGM}}{{#if panel.hasLedger}}This ledger has no entries yet. Use <i class="fa-solid fa-plus" inert></i> to add one.{{else}}No ledger yet. Use <i class="fa-solid fa-book-medical" inert></i> to create one.{{/if}}{{else}}No briefing available.{{/if}}</p>
 {{else if (eq panel.access "restricted")}}
     <p class="azd-muted"><i class="fa-solid fa-lock" inert></i> Classified.{{#if panel.isGM}} Players can't read “{{panel.title}}”.{{/if}}</p>
 {{else if (eq panel.access "unsupported")}}

@@ -23,7 +23,8 @@ scripts/mission-dashboard/
   constants.js             ids, limits, paths, ownership levels mirrored for pure modules
   dashboard-state.js       Scene flag schema: defaults, normalization, validation, narrow writes
   actor-adapter.js         starwarsffg Actor -> permission-filtered card view model
-  mission-data.js          Journal page access checks, enrichment, People of Note
+  mission-data.js          tab view models: ledger choice, entry paging, page access, enrichment; People of Note
+  ledgers.js               mission ledgers: module Journal folders, ledger/entry creation, ledger choice
   campaign-reputation.js   ledger schema, totals, validation, ledger writes
   controller.js            per-client lifecycle, hook routing, coalescing, stale-render guard
   dashboard-app.js         the HUD (frameless ApplicationV2, Handlebars parts)
@@ -86,10 +87,10 @@ config }`:
 - `shown` is `flag.enabled !== false` when the world setting `showOnAllScenes` (default `true`) is
   on, and `flag.enabled === true` when it is off.
 - `source` is `"scene"` when `flag.source === "scene"`, or, for legacy flags with no `source`, when
-  the flag holds `party`/`mission`. Otherwise it is `"campaign"`.
+  the flag holds `party`/`mission`/`ledgers`. Otherwise it is `"campaign"`.
 
 Switching a Scene to the campaign dashboard only writes `source`; its own config stays in the flag,
-so it can be switched back. `appendMissionEntry` and `createMissionEntry` write to whichever store
+so it can be switched back. `setDefaultLedger` writes to whichever store
 the Scene uses. Settings `onChange` re-syncs every client, so campaign edits show everywhere.
 
 ### Scene flag: `flags["ffg-azecraft-addon"].dashboard`
@@ -100,21 +101,25 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
   enabled: true,                 // false hides it on this Scene; absent means "follow the world setting"
   source: "campaign" | "scene",  // which config this Scene shows
   party: [{ id: "slot-1", actorUuid: "Actor.<id>" | null }, ...],   // 1..12 slots, 6 by default
-  mission: { objective: [uuid...], summary: [uuid...], intel: [uuid...] }, // JournalEntryPage UUIDs, oldest first, max 50
+  ledgers: { objective: uuid | null, summary: uuid | null, intel: uuid | null },  // default ledger (JournalEntry) per tab
   people: [{ id, actorUuid, role, status, relationship, note }]       // player-visible text only
 }
 ```
 
-- Each mission panel is a history: the last entry is current. Early builds of this feature stored
-  single `summaryPageUuid`/`objectivePageUuid`/`intelPageUuid` fields. They are read as one-entry
-  lists, and a save removes them with `-=` keys.
-- The HUD's **+ New entry** button (`createMissionEntry`) creates a page right after the panel's
-  newest page (`sort + 1`) and appends it with `appendMissionEntry`. That is a narrow update of
-  `mission.<panel>` from the current Scene state.
-- The history position being viewed is per client (`controller.#entryIndex`) and resets to the
-  newest entry on any Scene or config change. `selectEntry` builds each user's history only from
-  entries they can read (GMs see all of them, including broken ones), so hidden entries are never
-  counted or rendered for players.
+- **Ledgers.** A ledger is a JournalEntry with `flags["ffg-azecraft-addon"].missionLedger = { panel }`.
+  Ledgers live in module folders tagged `flags["ffg-azecraft-addon"].dashboardFolder` (`root`,
+  `objective`, `summary`, `intel`). `ensureLedgerFolders` creates the folders on the active GM's
+  `ready`, and whenever a ledger is created. A ledger's pages, sorted by `sort`, are its entries;
+  the last one is the newest.
+- **Which ledger shows.** `chooseLedger(visible, default, choice)` picks the viewer's choice, then
+  the configured default, then the most recently created ledger. Only ledgers the viewer can see
+  (Limited or higher) are considered. `selectEntry` then pages over the entries the viewer can
+  read; GMs see all of them.
+- **Per-client state.** The ledger and entry being viewed are stored per client
+  (`controller.#panelView`). They reset to the defaults on any Scene or config change. A new entry
+  never resets them: viewers already on the newest entry see it automatically.
+- **Superseded fields.** Earlier builds stored per-tab page lists (`mission`) or single page UUIDs.
+  They are ignored, and saving a Scene's own config removes `mission` with a `-=` key.
 - Reads normalize in memory with `normalizeDashboardConfig`, which gives deterministic `slot-N` ids
   for a config that was never saved. They never write.
 - Only a GM saving the config form writes. The update touches only
@@ -126,7 +131,7 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
 
 ### World settings
 
-`showOnAllScenes` (Boolean, default true) and `campaignDashboard` (Object: `party`, `mission`,
+`showOnAllScenes` (Boolean, default true) and `campaignDashboard` (Object: `party`, `ledgers`,
 `people`).
 
 ### Client settings (per browser)
@@ -175,7 +180,7 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
 - Hook routing:
   - `update/create/deleteActor`, `...Item` and `...ActiveEffect` refresh the rail, and only for
     referenced Actors.
-  - `...JournalEntryPage` and `...JournalEntry` refresh the mission panels (referenced pages) or
+  - `...JournalEntryPage` and `...JournalEntry` refresh the mission tabs (any mission ledger) or
     the campaign view (ledger).
   - `updateScene` resyncs when the module flag, ownership or name changes.
   - `updateUser` resyncs on the user's own role change.

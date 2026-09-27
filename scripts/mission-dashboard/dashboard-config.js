@@ -6,7 +6,6 @@
  */
 
 import {
-    MAX_PANEL_ENTRIES,
     MAX_SLOT_COUNT,
     MISSION_PANELS,
     OWNERSHIP,
@@ -29,8 +28,7 @@ import {
     sceneUsesOwnConfig,
     validateDashboardConfig
 } from "./dashboard-state.js";
-import { SUPPORTED_PAGE_TYPES } from "./mission-data.js";
-import { isLedgerEntry } from "./campaign-reputation.js";
+import { createLedger, ledgerPages, ledgersFor } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
@@ -99,22 +97,13 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     shown = true;
     source = "campaign";
 
-    /** Working copies per source, fingerprints of the stored configs they started from, chosen Journals. */
+    /** Working copies per source and fingerprints of the stored configs they started from. */
     drafts = {};
     fingerprints = {};
-    journalUuids = {};
 
     /** The working copy the form currently edits. */
     get draft() {
         return this.drafts[this.source];
-    }
-
-    get journalUuid() {
-        return this.journalUuids[this.source] ?? null;
-    }
-
-    set journalUuid(uuid) {
-        this.journalUuids[this.source] = uuid;
     }
 
     get #flag() {
@@ -135,11 +124,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             campaign: foundry.utils.deepClone(campaign)
         };
         this.fingerprints = { scene: configFingerprint(sceneStored), campaign: configFingerprint(campaign) };
-
-        for (const [key, draft] of Object.entries(this.drafts)) {
-            const newestPage = Object.values(draft.mission).flat().map(resolve).filter(Boolean).at(-1);
-            this.journalUuids[key] = newestPage?.parent?.uuid ?? null;
-        }
     }
 
     static DEFAULT_OPTIONS = {
@@ -160,12 +144,8 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             addPerson: DashboardConfigApp.#onAddPerson,
             removePerson: DashboardConfigApp.#onRemovePerson,
             movePerson: DashboardConfigApp.#onMovePerson,
-            createJournal: DashboardConfigApp.#onCreateJournal,
-            shareJournal: DashboardConfigApp.#onShareJournal,
-            openJournal: DashboardConfigApp.#onOpenJournal,
-            addEntry: DashboardConfigApp.#onAddEntry,
-            removeEntry: DashboardConfigApp.#onRemoveEntry,
-            moveEntry: DashboardConfigApp.#onMoveEntry,
+            newLedger: DashboardConfigApp.#onNewLedger,
+            openLedger: DashboardConfigApp.#onOpenLedger,
             reload: DashboardConfigApp.#onReload,
             copyToCampaign: DashboardConfigApp.#onCopyToCampaign,
             openHelp: () => DashboardHelpApp.open("gm-quick-start"),
@@ -184,44 +164,26 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     async _prepareContext() {
         const partyGroups = actorGroups();
         const peopleGroups = actorGroups({ npcFirst: true });
-        const journals = game.journal.contents
-            .filter(entry => !isLedgerEntry(entry))
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map(entry => ({ uuid: entry.uuid, name: entry.name }));
-        const journal = resolve(this.journalUuid);
-        const pages = journal?.pages.contents.slice().sort((a, b) => a.sort - b.sort) ?? [];
-        const knownActor = uuid => !uuid || Boolean(resolve(uuid));
-
-        const pageOptions = pages.map(page => ({
-            uuid: page.uuid,
-            name: SUPPORTED_PAGE_TYPES.has(page.type) ? page.name : `${page.name} (${page.type}: not supported)`,
-            disabled: !SUPPORTED_PAGE_TYPES.has(page.type)
-        }));
-
         const panels = MISSION_PANELS.map(panel => {
-            const list = this.draft.mission[panel.key];
-            const entries = list.map((selected, index) => {
-                const selectedPage = resolve(selected);
-                const options = pageOptions.slice();
+            const selected = this.draft.ledgers[panel.key];
+            const ledgers = ledgersFor(panel.key).reverse();
+            const options = ledgers.map(ledger => ({
+                uuid: ledger.uuid,
+                name: `${ledger.name} (${ledgerPages(ledger).length} ${ledgerPages(ledger).length === 1 ? "entry" : "entries"})`
+            }));
 
-                // A page from another Journal (or a deleted one) stays selectable rather than being silently dropped.
-                if (selected && !options.some(o => o.uuid === selected)) {
-                    options.unshift({ uuid: selected, name: selectedPage ? `${selectedPage.parent?.name} › ${selectedPage.name}` : "Missing page", disabled: false });
-                }
+            // A default that was deleted stays visible rather than being silently dropped.
+            if (selected && !options.some(o => o.uuid === selected)) options.unshift({ uuid: selected, name: "Missing ledger" });
 
-                return {
-                    index,
-                    number: index + 1,
-                    selected,
-                    options,
-                    first: index === 0,
-                    last: index === list.length - 1,
-                    missing: Boolean(selected) && !selectedPage,
-                    playerAccess: selectedPage ? this.#playerAccessLabel(selectedPage) : null
-                };
-            });
-
-            return { ...panel, entries, canAdd: list.length < MAX_PANEL_ENTRIES };
+            const ledger = resolve(selected) ?? ledgers[0] ?? null;
+            return {
+                ...panel,
+                selected,
+                options,
+                missing: Boolean(selected) && !resolve(selected),
+                playerAccess: ledger ? this.#playerAccessLabel(ledger) : null,
+                shownName: ledger?.name ?? null
+            };
         });
 
         const showOnAllScenes = game.settings.get(MODULE_ID, SETTINGS.showOnAllScenes);
@@ -252,9 +214,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             })),
             partyGroups,
             peopleGroups,
-            journals,
-            journalUuid: this.journalUuid,
-            journalHiddenFromPlayers: journal ? (journal.ownership.default ?? 0) < OWNERSHIP.OBSERVER : false,
             panels,
             canAddSlot: this.draft.party.length < MAX_SLOT_COUNT,
             textMax: PEOPLE_TEXT_MAX_LENGTH,
@@ -263,9 +222,9 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         };
     }
 
-    #playerAccessLabel(page) {
+    #playerAccessLabel(ledger) {
         const players = game.users.filter(u => !u.isGM);
-        const readers = players.filter(u => page.testUserPermission(u, OWNERSHIP.OBSERVER) && page.parent.testUserPermission(u, OWNERSHIP.LIMITED));
+        const readers = players.filter(u => ledger.testUserPermission(u, OWNERSHIP.OBSERVER));
         if (!players.length) return "No player accounts";
         if (readers.length === players.length) return "All players can read";
         if (!readers.length) return "Hidden from players";
@@ -289,9 +248,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
                 // The form's fields were read into the previous source's copy; now show the other copy.
                 this.source = event.target.value === "scene" ? "scene" : "campaign";
                 this.render();
-            } else if (event.target.name === "journalUuid") {
-                this.#autoSelectPages();
-                this.render();
             } else if (event.target.matches("select")) {
                 this.render();
             }
@@ -302,16 +258,13 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     #readForm() {
         const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.element).object);
         this.shown = Boolean(data.shown);
-        this.journalUuid = data.journalUuid || null;
 
         for (const [index, slot] of this.draft.party.entries()) {
             slot.actorUuid = data.party?.[index]?.actorUuid || null;
         }
 
         for (const { key } of MISSION_PANELS) {
-            const rows = data.mission?.[key] ?? {};
-            // Rows stay in place (even unselected ones) until saving normalizes them away.
-            this.draft.mission[key] = this.draft.mission[key].map((_, index) => rows[index] || "");
+            this.draft.ledgers[key] = data.ledgers?.[key] || null;
         }
 
         for (const [index, person] of this.draft.people.entries()) {
@@ -323,23 +276,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
                 relationship: row.relationship ?? "",
                 note: row.note ?? ""
             });
-        }
-    }
-
-    /** Convenience only: pick pages by name, and save their UUIDs. */
-    #autoSelectPages() {
-        const journal = resolve(this.journalUuid);
-        if (!journal) return;
-
-        const pages = journal.pages.contents.slice().sort((a, b) => a.sort - b.sort);
-
-        for (const panel of MISSION_PANELS) {
-            // Keep a panel that already uses this Journal; otherwise take every matching page, in Journal order,
-            // as its history (e.g. "Current Objective", "Current Objective 2").
-            if (this.draft.mission[panel.key].some(uuid => resolve(uuid)?.parent?.uuid === journal.uuid)) continue;
-            this.draft.mission[panel.key] = pages
-                .filter(page => SUPPORTED_PAGE_TYPES.has(page.type) && panel.pattern.test(page.name))
-                .map(page => page.uuid);
         }
     }
 
@@ -367,27 +303,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         this.render();
     }
 
-    static #onAddEntry(event, target) {
-        this.#readForm();
-        const list = this.draft.mission[target.dataset.panel];
-        if (!list || list.length >= MAX_PANEL_ENTRIES) return;
-        list.push("");
-        this.render();
-    }
-
-    static #onRemoveEntry(event, target) {
-        this.#readForm();
-        this.draft.mission[target.dataset.panel]?.splice(Number(target.dataset.index), 1);
-        this.render();
-    }
-
-    static #onMoveEntry(event, target) {
-        this.#readForm();
-        const list = this.draft.mission[target.dataset.panel];
-        if (list) DashboardConfigApp.#move(list, Number(target.dataset.index), Number(target.dataset.direction));
-        this.render();
-    }
-
     static #onAddPerson() {
         this.#readForm();
         this.draft.people.push({ id: newId("person"), actorUuid: null, role: "", status: "", relationship: "", note: "" });
@@ -412,52 +327,34 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         [list[index], list[to]] = [list[to], list[index]];
     }
 
-    /** Create a new mission Journal with the conventional pages; hidden from players until shared. */
-    static async #onCreateJournal() {
+    /** Create a ledger for a tab and make it the default in the form (applied on save). */
+    static async #onNewLedger(event, target) {
         this.#readForm();
-        const name = await DialogV2.input({
-            window: { title: "Create mission Journal" },
-            content: `<div class="form-group"><label>Mission title</label><div class="form-fields"><input type="text" name="name" value="${foundry.utils.escapeHTML(this.scene.name)}" required></div></div>
-                <p class="hint">Creates Summary, Current Objective, Key Intel and GM Notes pages. The Journal starts hidden from players; use “Share with players” when ready. GM Notes always stays GM-only.</p>`,
-            ok: { label: "Create", icon: "fa-solid fa-book" }
+        const panel = MISSION_PANELS.find(p => p.key === target.dataset.panel);
+        if (!panel) return;
+
+        const result = await DialogV2.input({
+            window: { title: `New ${panel.folderName.toLowerCase()} ledger` },
+            content: `<div class="form-group"><label>Name</label><div class="form-fields"><input type="text" name="name" maxlength="120" placeholder="e.g. Operation Glass Horizon" required autofocus></div></div>
+                <div class="form-group"><label>Players can read it</label><div class="form-fields"><input type="checkbox" name="playersCanRead" checked></div></div>
+                <p class="hint">Stored in the “Mission Dashboard › ${foundry.utils.escapeHTML(panel.folderName)}” Journal folder, with a first empty entry.</p>`,
+            ok: { label: "Create", icon: "fa-solid fa-book-medical" }
         });
+        if (!result?.name?.trim()) return;
 
-        if (!name?.name?.trim()) return;
-
-        const entry = await JournalEntry.implementation.create({
-            name: `Mission: ${name.name.trim()}`,
-            ownership: { default: OWNERSHIP.NONE },
-            pages: [
-                { name: "Summary", type: "text", sort: 100000, text: { content: "<p>Why are we here?</p>" } },
-                { name: "Current Objective", type: "text", sort: 200000, text: { content: "<p>What do we do next?</p>" } },
-                { name: "Key Intel", type: "text", sort: 300000, text: { content: "<h3>People</h3><ul><li></li></ul><h3>Places</h3><ul><li></li></ul><h3>Clues</h3><ul><li></li></ul>" } },
-                { name: "GM Notes", type: "text", sort: 400000, ownership: { default: OWNERSHIP.NONE }, text: { content: "<p>Not shown on the dashboard.</p>" } }
-            ]
-        });
-
-        this.journalUuid = entry.uuid;
-        this.#autoSelectPages();
-        this.render();
+        try {
+            const ledger = await createLedger(panel.key, result.name, { playersCanRead: Boolean(result.playersCanRead) });
+            this.draft.ledgers[panel.key] = ledger.uuid;
+            this.render();
+        } catch (error) {
+            ui.notifications.error(error.message);
+        }
     }
 
-    /** Give all players Observer on the mission Journal; explicitly restricted pages (GM Notes) stay hidden. */
-    static async #onShareJournal() {
+    static #onOpenLedger(event, target) {
         this.#readForm();
-        const journal = resolve(this.journalUuid);
-        if (!journal) return;
-
-        const confirmed = await DialogV2.confirm({
-            window: { title: "Share mission Journal" },
-            content: `<p>Set default ownership of <strong>${foundry.utils.escapeHTML(journal.name)}</strong> to Observer so all players can read it?</p><p class="hint">Pages with their own ownership (such as GM Notes) keep it.</p>`
-        });
-
-        if (!confirmed) return;
-        await journal.update({ "ownership.default": OWNERSHIP.OBSERVER });
-        this.render();
-    }
-
-    static #onOpenJournal() {
-        resolve(this.journalUuid)?.sheet.render(true);
+        const uuid = this.draft.ledgers[target.dataset.panel] ?? ledgersFor(target.dataset.panel).at(-1)?.uuid;
+        resolve(uuid)?.sheet.render(true);
     }
 
     static #onReload() {
@@ -469,7 +366,6 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
     static #onCopyToCampaign() {
         this.#readForm();
         this.drafts.campaign = foundry.utils.deepClone(this.drafts.scene);
-        this.journalUuids.campaign = this.journalUuids.scene;
         this.source = "campaign";
         ui.notifications.info("Copied into the campaign dashboard. Save to apply it to every Scene that uses the campaign dashboard.");
         this.render();

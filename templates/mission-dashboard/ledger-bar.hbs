@@ -1,0 +1,28 @@
+{{#if panel.hasLedger}}
+<div class="azd-ledger-bar">
+    {{#if (gt panel.ledgers.length 1)}}
+    <select class="azd-ledger-select" data-ledger-panel="{{key}}" aria-label="{{label}} ledger" data-tooltip="Switch ledger (only on your screen)">
+        {{#each panel.ledgers as |ledger|}}
+        <option value="{{ledger.uuid}}" {{#if ledger.selected}}selected{{/if}}>{{#if ledger.isDefault}}★ {{/if}}{{ledger.name}}</option>
+        {{/each}}
+    </select>
+    {{else}}
+    <span class="azd-ledger-name" data-tooltip="{{panel.ledgerName}}">{{panel.ledgerName}}</span>
+    {{/if}}
+    {{#if panel.isGM}}
+    {{#if panel.isDefaultLedger}}
+    <span class="azd-ledger-default" data-tooltip="{{#if panel.defaultIsSet}}Default ledger for this dashboard{{else}}Shown by default as the most recent ledger{{/if}}"><i class="fa-solid fa-star" inert></i></span>
+    {{else}}
+    <button type="button" class="azd-icon-button" data-action="setDefaultLedger" data-panel="{{key}}" data-tooltip="Make this the default ledger" aria-label="Make default ledger"><i class="fa-regular fa-star" inert></i></button>
+    {{/if}}
+    <button type="button" class="azd-icon-button" data-action="openLedger" data-panel="{{key}}" data-tooltip="Open ledger Journal" aria-label="Open ledger Journal"><i class="fa-solid fa-book-open" inert></i></button>
+    {{/if}}
+    {{#if panel.paged}}
+    <span class="azd-pager" role="group" aria-label="{{label}} entries">
+        <button type="button" class="azd-icon-button" data-action="pageEntry" data-panel="{{key}}" data-step="-1" {{disabled (not panel.hasPrevious)}} data-tooltip="Earlier entry" aria-label="Earlier entry"><i class="fa-solid fa-chevron-left" inert></i></button>
+        <span class="azd-pager-count" aria-live="polite">{{panel.position}}/{{panel.count}}</span>
+        <button type="button" class="azd-icon-button" data-action="pageEntry" data-panel="{{key}}" data-step="1" {{disabled (not panel.hasNext)}} data-tooltip="Later entry" aria-label="Later entry"><i class="fa-solid fa-chevron-right" inert></i></button>
+    </span>
+    {{/if}}
+</div>
+{{/if}}

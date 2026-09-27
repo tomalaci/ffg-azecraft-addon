@@ -12,24 +12,35 @@ const pending = [];
 let viewed = null;
 let DashboardController;
 
-function makeScene(id, pageUuid) {
+function makeScene(id, ledgerUuid) {
     return {
         id,
         name: id,
         navName: "",
-        flags: { "ffg-azecraft-addon": { dashboard: { enabled: true, party: [], mission: { summaryPageUuid: pageUuid } } } }
+        flags: { "ffg-azecraft-addon": { dashboard: { enabled: true, source: "scene", party: [], ledgers: { summary: ledgerUuid } } } }
     };
 }
 
 before(async () => {
-    const pages = new Map();
+    // One summary ledger per Scene, each with a single entry page.
+    const ledgers = [];
     for (const scene of ["A", "B"]) {
         const page = makePage({ name: `Summary ${scene}` });
         page.uuid = `JournalEntry.${scene}.JournalEntryPage.p`;
+        page.sort = 100000;
         page.text = { content: `<p>${scene}</p>` };
         page.isOwner = false;
         page.canUserModify = () => false;
-        pages.set(page.uuid, page);
+        const ledger = {
+            ...page.parent,
+            uuid: `JournalEntry.${scene}`,
+            name: `Ledger ${scene}`,
+            _stats: { createdTime: scene === "A" ? 1 : 2 },
+            flags: { "ffg-azecraft-addon": { missionLedger: { panel: "summary" } } },
+            pages: { contents: [page] }
+        };
+        page.parent = ledger;
+        ledgers.push(ledger);
     }
 
     class FakeApp {
@@ -50,12 +61,12 @@ before(async () => {
         users: [],
         scenes: { get viewed() { return viewed; } },
         settings: { get: (_m, key) => (key === "dashboardCompact" ? "auto" : key === "campaignLedgerUuid" ? "" : false) },
-        journal: []
+        journal: ledgers
     };
     globalThis.Hooks = { on() {}, off() {} };
     globalThis.foundry = {
         utils: {
-            fromUuidSync: uuid => pages.get(uuid) ?? null,
+            fromUuidSync: () => null,
             escapeHTML: s => s,
             hasProperty: () => false
         },
@@ -91,11 +102,11 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 test("a slow render for Scene A is dropped after switching to Scene B", async () => {
     const controller = new DashboardController();
 
-    viewed = makeScene("A", "JournalEntry.A.JournalEntryPage.p");
+    viewed = makeScene("A", "JournalEntry.A");
     controller.sync();
     await tick();
 
-    viewed = makeScene("B", "JournalEntry.B.JournalEntryPage.p");
+    viewed = makeScene("B", "JournalEntry.B");
     controller.sync();
     await tick();
 
@@ -132,7 +143,7 @@ test("a mission refresh queued during enrichment drops the in-flight result (e.g
     renders.length = 0;
     pending.length = 0;
     const controller = new DashboardController();
-    viewed = makeScene("A", "JournalEntry.A.JournalEntryPage.p");
+    viewed = makeScene("A", "JournalEntry.A");
     controller.sync();
     await tick();
     for (const resolve of pending.splice(0)) resolve();
@@ -154,7 +165,7 @@ test("a mission refresh queued during enrichment drops the in-flight result (e.g
 test("unmount while enrichment is pending never remounts the HUD", async () => {
     pending.length = 0;
     const controller = new DashboardController();
-    viewed = makeScene("A", "JournalEntry.A.JournalEntryPage.p");
+    viewed = makeScene("A", "JournalEntry.A");
     controller.sync();
     await tick();
     controller.unmount();

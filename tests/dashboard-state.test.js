@@ -27,21 +27,17 @@ test("normalization does not mutate its input", () => {
 
     assert.deepEqual(raw, copy);
     assert.equal(config.party[0].actorUuid, "Actor.x");
-    assert.deepEqual(config.mission, { objective: [], summary: [], intel: [] });
+    assert.deepEqual(config.ledgers, { objective: null, summary: null, intel: null });
 });
 
-test("mission panels are ordered, de-duplicated page lists; legacy single pages become one entry", () => {
+test("each tab has an optional default ledger; superseded page lists are ignored", () => {
     const config = normalizeDashboardConfig({
-        mission: {
-            objective: ["P.1", " P.2 ", "P.1", "", null, "P.3"],
-            summaryPageUuid: "P.legacy",
-            intel: []
-        }
+        ledgers: { objective: " JournalEntry.a ", summary: "", intel: 5 },
+        mission: { objective: ["P.1"] }
     });
 
-    assert.deepEqual(config.mission.objective, ["P.1", "P.2", "P.3"]);
-    assert.deepEqual(config.mission.summary, ["P.legacy"]);
-    assert.deepEqual(config.mission.intel, []);
+    assert.deepEqual(config.ledgers, { objective: "JournalEntry.a", summary: null, intel: null });
+    assert.equal("mission" in config, false);
 });
 
 test("keeps a four-person party and its order", () => {
@@ -86,23 +82,23 @@ test("fingerprint detects a concurrent change", () => {
 test("referenced uuids for hook relevance", () => {
     const refs = referencedUuids(normalizeDashboardConfig({
         party: [{ id: "s1", actorUuid: "Actor.1" }, { id: "s2", actorUuid: null }],
-        mission: { summary: ["JournalEntry.j.JournalEntryPage.p"], objective: ["JournalEntry.j.JournalEntryPage.o1", "JournalEntry.j.JournalEntryPage.o2"] },
+        ledgers: { summary: "JournalEntry.s", objective: "JournalEntry.o" },
         people: [{ id: "p", actorUuid: "Actor.9" }]
     }));
 
     assert.deepEqual([...refs.actors], ["Actor.1"]);
     assert.deepEqual([...refs.people], ["Actor.9"]);
-    assert.deepEqual([...refs.pages].sort(), ["JournalEntry.j.JournalEntryPage.o1", "JournalEntry.j.JournalEntryPage.o2", "JournalEntry.j.JournalEntryPage.p"]);
+    assert.deepEqual([...refs.ledgers].sort(), ["JournalEntry.o", "JournalEntry.s"]);
 });
 
-const campaign = { party: [{ id: "c1", actorUuid: "Actor.pc" }], mission: { objective: ["Page.c"] } };
+const campaign = { party: [{ id: "c1", actorUuid: "Actor.pc" }], ledgers: { objective: "JournalEntry.c" } };
 
 test("every Scene shows the campaign dashboard by default, including never-configured ones", () => {
     const resolved = resolveDashboard(undefined, { showOnAllScenes: true, campaign });
     assert.equal(resolved.shown, true);
     assert.equal(resolved.source, "campaign");
     assert.deepEqual(resolved.config.party.map(s => s.actorUuid), ["Actor.pc"]);
-    assert.deepEqual(resolved.config.mission.objective, ["Page.c"]);
+    assert.equal(resolved.config.ledgers.objective, "JournalEntry.c");
 });
 
 test("a Scene can be hidden, or shown only when enabled if show-on-all is off", () => {
@@ -112,8 +108,8 @@ test("a Scene can be hidden, or shown only when enabled if show-on-all is off", 
 });
 
 test("a Scene's own config is used when chosen, and legacy configured Scenes keep theirs", () => {
-    const own = { source: "scene", party: [{ id: "s1", actorUuid: "Actor.other" }], mission: { objective: ["Page.s"] } };
-    assert.deepEqual(resolveDashboard(own, { showOnAllScenes: true, campaign }).config.mission.objective, ["Page.s"]);
+    const own = { source: "scene", party: [{ id: "s1", actorUuid: "Actor.other" }], ledgers: { objective: "JournalEntry.s" } };
+    assert.equal(resolveDashboard(own, { showOnAllScenes: true, campaign }).config.ledgers.objective, "JournalEntry.s");
 
     // Switched back to the campaign dashboard: the Scene's old config is kept but ignored.
     const back = { ...own, source: "campaign" };

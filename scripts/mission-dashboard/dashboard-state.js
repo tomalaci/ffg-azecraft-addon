@@ -12,7 +12,6 @@
 import {
     DEFAULT_SLOT_COUNT,
     FLAG_KEY,
-    MAX_PANEL_ENTRIES,
     MAX_SLOT_COUNT,
     MISSION_PANELS,
     MODULE_ID,
@@ -43,21 +42,8 @@ export function defaultParty(count = DEFAULT_SLOT_COUNT) {
     return Array.from({ length: count }, (_, index) => ({ id: `slot-${index + 1}`, actorUuid: null }));
 }
 
-function emptyMission() {
-    return Object.fromEntries(MISSION_PANELS.map(panel => [panel.key, []]));
-}
-
-/** Legacy single-page fields (pre-history drafts of this schema), read as one-entry lists. */
-const LEGACY_MISSION_KEYS = { summary: "summaryPageUuid", objective: "objectivePageUuid", intel: "intelPageUuid" };
-
-function normalizeEntries(raw, legacy) {
-    const list = Array.isArray(raw) ? raw : legacy ? [legacy] : [];
-    const seen = new Set();
-
-    return list
-        .map(cleanUuid)
-        .filter(uuid => uuid && !seen.has(uuid) && seen.add(uuid))
-        .slice(-MAX_PANEL_ENTRIES);
+function emptyLedgers() {
+    return Object.fromEntries(MISSION_PANELS.map(panel => [panel.key, null]));
 }
 
 export function defaultDashboardConfig() {
@@ -65,7 +51,8 @@ export function defaultDashboardConfig() {
         schemaVersion: SCHEMA_VERSION,
         enabled: false,
         party: defaultParty(),
-        mission: emptyMission(),
+        // Default ledger (JournalEntry UUID) per tab; null means "the most recent ledger".
+        ledgers: emptyLedgers(),
         people: []
     };
 }
@@ -99,11 +86,8 @@ export function normalizeDashboardConfig(raw) {
             });
     }
 
-    const mission = raw.mission ?? {};
-    config.mission = Object.fromEntries(MISSION_PANELS.map(({ key }) => [
-        key,
-        normalizeEntries(mission[key], mission[LEGACY_MISSION_KEYS[key]])
-    ]));
+    const ledgers = raw.ledgers ?? {};
+    config.ledgers = Object.fromEntries(MISSION_PANELS.map(({ key }) => [key, cleanUuid(ledgers[key])]));
 
     if (Array.isArray(raw.people)) {
         config.people = raw.people
@@ -137,7 +121,7 @@ export function sceneUsesOwnConfig(flag) {
     if (!flag || typeof flag !== "object") return false;
     if (flag.source === "scene") return true;
     if (flag.source === "campaign") return false;
-    return Array.isArray(flag.party) || Boolean(flag.mission);
+    return Array.isArray(flag.party) || Boolean(flag.mission) || Boolean(flag.ledgers);
 }
 
 /** Whether the dashboard shows on a Scene: on every Scene unless hidden there, or only where enabled. */
@@ -194,7 +178,7 @@ export function referencedUuids(config) {
     return {
         actors: new Set(config.party.map(slot => slot.actorUuid).filter(Boolean)),
         people: new Set(config.people.map(person => person.actorUuid).filter(Boolean)),
-        pages: new Set(Object.values(config.mission).flat())
+        ledgers: new Set(Object.values(config.ledgers).filter(Boolean))
     };
 }
 
@@ -303,15 +287,12 @@ export async function saveSceneDashboard(scene, { shown, source, config = null, 
 
         Object.assign(update, {
             [`${base}.party`]: normalized.party,
-            [`${base}.mission`]: normalized.mission,
+            [`${base}.ledgers`]: normalized.ledgers,
             [`${base}.people`]: normalized.people
         });
 
-        // Flag updates merge objects, so drop superseded single-page keys explicitly.
-        const stored = sceneFlag(scene)?.mission ?? {};
-        for (const legacy of Object.values(LEGACY_MISSION_KEYS)) {
-            if (legacy in stored) update[`${base}.mission.-=${legacy}`] = null;
-        }
+        // Flag updates merge objects, so drop the superseded page-list key explicitly.
+        if (sceneFlag(scene)?.mission) update[`${base}.-=mission`] = null;
     }
 
     return scene.update(update);
@@ -332,24 +313,20 @@ export async function saveCampaignConfig(config, { expectedFingerprint = null } 
 }
 
 /**
- * Append a page to the end (newest) of a mission panel's history, in whichever store the Scene uses.
- * Reads the current stored state, not a form's copy, so other config fields are not overwritten.
+ * Set a tab's default ledger in whichever store the Scene uses (its own config or the campaign
+ * dashboard). Reads the current stored state, so other config fields are not overwritten.
  */
-export async function appendMissionEntry(scene, panelKey, pageUuid) {
+export async function setDefaultLedger(scene, panelKey, ledgerUuid) {
     assertGM();
+    if (!MISSION_PANELS.some(panel => panel.key === panelKey)) throw new Error(`Unknown mission tab: ${panelKey}`);
 
-    const { source, config } = resolveSceneDashboard(scene);
-    const entries = config.mission[panelKey];
-    if (!entries) throw new Error(`Unknown mission panel: ${panelKey}`);
-
-    const next = [...entries.filter(uuid => uuid !== pageUuid), pageUuid].slice(-MAX_PANEL_ENTRIES);
-
-    if (source === "scene") {
-        return scene.update({ [`flags.${MODULE_ID}.${FLAG_KEY}.mission.${panelKey}`]: next });
+    if (resolveSceneDashboard(scene).source === "scene") {
+        return scene.update({ [`flags.${MODULE_ID}.${FLAG_KEY}.ledgers.${panelKey}`]: ledgerUuid ?? null });
     }
 
     const campaign = foundry.utils.deepClone(campaignRaw());
-    campaign.mission = { ...normalizeDashboardConfig(campaign).mission, [panelKey]: next };
+    delete campaign.mission;
+    campaign.ledgers = { ...normalizeDashboardConfig(campaign).ledgers, [panelKey]: ledgerUuid ?? null };
     return game.settings.set(MODULE_ID, SETTINGS.campaignDashboard, campaign);
 }
 
@@ -359,44 +336,4 @@ export async function setDashboardEnabled(scene, enabled) {
         [`flags.${MODULE_ID}.${FLAG_KEY}.enabled`]: Boolean(enabled),
         [`flags.${MODULE_ID}.${FLAG_KEY}.schemaVersion`]: SCHEMA_VERSION
     });
-}
-
-/**
- * Create the next entry of a mission panel as a new page in the mission Journal (right after the
- * panel's newest page) and make it the panel's current entry. The previous entry becomes history.
- * @returns {Promise<JournalEntryPage>}
- */
-export async function createMissionEntry(scene, panelKey) {
-    assertGM();
-
-    const panel = MISSION_PANELS.find(p => p.key === panelKey);
-    if (!panel) throw new Error(`Unknown mission panel: ${panelKey}`);
-
-    const { config } = resolveSceneDashboard(scene);
-    const resolve = uuid => {
-        try {
-            return foundry.utils.fromUuidSync(uuid, { strict: false });
-        } catch {
-            return null;
-        }
-    };
-    const own = config.mission[panelKey].map(resolve).filter(Boolean);
-    const anyPage = Object.values(config.mission).flat().map(resolve).find(Boolean);
-    const previous = own.at(-1) ?? null;
-    const journal = previous?.parent ?? anyPage?.parent ?? null;
-
-    if (!journal) {
-        throw new Error("Choose a mission Journal in the dashboard configuration first.");
-    }
-
-    const number = config.mission[panelKey].length + 1;
-    const [page] = await journal.createEmbeddedDocuments("JournalEntryPage", [{
-        name: number > 1 ? `${panel.pageName} ${number}` : panel.pageName,
-        type: "text",
-        text: { content: "" },
-        sort: previous ? previous.sort + 1 : Math.max(0, ...journal.pages.map(p => p.sort)) + 100000
-    }]);
-
-    await appendMissionEntry(scene, panelKey, page.uuid);
-    return page;
 }
