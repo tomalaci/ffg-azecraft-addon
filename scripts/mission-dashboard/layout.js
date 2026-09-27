@@ -16,6 +16,49 @@ const WATCHED_SELECTORS = [
 
 const GAP = 12;
 
+/** Narrowest a mission tab may become, in CSS pixels. */
+export const MIN_COLUMN_WIDTH = 180;
+export const DEFAULT_COLUMNS = [1 / 3, 1 / 3, 1 / 3];
+
+function validColumns(fractions) {
+    return Array.isArray(fractions) && fractions.length === 3 && fractions.every(f => Number.isFinite(f) && f > 0)
+        ? fractions
+        : DEFAULT_COLUMNS;
+}
+
+/**
+ * Pixel widths of the three mission tabs for a bar of `total` pixels. Pure.
+ * Every tab keeps at least `min` pixels; the rest is shared in proportion to the saved fractions.
+ */
+export function clampColumns(fractions, total, min = MIN_COLUMN_WIDTH) {
+    const f = validColumns(fractions);
+    const sum = f.reduce((a, b) => a + b, 0);
+
+    if (total <= 3 * min) return [total / 3, total / 3, total / 3];
+
+    const excess = f.map(x => Math.max(0, (x / sum) * total - min));
+    const excessSum = excess.reduce((a, b) => a + b, 0);
+    const spare = total - 3 * min;
+
+    return excess.map(e => min + (excessSum ? (e / excessSum) * spare : spare / 3));
+}
+
+/**
+ * Move one divider (0: objective|summary, 1: summary|intel) to `x` pixels from the bar's left edge.
+ * Only the two tabs next to the divider change. Returns new fractions. Pure.
+ */
+export function moveDivider(fractions, divider, x, total, min = MIN_COLUMN_WIDTH) {
+    const [a, b, c] = clampColumns(fractions, total, min);
+
+    if (divider === 0) {
+        const first = Math.min(Math.max(x, min), a + b - min);
+        return [first / total, (a + b - first) / total, c / total];
+    }
+
+    const boundary = Math.min(Math.max(x, a + min), total - min);
+    return [a / total, (boundary - a) / total, (total - boundary) / total];
+}
+
 function visibleRect(selector) {
     const element = document.querySelector(selector);
     if (!element) return null;
@@ -31,7 +74,7 @@ function visibleRect(selector) {
  * Pure sizing rules. `ui` holds measured rects (or null) and the viewport size.
  * @returns {object} CSS pixel values and layout mode
  */
-export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar }, { compactPreference = "auto", missionCollapsed = false, framed = true } = {}) {
+export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar }, { compactPreference = "auto", missionCollapsed = false, framed = true, columns = DEFAULT_COLUMNS } = {}) {
     const left = Math.round((controls?.right ?? 0) + GAP);
     const top = Math.round(Math.max(GAP, (navActive?.bottom ?? 0) + 8));
     // The SWFFG destiny tracker is a movable window; it only constrains the rail while docked low.
@@ -58,6 +101,13 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     // Framed: the squad column ends where the mission tabs begin, so both edges line up.
     const railEnd = framed ? Math.max(railBottom, bottom + missionHeight) : railBottom;
 
+    // The mission bar: one strip split into three resizable tabs.
+    const barLeft = left + railWidth + GAP + (framed ? GAP : 0);
+    const barRight = width - (framed ? Math.max(GAP, right) : right);
+    const barWidth = Math.max(0, barRight - barLeft);
+    // The third tab takes whatever rounding leaves, so the three always add up to the bar width.
+    const [col1, col2] = clampColumns(columns, barWidth).map(Math.round);
+
     return {
         compact,
         values: {
@@ -69,8 +119,14 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
             "--azd-rail-width": `${railWidth}px`,
             "--azd-mission-height": `${missionHeight}px`,
             "--azd-toggle-left": `${toggleLeft}px`,
-            "--azd-toggle-top": `${toggleTop}px`
-        }
+            "--azd-toggle-top": `${toggleTop}px`,
+            "--azd-bar-left": `${barLeft}px`,
+            "--azd-bar-width": `${barWidth}px`,
+            "--azd-col-1": `${col1}px`,
+            "--azd-col-2": `${col2}px`,
+            "--azd-col-3": `${barWidth - col1 - col2}px`
+        },
+        bar: { left: barLeft, width: barWidth }
     };
 }
 
@@ -92,6 +148,8 @@ export function measureUI() {
  * Keeps CSS variables in sync with the core UI. One instance per mounted dashboard.
  */
 export class LayoutWatcher {
+    /** The most recent layout result (used by divider dragging). */
+    last = null;
     #element;
     #getOptions;
     #frame = null;
@@ -146,7 +204,9 @@ export class LayoutWatcher {
     apply() {
         if (!this.#element?.isConnected) return;
 
-        const { compact, values } = computeLayout(measureUI(), this.#getOptions());
+        const result = computeLayout(measureUI(), this.#getOptions());
+        const { compact, values } = result;
+        this.last = result;
 
         for (const [name, value] of Object.entries(values)) {
             this.#element.style.setProperty(name, value);

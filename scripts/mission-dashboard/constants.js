@@ -33,6 +33,7 @@ export const SETTINGS = {
     compact: "dashboardCompact",
     missionCollapsed: "dashboardMissionCollapsed",
     style: "dashboardStyle",
+    columns: "dashboardColumns",
     ledger: "campaignLedgerUuid",
     campaignDashboard: "campaignDashboard",
     showOnAllScenes: "showOnAllScenes"

@@ -175,7 +175,15 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
   around the map window. `frameWindow()` computes that window. `fitSceneToFrame()` pans and zooms
   (`canvas.animatePan`) so `canvas.dimensions.sceneRect` fits inside it. That runs only on the
   header button, or once on mount when the Scene flag `fitOnOpen` is set.
-- Parts are `frame`, `header`, `rail`, `mission` and `intel`. The controller builds a view model, awaiting
+- **Mission bar.** `computeLayout` returns the bar geometry and three column widths
+  (`--azd-bar-left`, `--azd-col-1..3`). The widths come from the client setting `dashboardColumns`
+  (fractions) through `clampColumns`, which keeps each tab at least 180px. `moveDivider` changes only
+  the two neighbouring tabs. The `dividers` part renders last, so its handles sit above the tabs.
+- **Card art.** The art box has a fixed height (0.55 × rail width) with `object-fit: cover`,
+  starting at `50% 0%`. Dragging changes `object-position`, 1:1 with the pointer, over the image's
+  overflow. Positions are stored in `localStorage["ffg-azecraft-addon.artPan"]` as
+  `{uuid: {src, x, y}}` and deleted when the Actor's art path changes.
+- Parts are `frame`, `header`, `rail`, `mission`, `intel` and `dividers`. The controller builds a view model, awaiting
   UUID resolution and `TextEditor.enrichHTML`, and then renders only the affected parts. Cards and
   the header render immediately; the first mount waits for mission content.
 - Stale results are dropped using a scene generation counter (bumped on sync and unmount) and a

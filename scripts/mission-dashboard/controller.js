@@ -67,7 +67,8 @@ export class DashboardController {
             hidden: game.settings.get(MODULE_ID, SETTINGS.hidden),
             compact: game.settings.get(MODULE_ID, SETTINGS.compact),
             missionCollapsed: game.settings.get(MODULE_ID, SETTINGS.missionCollapsed),
-            style: game.settings.get(MODULE_ID, SETTINGS.style)
+            style: game.settings.get(MODULE_ID, SETTINGS.style),
+            columns: game.settings.get(MODULE_ID, SETTINGS.columns)
         };
     }
 

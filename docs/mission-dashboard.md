@@ -136,7 +136,8 @@ character, so it carries over to every mission.
 ### Full-body art
 
 Hover a card and click the image button in the corner of the art to set dashboard art for the
-character. Art is shown whole, not cropped. Leave the path empty to go back to the Actor portrait.
+character. Every card has the same picture box: the art fills it, centred and starting from the
+top, and you can drag it to show a different part. Leave the path empty to go back to the Actor portrait.
 Players who can't browse files can paste a path that a GM gives them. If an image can't be loaded,
 the card falls back to the portrait.
 
@@ -145,6 +146,11 @@ the card falls back to the portrait.
 By default the squad column and the mission bar form a solid **frame** around the map; the Scene
 shows through the window between them. The client setting *Mission dashboard style* switches to
 separate **floating panels** instead.
+
+The three mission tabs form one bar. Drag the line between two tabs to resize them (each keeps at
+least 180px), and double-click a line to reset to equal widths. Drag a character's art to choose
+which part of the picture shows in its card; a plain click still opens the sheet. Both are saved
+in your browser only, and an art position is forgotten when that character's art changes.
 
 These buttons in the dashboard header only affect **your** screen:
 

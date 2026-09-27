@@ -307,18 +307,6 @@
     backdrop-filter: none;
 }
 
-#azecraft-mission-dashboard.azd--framed .azd-mission {
-    left: calc(var(--azd-panels-left) + 12px);
-}
-
-#azecraft-mission-dashboard.azd--framed .azd-panel {
-    width: calc((var(--azd-panels-width) - 36px) / 2);
-}
-
-#azecraft-mission-dashboard.azd--framed .azd-intel {
-    right: max(12px, var(--azd-right, 360px));
-}
-
 #azecraft-mission-dashboard.azd--framed .azd-card,
 #azecraft-mission-dashboard.azd--framed .azd-header {
     box-shadow: inset 0 0 0 1px var(--azd-line-soft);
@@ -560,24 +548,29 @@
     font-size: 12px;
 }
 
+/* Fixed art box so every card has the same height; the art fills it and can be panned. */
 #azecraft-mission-dashboard .azd-card-art {
     position: relative;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    min-height: 150px;
-    max-height: 270px;
+    height: calc(var(--azd-rail-width, 420px) * 0.55);
+    overflow: hidden;
     background: radial-gradient(ellipse at 50% 85%, rgba(114, 212, 255, 0.16), transparent 70%);
+    box-shadow: inset 0 0 0 1px var(--azd-line-soft);
 }
 
 #azecraft-mission-dashboard .azd-card-art img {
+    display: block;
     width: 100%;
     height: 100%;
-    max-height: 270px;
     border: none;
-    object-fit: contain;
-    object-position: 50% 100%;
-    cursor: pointer;
+    object-fit: cover;
+    object-position: 50% 0%;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+#azecraft-mission-dashboard .azd-card-art img.azd-art--panning {
+    cursor: grabbing;
 }
 
 #azecraft-mission-dashboard .azd-art-edit {
@@ -686,14 +679,7 @@
 }
 
 #azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-card-art {
-    min-height: 0;
-    max-height: 64px;
-    align-items: flex-start;
-}
-
-#azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-card-art img {
-    max-height: 64px;
-    object-position: 50% 0;
+    height: 64px;
 }
 
 #azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-crits ul,
@@ -720,23 +706,69 @@
 /*  Mission and intel panels                    */
 /* -------------------------------------------- */
 
+/* One merged bar: objective | summary (the mission part) and intel sit edge to edge, sized by the
+ * column widths the layout computes from this client's saved divider positions. */
 #azecraft-mission-dashboard .azd-panel {
     position: absolute;
     bottom: var(--azd-bottom, 84px);
     height: var(--azd-mission-height, 220px);
-    width: calc((var(--azd-panels-width) - 12px) / 2);
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
 }
 
 #azecraft-mission-dashboard .azd-mission {
-    left: var(--azd-panels-left);
+    left: var(--azd-bar-left);
+    width: calc(var(--azd-col-1) + var(--azd-col-2));
     flex-direction: row;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, var(--azd-chamfer) 100%, 0 calc(100% - var(--azd-chamfer)));
 }
 
 #azecraft-mission-dashboard .azd-intel {
-    right: var(--azd-right, 360px);
+    left: calc(var(--azd-bar-left) + var(--azd-col-1) + var(--azd-col-2));
+    width: var(--azd-col-3);
+    border-left: 1px solid var(--azd-line-soft);
+    clip-path: polygon(0 0, calc(100% - var(--azd-chamfer)) 0, 100% var(--azd-chamfer), 100% 100%, 0 100%);
+}
+
+#azecraft-mission-dashboard .azd-intel::before {
+    display: none;
+}
+
+/* Resize handles on the tab boundaries; a wide invisible hit area around a thin line. */
+#azecraft-mission-dashboard .azd-divider {
+    position: absolute;
+    bottom: var(--azd-bottom, 84px);
+    height: var(--azd-mission-height, 220px);
+    width: 11px;
+    margin-left: -5px;
+    cursor: col-resize;
+    pointer-events: auto;
+    touch-action: none;
+}
+
+#azecraft-mission-dashboard .azd-divider[data-divider="0"] { left: calc(var(--azd-bar-left) + var(--azd-col-1)); }
+#azecraft-mission-dashboard .azd-divider[data-divider="1"] { left: calc(var(--azd-bar-left) + var(--azd-col-1) + var(--azd-col-2)); }
+
+#azecraft-mission-dashboard .azd-divider::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 5px;
+    width: 1px;
+    background: var(--azd-line-soft);
+}
+
+#azecraft-mission-dashboard .azd-divider:hover::after,
+#azecraft-mission-dashboard .azd-divider--active::after {
+    width: 3px;
+    left: 4px;
+    background: var(--azd-accent);
+}
+
+#azecraft-mission-dashboard.azd--hidden .azd-dividers {
+    display: none;
 }
 
 #azecraft-mission-dashboard .azd-objective,
@@ -748,8 +780,7 @@
 }
 
 #azecraft-mission-dashboard .azd-objective {
-    flex: 0 0 42%;
-    border-right: 1px solid var(--azd-line-soft);
+    flex: 0 0 var(--azd-col-1);
     background: linear-gradient(180deg, rgba(255, 157, 66, 0.13), rgba(255, 157, 66, 0.03));
     box-shadow: inset 3px 0 0 var(--azd-orange);
 }
@@ -926,18 +957,6 @@
 
 #azecraft-mission-dashboard .azd-journal-content a:not(.content-link) {
     color: var(--azd-accent);
-}
-
-/* Narrow screens: objective stacked above the summary so both get the full width. */
-#azecraft-mission-dashboard.azd--compact:not(.azd--mission-collapsed) .azd-mission {
-    flex-direction: column;
-}
-
-#azecraft-mission-dashboard.azd--compact:not(.azd--mission-collapsed) .azd-objective {
-    flex: 0 1 auto;
-    max-height: 50%;
-    border-right: none;
-    border-bottom: 1px solid var(--azd-line-soft);
 }
 
 #azecraft-mission-dashboard.azd--compact .azd-panel-head {

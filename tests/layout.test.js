@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { computeLayout, frameWindow } from "../scripts/mission-dashboard/layout.js";
+import { clampColumns, computeLayout, frameWindow, moveDivider } from "../scripts/mission-dashboard/layout.js";
 
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
 
@@ -69,4 +69,30 @@ test("framed: the squad column ends where the mission tabs begin", () => {
     // hotbar inset 84 + mission panels 220 = 304 from the bottom, the top edge of the tabs
     assert.equal(values["--azd-rail-bottom"], "304px");
     assert.equal(computeLayout(desktop, { missionCollapsed: true }).values["--azd-rail-bottom"], "127px");
+});
+
+const near = (actual, expected) => actual.forEach((v, i) => assert.ok(Math.abs(v - expected[i]) < 0.5, `${actual} vs ${expected}`));
+
+test("mission tabs default to equal widths and keep a minimum width", () => {
+    near(clampColumns(undefined, 900), [300, 300, 300]);
+    near(clampColumns([0.8, 0.1, 0.1], 900), [540, 180, 180]);
+    // Too narrow for the minimum: equal split rather than overflow.
+    near(clampColumns([0.8, 0.1, 0.1], 450), [150, 150, 150]);
+});
+
+test("dragging a divider only trades width between its neighbours, within limits", () => {
+    const total = 900;
+    near(moveDivider(undefined, 0, 400, total).map(f => f * total), [400, 200, 300]);
+    near(moveDivider(undefined, 0, 50, total).map(f => f * total), [180, 420, 300]);
+    near(moveDivider(undefined, 1, 450, total).map(f => f * total), [300, 180, 420]);
+    near(moveDivider(undefined, 1, 890, total).map(f => f * total), [300, 420, 180]);
+});
+
+test("the mission bar spans from the frame to the sidebar and is split by the columns", () => {
+    const { values, bar } = computeLayout(desktop, { columns: [0.5, 0.25, 0.25] });
+    // rail 100 + 420 + gap 12 + frame padding 12 = 544; sidebar 1572 - 12 = 1560
+    assert.deepEqual(bar, { left: 544, width: 1016 });
+    assert.equal(values["--azd-col-1"], "508px");
+    assert.equal(values["--azd-col-2"], "254px");
+    assert.equal(values["--azd-col-3"], "254px");
 });

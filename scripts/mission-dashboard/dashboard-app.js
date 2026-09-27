@@ -9,7 +9,42 @@ import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS
 import { setDefaultLedger } from "./dashboard-state.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
-import { LayoutWatcher, fitSceneToFrame } from "./layout.js";
+import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
+
+const ART_PAN_KEY = `${MODULE_ID}.artPan`;
+const DRAG_THRESHOLD = 4;
+
+/** Saved art pan positions per Actor, in this browser only: {uuid: {src, x, y}}. */
+function readArtPans() {
+    try {
+        return JSON.parse(localStorage.getItem(ART_PAN_KEY) ?? "{}") ?? {};
+    } catch {
+        return {};
+    }
+}
+
+/** Drop saved pans whose image has changed since they were made. */
+function forgetStaleArtPans(currentArt) {
+    try {
+        const pans = readArtPans();
+        const stale = Object.keys(pans).filter(uuid => uuid in currentArt && pans[uuid].src !== currentArt[uuid]);
+        if (!stale.length) return;
+        for (const uuid of stale) delete pans[uuid];
+        localStorage.setItem(ART_PAN_KEY, JSON.stringify(pans));
+    } catch {
+        // Storage unavailable: nothing to clean up.
+    }
+}
+
+function saveArtPan(uuid, src, x, y) {
+    try {
+        const pans = readArtPans();
+        pans[uuid] = { src, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+        localStorage.setItem(ART_PAN_KEY, JSON.stringify(pans));
+    } catch {
+        // Storage can be unavailable (private mode); panning still works for this session.
+    }
+}
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
@@ -64,8 +99,13 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         header: { template: `${TEMPLATE_ROOT}/header.hbs` },
         rail: { template: `${TEMPLATE_ROOT}/rail.hbs`, scrollable: [".azd-rail-cards"] },
         mission: { template: `${TEMPLATE_ROOT}/mission.hbs`, scrollable: [".azd-objective-body", ".azd-summary-body"] },
-        intel: { template: `${TEMPLATE_ROOT}/intel.hbs`, scrollable: [".azd-intel-scroll"] }
+        intel: { template: `${TEMPLATE_ROOT}/intel.hbs`, scrollable: [".azd-intel-scroll"] },
+        // Last, so the resize handles sit above the tabs they separate.
+        dividers: { template: `${TEMPLATE_ROOT}/dividers.hbs` }
     };
+
+    /** Column fractions while a divider is being dragged (not yet saved). */
+    #dragColumns = null;
 
     /* -------------------------------------------- */
     /*  Rendering                                   */
@@ -81,12 +121,19 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     async _prepareContext() {
         const view = this.controller.view;
         const prefs = this.controller.preferences();
+        // Invalidate pans made for a previous image, then read what is left.
+        forgetStaleArtPans(Object.fromEntries((view?.cards ?? []).filter(c => c.uuid && c.art).map(c => [c.uuid, c.art])));
+        const pans = readArtPans();
         const cards = (view?.cards ?? []).map(card => {
             const draft = card.uuid ? this.drafts.get(card.uuid) : null;
+            // A saved pan only applies to the image it was made for.
+            const pan = card.uuid ? pans[card.uuid] : null;
+            const artPosition = pan && pan.src === card.art ? `${pan.x}% ${pan.y}%` : "50% 0%";
 
             return {
                 ...card,
                 expanded: this.expanded.has(card.slotId),
+                artPosition,
                 editing: Boolean(draft),
                 draft: draft?.text ?? "",
                 draftConflict: Boolean(draft) && !draft.saving && draft.original !== card.desire,
@@ -159,11 +206,19 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             img.classList.add("azd-art--fallback");
         }, true);
 
-        this.#layout = new LayoutWatcher(this.element, () => ({
-            compactPreference: this.controller.preferences().compact,
-            missionCollapsed: this.controller.preferences().missionCollapsed,
-            framed: this.controller.preferences().style !== "floating"
-        }));
+        this.#layout = new LayoutWatcher(this.element, () => this.#layoutOptions());
+
+        this.element.addEventListener("pointerdown", event => {
+            if (event.button !== 0) return;
+            const divider = event.target.closest("[data-divider]");
+            if (divider) return this.#dragDivider(event, divider);
+            const art = event.target.closest(".azd-card-art img");
+            if (art) return this.#panArt(event, art);
+        });
+
+        this.element.addEventListener("dblclick", event => {
+            if (event.target.closest("[data-divider]")) game.settings.set(MODULE_ID, SETTINGS.columns, DEFAULT_COLUMNS);
+        });
         this.#layout.start();
     }
 
@@ -422,7 +477,91 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     #layoutOptions() {
         const prefs = this.controller.preferences();
-        return { compactPreference: prefs.compact, missionCollapsed: prefs.missionCollapsed, framed: prefs.style !== "floating" };
+        return {
+            compactPreference: prefs.compact,
+            missionCollapsed: prefs.missionCollapsed,
+            framed: prefs.style !== "floating",
+            columns: this.#dragColumns ?? prefs.columns
+        };
+    }
+
+    /* -------------------------------------------- */
+    /*  Pointer interactions                        */
+    /* -------------------------------------------- */
+
+    /** Resize two neighbouring mission tabs; saved to this browser when released. */
+    #dragDivider(event, divider) {
+        const bar = this.#layout?.last?.bar;
+        if (!bar?.width) return;
+
+        event.preventDefault();
+        const index = Number(divider.dataset.divider);
+        const start = this.controller.preferences().columns;
+        divider.setPointerCapture(event.pointerId);
+        divider.classList.add("azd-divider--active");
+
+        const move = moveEvent => {
+            this.#dragColumns = moveDivider(start, index, moveEvent.clientX - bar.left, bar.width);
+            this.#layout.apply();
+        };
+        const end = () => {
+            divider.removeEventListener("pointermove", move);
+            divider.classList.remove("azd-divider--active");
+            const columns = this.#dragColumns;
+            if (columns) game.settings.set(MODULE_ID, SETTINGS.columns, columns).finally(() => { this.#dragColumns = null; });
+        };
+
+        divider.addEventListener("pointermove", move);
+        divider.addEventListener("pointerup", end, { once: true });
+        divider.addEventListener("pointercancel", end, { once: true });
+    }
+
+    /**
+     * Drag card art to pan it inside its fixed box; a click without dragging opens the sheet.
+     * The position is saved in this browser per Actor, together with the image it applies to.
+     */
+    #panArt(event, img) {
+        event.preventDefault();
+        const uuid = img.closest("[data-uuid]")?.dataset.uuid;
+        const [x0, y0] = getComputedStyle(img).objectPosition.split(" ").map(v => Number.parseFloat(v) || 0);
+        const scale = Math.max(img.clientWidth / (img.naturalWidth || 1), img.clientHeight / (img.naturalHeight || 1));
+        const overflowX = Math.max(0, (img.naturalWidth * scale) - img.clientWidth);
+        const overflowY = Math.max(0, (img.naturalHeight * scale) - img.clientHeight);
+        const startX = event.clientX;
+        const startY = event.clientY;
+        let panning = false;
+        let position = [x0, y0];
+
+        img.setPointerCapture(event.pointerId);
+
+        const move = moveEvent => {
+            const dx = moveEvent.clientX - startX;
+            const dy = moveEvent.clientY - startY;
+            if (!panning && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+            panning = true;
+            img.classList.add("azd-art--panning");
+            // Dragging the image right reveals its left side, i.e. a smaller percentage.
+            const clamp = v => Math.min(100, Math.max(0, v));
+            position = [
+                overflowX ? clamp(x0 - (dx / overflowX) * 100) : x0,
+                overflowY ? clamp(y0 - (dy / overflowY) * 100) : y0
+            ];
+            img.style.objectPosition = `${position[0]}% ${position[1]}%`;
+        };
+        const end = () => {
+            img.removeEventListener("pointermove", move);
+            img.classList.remove("azd-art--panning");
+            if (panning) {
+                if (uuid) saveArtPan(uuid, img.dataset.artSrc, ...position);
+            } else {
+                const actor = uuid ? foundry.utils.fromUuidSync(uuid, { strict: false }) : null;
+                if (actor?.testUserPermission(game.user, "LIMITED")) actor.sheet?.render(true);
+            }
+        };
+
+        img.addEventListener("pointermove", move);
+        img.addEventListener("pointerup", end, { once: true });
+        img.addEventListener("pointercancel", end, { once: true });
     }
 
     /** Fit the Scene into the frame on this client (used when a Scene opens with "fit on open"). */

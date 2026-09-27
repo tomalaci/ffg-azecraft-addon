@@ -10,7 +10,7 @@ import { ensureLedgerFolders } from "./ledgers.js";
 
 // Keys are Handlebars partial names; most partials are referenced by their path.
 const TEMPLATES = Object.fromEntries(
-    ["frame", "header", "rail", "card", "mission", "intel", "dashboard-config", "campaign", "help"]
+    ["frame", "dividers", "header", "rail", "card", "mission", "intel", "dashboard-config", "campaign", "help"]
         .map(name => `${TEMPLATE_ROOT}/${name}.hbs`)
         .map(path => [path, path])
 );
@@ -54,6 +54,16 @@ function registerSettings() {
         type: String,
         choices: { framed: "Framed", floating: "Floating panels" },
         default: "framed",
+        onChange: () => controller?.app?.applyPreferences()
+    });
+
+    // Relative widths of the objective / summary / intel tabs, set by dragging the dividers.
+    game.settings.register(MODULE_ID, SETTINGS.columns, {
+        name: "Mission tab widths",
+        scope: "client",
+        config: false,
+        type: Array,
+        default: [1 / 3, 1 / 3, 1 / 3],
         onChange: () => controller?.app?.applyPreferences()
     });
 
