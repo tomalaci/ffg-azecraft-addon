@@ -26,6 +26,6 @@
   <polygon points="256.00,110.00 334.76,135.59 383.44,202.59 383.44,285.41 334.76,352.41 256.00,378.00 177.24,352.41 128.56,285.41 128.56,202.59 177.24,135.59" fill="none" stroke="#8aa4c0" stroke-width="12" stroke-linejoin="round"/>
   <circle cx="256" cy="208" r="44" fill="#8aa4c0"/>
   <path d="M184 322 C184 270 214 258 256 258 C298 258 328 270 328 322 Z" fill="#8aa4c0"/>
-  <path d="M240.4 191.6 C240.4 170.0 271.6 170.0 271.6 190.4 C271.6 203.6 256 203.6 256 218.0" fill="none" stroke="#0b1422" stroke-width="10.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="256" cy="234.8" r="6.6" fill="#0b1422"/>
+  <path transform="translate(256 208)" d="M-16 24 L-16 -24 L16 24 L16 -24" fill="none" stroke="#0b1422" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

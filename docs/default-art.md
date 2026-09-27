@@ -5,14 +5,15 @@ officer for rivals, Darth Vader for nemeses, and so on. The addon replaces these
 its own abstract, Mass Effect style tokens (`assets/default-art/`).
 
 All types share the character's figure emblem. Minions, rivals and nemeses are not necessarily
-enemies, so they share one neutral grey-blue and an unknown figure (a "?" on the head); their
-tier shows in the frame around the figure and in the outer ring, which gets more detailed per tier:
+enemies, so they share one neutral grey-blue figure with the tier's initial (M, R or N) on the
+head; the tier also shows in the frame around the figure and in the outer ring, which gets more
+detailed per tier:
 
 | Type | Art |
 | --- | --- |
-| Minion | Grey-blue figure with "?" in a hexagon; plain four-segment ring |
-| Rival | Same figure in an octagon; eight-segment ring with inner brackets |
-| Nemesis | Same figure in a decagon; twelve-segment double ring with more ticks and brackets |
+| Minion | Grey-blue figure with "M" in a hexagon; plain four-segment ring |
+| Rival | Figure with "R" in an octagon; eight-segment ring with inner brackets |
+| Nemesis | Figure with "N" in a decagon; twelve-segment double ring with more ticks and brackets |
 | Character | Cyan figure in a hexagon |
 | Vehicle | Cyan ship silhouette |
 
