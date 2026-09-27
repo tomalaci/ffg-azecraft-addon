@@ -313,6 +313,20 @@ export function normalizeLoadout(raw) {
     ]));
 }
 
+/** Concentration powers the character is keeping up: known concentration power ids, no duplicates. */
+export function normalizeConcentration(raw) {
+    const ids = new Set(Array.isArray(raw) ? raw : []);
+    return allPowers().filter(power => power.concentration && ids.has(power.id)).map(power => power.id);
+}
+
+/** Add or remove a power from the concentration list. */
+export function toggleConcentration(raw, powerId) {
+    const current = normalizeConcentration(raw);
+    return current.includes(powerId)
+        ? current.filter(id => id !== powerId)
+        : normalizeConcentration([...current, powerId]);
+}
+
 export const PRESET_NAME_MAX_LENGTH = 60;
 
 /**

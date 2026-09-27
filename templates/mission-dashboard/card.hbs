@@ -18,6 +18,13 @@
                 </button>
             </div>
             {{#if card.subtitle}}<div class="azd-subtitle">{{card.subtitle}}</div>{{/if}}
+            {{#if card.concentrating.length}}
+            <div class="azd-conc">
+                {{#each card.concentrating as |power|}}
+                <span class="azd-conc-chip" data-tooltip="Concentrating on {{power.label}}"><i class="fa-solid fa-rotate" inert></i> {{power.label}}{{#if ../card.canEditConcentration}}<button type="button" class="azd-conc-clear" data-action="endConcentration" data-power="{{power.id}}" data-tooltip="Stop concentrating" aria-label="Stop concentrating on {{power.label}}"><i class="fa-solid fa-xmark" inert></i></button>{{/if}}</span>
+                {{/each}}
+            </div>
+            {{/if}}
 
             {{#if (eq card.availability "limited")}}
             <p class="azd-muted azd-limited-note">Details restricted.</p>

@@ -9,11 +9,13 @@ import {
     disciplineForSkill,
     findPower,
     modifierGroups,
+    normalizeConcentration,
     normalizeLoadout,
     normalizePreset,
     normalizePresets,
     powersFor,
-    presetDifficulty
+    presetDifficulty,
+    toggleConcentration
 } from "../scripts/powers/power-catalog.js";
 
 test("every power has a skill and a base difficulty from the rules", () => {
@@ -99,4 +101,12 @@ test("modifierGroups narrows the dialog to the rolled power plus general modifie
     const one = modifierGroups("tech", "tech-attack");
     assert.deepEqual(one.map(g => [g.id, g.open]), [["tech-general", false], ["tech-attack", true]]);
     assert.deepEqual(modifierGroups("unknown"), []);
+});
+
+test("concentration keeps only known concentration powers, toggling on and off", () => {
+    assert.deepEqual(normalizeConcentration(["biotic-barrier", "biotic-attack", "bogus", "biotic-barrier"]), ["biotic-barrier"]);
+    assert.deepEqual(normalizeConcentration(null), []);
+    assert.deepEqual(toggleConcentration([], "tech-augment"), ["tech-augment"]);
+    assert.deepEqual(toggleConcentration(["tech-augment", "biotic-barrier"], "tech-augment"), ["biotic-barrier"]);
+    assert.deepEqual(toggleConcentration([], "biotic-attack"), [], "not a concentration power");
 });

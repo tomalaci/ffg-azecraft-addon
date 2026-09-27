@@ -13,9 +13,15 @@
                 <span class="azpw-power-meta">
                     <span class="azpw-dice">{{#each power.dice}}<span class="azpw-die"></span>{{/each}}{{#unless power.dice.length}}—{{/unless}}</span>
                     <span>{{power.level}}</span>
-                    {{#if power.concentration}}<span class="azpw-tag" data-tooltip="Concentration: stays active while the caster concentrates">Conc.</span>{{/if}}
                 </span>
             </button>
+            {{#if power.concentration}}
+            <button type="button" class="azpw-conc {{#if power.concentrating}}azpw-conc--on{{/if}}" data-azpw="concentrate" data-power="{{power.id}}" {{disabled (not @root.canEdit)}}
+                aria-pressed="{{power.concentrating}}"
+                data-tooltip="{{#if power.concentrating}}Concentrating: shown on the mission dashboard. Click when it ends.{{else}}Concentration power. Click to mark that the character is keeping it up.{{/if}}">
+                <i class="fa-solid fa-rotate" inert></i> {{#if power.concentrating}}Concentrating{{else}}Conc.{{/if}}
+            </button>
+            {{/if}}
             {{#if power.loadoutOptions}}
             <div class="azpw-loadout" role="group" aria-label="{{power.loadoutLabel}} loaded for {{power.label}}">
                 {{#each power.loadoutOptions as |option|}}

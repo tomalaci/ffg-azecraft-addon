@@ -127,6 +127,8 @@ still work.
 - Click a character's **name**, or double-click their **art**, to open their sheet.
 - Click a character's **art** to view it full size (GMs can show it to players from there).
 - Click a **critical injury** to open that injury.
+- Powers the character is concentrating on (toggled on the sheet's Biotics / Tech tabs) show as
+  orange chips under the name; the owner or a GM can clear one with its ×.
 - **Wounds** and **Strain** show the current value against the threshold, exactly as on the sheet.
   A value above the threshold is shown in red and marked *over*. The bar stops at full, but the
   number always shows the real value. The dashboard doesn't apply any rules effects.

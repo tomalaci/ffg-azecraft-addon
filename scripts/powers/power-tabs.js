@@ -16,10 +16,12 @@ import {
     findModifier,
     findPower,
     findSubtype,
+    normalizeConcentration,
     normalizeLoadout,
     normalizePresets,
     powersFor,
-    presetDifficulty
+    presetDifficulty,
+    toggleConcentration
 } from "./power-catalog.js";
 import { rollPower } from "../roll-power-modifiers.js";
 import { PowerPresetEditor } from "./preset-editor.js";
@@ -29,7 +31,7 @@ const TEMPLATE = `modules/${MODULE_ID}/templates/actors/parts/power-tab.hbs`;
 const ACTOR_TYPES = new Set(["character"]);
 const DISCIPLINES = ["biotics", "tech"];
 
-export const FLAGS = { presets: "powerPresets", loadout: "techLoadout" };
+export const FLAGS = { presets: "powerPresets", loadout: "techLoadout", concentration: "concentration" };
 
 export function readPresets(actor) {
     return normalizePresets(actor.getFlag(MODULE_ID, FLAGS.presets));
@@ -53,6 +55,7 @@ function diceView({ difficulty, setback = 0, upgrades = 0 }) {
 function context(actor, discipline) {
     const entry = POWER_MODIFIER_CATALOG[discipline];
     const loadout = readLoadout(actor);
+    const concentrating = new Set(normalizeConcentration(actor.getFlag(MODULE_ID, FLAGS.concentration)));
 
     const powers = powersFor(discipline).map(power => {
         const loaded = power.loadout ? findSubtype(power, loadout[power.id]) : null;
@@ -60,6 +63,7 @@ function context(actor, discipline) {
             id: power.id,
             label: power.label,
             concentration: power.concentration,
+            concentrating: concentrating.has(power.id),
             loaded,
             loadoutLabel: power.subtypeLabel,
             loadoutOptions: power.loadout
@@ -117,6 +121,8 @@ async function onClick(app, event) {
             const loaded = found?.loadout ? readLoadout(actor)[found.id] : null;
             return rollPower(app, power, { subtype: loaded });
         }
+        case "concentrate":
+            return actor.setFlag(MODULE_ID, FLAGS.concentration, toggleConcentration(actor.getFlag(MODULE_ID, FLAGS.concentration), power));
         case "load":
             return actor.setFlag(MODULE_ID, FLAGS.loadout, { ...readLoadout(actor), [power]: subtype });
         case "rollPreset": {

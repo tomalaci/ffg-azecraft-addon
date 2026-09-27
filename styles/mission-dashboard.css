@@ -458,6 +458,46 @@
     font-size: 12px;
 }
 
+/* Concentration powers the character keeps up (set on the sheet's Biotics / Tech tabs). */
+#azecraft-mission-dashboard .azd-conc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin: 2px 0 4px;
+}
+
+#azecraft-mission-dashboard .azd-conc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    border: 1px solid rgba(255, 157, 66, 0.6);
+    background: rgba(255, 157, 66, 0.12);
+    color: var(--azd-orange, #ff9d42);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+#azecraft-mission-dashboard .azd-conc-clear {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0 1px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#azecraft-mission-dashboard .azd-conc-clear:hover {
+    color: #fff;
+    box-shadow: none;
+}
+
 #azecraft-mission-dashboard .azd-tracks {
     display: flex;
     flex-direction: column;

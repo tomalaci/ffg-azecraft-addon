@@ -100,6 +100,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             saveDesire: MissionDashboardApp.#onSaveDesire,
             useLatestDesire: MissionDashboardApp.#onUseLatestDesire,
             editArt: MissionDashboardApp.#onEditArt,
+            endConcentration: MissionDashboardApp.#onEndConcentration,
             toggleCard: MissionDashboardApp.#onToggleCard,
             editPage: MissionDashboardApp.#onEditPage,
             configure: MissionDashboardApp.#onConfigure,
@@ -303,6 +304,14 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const actor = MissionDashboardApp.#resolve(target.closest("[data-uuid]")?.dataset.uuid);
         if (!actor?.testUserPermission(game.user, "LIMITED")) return;
         actor.sheet?.render(true);
+    }
+
+    /** Stop concentrating on a power (the flag the Biotics / Tech tabs set). */
+    static async #onEndConcentration(event, target) {
+        const actor = MissionDashboardApp.#resolve(target.closest("[data-uuid]")?.dataset.uuid);
+        if (!actor?.canUserModify(game.user, "update")) return;
+        const current = actor.getFlag(MODULE_ID, "concentration") ?? [];
+        await actor.setFlag(MODULE_ID, "concentration", current.filter(id => id !== target.dataset.power));
     }
 
     static #onOpenItem(event, target) {

@@ -24,6 +24,11 @@ optional effects and the general modifiers are listed. Tick the effects you use 
 the chat message names the power and the chosen effects. Rolling Biotics or Tech from the skills
 list still shows every power's modifiers.
 
+**Concentration.** Powers that need concentration have a **Conc.** toggle. Click it when the
+character starts keeping the power up: it turns orange ("Concentrating") and the power shows as a
+chip on the character's mission dashboard card. Click it again (or the chip's ×) when it ends. It
+is only a reminder: no stats change.
+
 **Tech loadout.** Tech Attack and Tech Augment subtypes are readied separately, so their buttons
 have a loadout row: the element (Incinerate, Cryo Blast, Overload, Neural Shock) and the augment
 mode (Tech Armor, Charged Melee, Turbocharge, Tactical Cloak). Click an icon to load it; rolls use
@@ -50,7 +55,7 @@ off to get the parchment look back (the header fields stay removed).
   tabs that `scripts/powers/power-tabs.js` fills in `renderActorSheet`; presets are edited in
   `scripts/powers/preset-editor.js`. Actor flags: `powerPresets` (list of
   `{id, name, power, subtype, modifiers}`, modifiers as `"<power or general id>:<option id>"`) and
-  `techLoadout` (`{power id: subtype id}`). A power button calls the system's
+  `techLoadout` (`{power id: subtype id}`) and `concentration` (list of power ids). A power button calls the system's
   `DiceHelpers.rollSkill` for the power's skill and parks the power, subtype and modifiers for the
   roll dialog; the patched `RollBuilderFFG.getData` in `scripts/roll-power-modifiers.js` claims it
   (within 5 s, same discipline), moves the difficulty from Average to the base, ticks the preset's

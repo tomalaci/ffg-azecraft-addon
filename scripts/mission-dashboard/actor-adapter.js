@@ -13,6 +13,7 @@
  */
 
 import { DESIRE_MAX_LENGTH, FLAG_KEY, MODULE_ID, OWNERSHIP, PLACEHOLDER_ART } from "./constants.js";
+import { findPower, normalizeConcentration } from "../powers/power-catalog.js";
 
 const CRITICAL_INJURY_TYPE = "criticalinjury";
 
@@ -126,6 +127,12 @@ function permissionLevel(actor, user) {
  * @param {Actor|null} actor   Resolved world Actor, or null if missing
  * @param {User} user
  */
+/** Concentration powers the character is keeping up (Biotics / Tech tabs), as labels. */
+export function readConcentration(actor) {
+    return normalizeConcentration(actor?.flags?.[MODULE_ID]?.concentration)
+        .map(id => ({ id, label: findPower(id).label }));
+}
+
 export function buildCharacterCard(slot, actor, user) {
     const base = {
         slotId: slot.id,
@@ -193,6 +200,8 @@ export function buildCharacterCard(slot, actor, user) {
             ranged: formatNumber(toNumber(stats?.defence?.ranged))
         },
         criticalInjuries,
+        concentrating: readConcentration(actor),
+        canEditConcentration: canEdit,
         hasDesire: Boolean(desire),
         desire: desire?.text ?? "",
         desireRich: Boolean(desire?.rich),

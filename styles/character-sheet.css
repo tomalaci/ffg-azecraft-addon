@@ -709,3 +709,26 @@
     color: var(--azcs-muted);
     font-size: 11px;
 }
+
+/* Concentration toggle on concentration powers. */
+.azcs.starwarsffg.sheet.actor .window-content .azpw-conc {
+    align-self: flex-start;
+    width: auto;
+    height: 20px;
+    margin: 0 8px 6px;
+    padding: 0 6px;
+    border: 1px solid var(--azcs-line-soft);
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--azcs-accent);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    line-height: 18px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-conc--on {
+    border-color: var(--azcs-orange);
+    background: rgba(255, 157, 66, 0.18);
+    color: var(--azcs-orange);
+}
