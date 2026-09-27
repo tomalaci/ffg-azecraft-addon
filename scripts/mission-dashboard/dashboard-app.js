@@ -11,41 +11,62 @@ import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
+import { artOverflow, artViewStyle, normalizeArtView, panArtView, zoomArtView, DEFAULT_ART_VIEW } from "./art-view.js";
 
-const ART_PAN_KEY = `${MODULE_ID}.artPan`;
+const ART_VIEW_KEY = `${MODULE_ID}.artView`;
 const DRAG_THRESHOLD = 4;
+const ZOOM_BUTTON_STEP = 0.25;
+const ZOOM_WHEEL_STEP = 0.1;
 
-/** Saved art pan positions per Actor, in this browser only: {uuid: {src, x, y}}. */
-function readArtPans() {
+// Pan-only positions from an earlier build were made without zoom; drop them once.
+try {
+    localStorage.removeItem(`${MODULE_ID}.artPan`);
+} catch {
+    // Storage unavailable.
+}
+
+/** Saved art views per Actor, in this browser only: {uuid: {src, x, y, z}}. */
+function readArtViews() {
     try {
-        return JSON.parse(localStorage.getItem(ART_PAN_KEY) ?? "{}") ?? {};
+        return JSON.parse(localStorage.getItem(ART_VIEW_KEY) ?? "{}") ?? {};
     } catch {
         return {};
     }
 }
 
-/** Drop saved pans whose image has changed since they were made. */
-function forgetStaleArtPans(currentArt) {
+/** Drop saved views whose image has changed since they were made. */
+function forgetStaleArtViews(currentArt) {
     try {
-        const pans = readArtPans();
-        const stale = Object.keys(pans).filter(uuid => uuid in currentArt && pans[uuid].src !== currentArt[uuid]);
+        const views = readArtViews();
+        const stale = Object.keys(views).filter(uuid => uuid in currentArt && views[uuid].src !== currentArt[uuid]);
         if (!stale.length) return;
-        for (const uuid of stale) delete pans[uuid];
-        localStorage.setItem(ART_PAN_KEY, JSON.stringify(pans));
+        for (const uuid of stale) delete views[uuid];
+        localStorage.setItem(ART_VIEW_KEY, JSON.stringify(views));
     } catch {
         // Storage unavailable: nothing to clean up.
     }
 }
 
-function saveArtPan(uuid, src, x, y) {
+function saveArtView(uuid, src, view) {
     try {
-        const pans = readArtPans();
-        pans[uuid] = { src, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-        localStorage.setItem(ART_PAN_KEY, JSON.stringify(pans));
+        const views = readArtViews();
+        views[uuid] = { src, ...normalizeArtView(view) };
+        localStorage.setItem(ART_VIEW_KEY, JSON.stringify(views));
     } catch {
-        // Storage can be unavailable (private mode); panning still works for this session.
+        // Storage can be unavailable (private mode); the view still applies for this session.
     }
 }
+
+/** The view currently applied to an art image (from its CSS variables). */
+function currentArtView(img) {
+    const read = name => Number.parseFloat(img.style.getPropertyValue(name));
+    return normalizeArtView({ x: read("--azd-art-x"), y: read("--azd-art-y"), z: read("--azd-art-z") });
+}
+
+function applyArtView(img, view) {
+    img.setAttribute("style", artViewStyle(view));
+}
+
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
@@ -87,6 +108,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             pageEntry: MissionDashboardApp.#onPageEntry,
             openHelp: () => DashboardHelpApp.open(),
             fitScene: MissionDashboardApp.#onFitScene,
+            artZoom: MissionDashboardApp.#onArtZoom,
             newEntry: MissionDashboardApp.#onNewEntry,
             newLedger: MissionDashboardApp.#onNewLedger,
             setDefaultLedger: MissionDashboardApp.#onSetDefaultLedger,
@@ -123,18 +145,18 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const view = this.controller.view;
         const prefs = this.controller.preferences();
         // Invalidate pans made for a previous image, then read what is left.
-        forgetStaleArtPans(Object.fromEntries((view?.cards ?? []).filter(c => c.uuid && c.art).map(c => [c.uuid, c.art])));
-        const pans = readArtPans();
+        forgetStaleArtViews(Object.fromEntries((view?.cards ?? []).filter(c => c.uuid && c.art).map(c => [c.uuid, c.art])));
+        const artViews = readArtViews();
         const cards = (view?.cards ?? []).map(card => {
             const draft = card.uuid ? this.drafts.get(card.uuid) : null;
-            // A saved pan only applies to the image it was made for.
-            const pan = card.uuid ? pans[card.uuid] : null;
-            const artPosition = pan && pan.src === card.art ? `${pan.x}% ${pan.y}%` : "50% 0%";
+            // A saved view only applies to the image it was made for.
+            const saved = card.uuid ? artViews[card.uuid] : null;
+            const artStyle = artViewStyle(saved && saved.src === card.art ? saved : DEFAULT_ART_VIEW);
 
             return {
                 ...card,
                 expanded: this.expanded.has(card.slotId),
-                artPosition,
+                artStyle,
                 editing: Boolean(draft),
                 draft: draft?.text ?? "",
                 draftConflict: Boolean(draft) && !draft.saving && draft.original !== card.desire,
@@ -216,6 +238,16 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             const art = event.target.closest(".azd-card-art img");
             if (art) return this.#panArt(event, art);
         });
+
+        // Shift + wheel over card art zooms it; a plain wheel still scrolls the squad column.
+        this.element.addEventListener("wheel", event => {
+            if (!event.shiftKey) return;
+            const img = event.target.closest(".azd-card-art")?.querySelector("img");
+            if (!img) return;
+            event.preventDefault();
+            const delta = event.deltaY || event.deltaX;
+            this.#zoomArt(img, delta < 0 ? ZOOM_WHEEL_STEP : -ZOOM_WHEEL_STEP);
+        }, { passive: false });
 
         this.element.addEventListener("dblclick", event => {
             if (event.target.closest("[data-divider]")) game.settings.set(MODULE_ID, SETTINGS.columns, DEFAULT_COLUMNS);
@@ -545,14 +577,13 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     #panArt(event, img) {
         event.preventDefault();
         const uuid = img.closest("[data-uuid]")?.dataset.uuid;
-        const [x0, y0] = getComputedStyle(img).objectPosition.split(" ").map(v => Number.parseFloat(v) || 0);
-        const scale = Math.max(img.clientWidth / (img.naturalWidth || 1), img.clientHeight / (img.naturalHeight || 1));
-        const overflowX = Math.max(0, (img.naturalWidth * scale) - img.clientWidth);
-        const overflowY = Math.max(0, (img.naturalHeight * scale) - img.clientHeight);
+        const box = img.parentElement.getBoundingClientRect();
+        const start = currentArtView(img);
+        const overflow = artOverflow(box, { width: img.naturalWidth, height: img.naturalHeight }, start.z);
         const startX = event.clientX;
         const startY = event.clientY;
         let panning = false;
-        let position = [x0, y0];
+        let view = start;
 
         img.setPointerCapture(event.pointerId);
 
@@ -562,19 +593,14 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             if (!panning && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
             panning = true;
             img.classList.add("azd-art--panning");
-            // Dragging the image right reveals its left side, i.e. a smaller percentage.
-            const clamp = v => Math.min(100, Math.max(0, v));
-            position = [
-                overflowX ? clamp(x0 - (dx / overflowX) * 100) : x0,
-                overflowY ? clamp(y0 - (dy / overflowY) * 100) : y0
-            ];
-            img.style.objectPosition = `${position[0]}% ${position[1]}%`;
+            view = panArtView(start, dx, dy, overflow);
+            applyArtView(img, view);
         };
         const end = () => {
             img.removeEventListener("pointermove", move);
             img.classList.remove("azd-art--panning");
             if (panning) {
-                if (uuid) saveArtPan(uuid, img.dataset.artSrc, ...position);
+                if (uuid) saveArtView(uuid, img.dataset.artSrc, view);
             } else {
                 const actor = uuid ? foundry.utils.fromUuidSync(uuid, { strict: false }) : null;
                 if (actor?.testUserPermission(game.user, "LIMITED")) actor.sheet?.render(true);
@@ -584,6 +610,19 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         img.addEventListener("pointermove", move);
         img.addEventListener("pointerup", end, { once: true });
         img.addEventListener("pointercancel", end, { once: true });
+    }
+
+    /** Zoom card art by a step (0 resets to the default view); saved in this browser. */
+    #zoomArt(img, step) {
+        const uuid = img.closest("[data-uuid]")?.dataset.uuid;
+        const view = step === 0 ? { ...DEFAULT_ART_VIEW } : zoomArtView(currentArtView(img), step);
+        applyArtView(img, view);
+        if (uuid) saveArtView(uuid, img.dataset.artSrc, view);
+    }
+
+    static #onArtZoom(event, target) {
+        const img = target.closest(".azd-card-art")?.querySelector("img");
+        if (img) this.#zoomArt(img, Number(target.dataset.step) * ZOOM_BUTTON_STEP);
     }
 
     /** Fit the Scene into the frame on this client (used when a Scene opens with "fit on open"). */

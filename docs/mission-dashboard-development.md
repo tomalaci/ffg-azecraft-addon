@@ -25,6 +25,7 @@ scripts/mission-dashboard/
   actor-adapter.js         starwarsffg Actor -> permission-filtered card view model
   mission-data.js          tab view models: ledger choice, entry paging, page access, enrichment; People of Note
   ledgers.js               mission ledgers: module Journal folders, ledger/entry creation, ledger choice
+  art-view.js              card art pan/zoom maths and CSS variables (pure)
   campaign-reputation.js   ledger schema, totals, validation, ledger writes
   controller.js            per-client lifecycle, hook routing, coalescing, stale-render guard
   dashboard-app.js         the HUD (frameless ApplicationV2, Handlebars parts)
@@ -180,10 +181,14 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
   (`--azd-bar-left`, `--azd-col-1..3`). The widths come from the client setting `dashboardColumns`
   (fractions) through `clampColumns`, which keeps each tab at least 180px. `moveDivider` changes only
   the two neighbouring tabs. The `dividers` part renders last, so its handles sit above the tabs.
-- **Card art.** The art box has a fixed height (0.55 × rail width) with `object-fit: cover`,
-  starting at `50% 0%`. Dragging changes `object-position`, 1:1 with the pointer, over the image's
-  overflow. Positions are stored in `localStorage["ffg-azecraft-addon.artPan"]` as
-  `{uuid: {src, x, y}}` and deleted when the Actor's art path changes.
+- **Card art.** The art box has a fixed height (0.55 × rail width). A view `{x, y, z}` (`art-view.js`,
+  pure) sets CSS variables. The `<img>` is sized to z × the box with `object-fit: cover`, and offset
+  by the same fraction as its `object-position`, which places the picture at x%/y% of its overflow
+  at any box size. The default is `{50, 0, 1.5}`; zoom ranges from 1× (plain cover) to 4×. Panning
+  is 1:1 with the pointer (`artOverflow`/`panArtView`). Zoom uses hover buttons or Shift+wheel;
+  a plain wheel still scrolls the rail. Views are stored in
+  `localStorage["ffg-azecraft-addon.artView"]` as `{uuid: {src, x, y, z}}` and deleted when the
+  Actor's art path changes. The earlier pan-only key `artPan` is removed on load.
 - Parts are `frame`, `header`, `rail`, `mission`, `intel` and `dividers`. The controller builds a view model, awaiting
   UUID resolution and `TextEditor.enrichHTML`, and then renders only the affected parts. Cards and
   the header render immediately; the first mount waits for mission content.

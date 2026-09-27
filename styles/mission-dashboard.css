@@ -557,16 +557,52 @@
     box-shadow: inset 0 0 0 1px var(--azd-line-soft);
 }
 
+/* The image element is z × the box, cover-fitted, and offset by the same fraction as its
+ * object-position: together that places the picture at x%/y% of its overflow at any box size
+ * (see art-view.js). Defaults: 1.5× cover, centred, top. */
 #azecraft-mission-dashboard .azd-card-art img {
+    --azd-art-x: 50;
+    --azd-art-y: 0;
+    --azd-art-z: 1.5;
+    position: absolute;
     display: block;
-    width: 100%;
-    height: 100%;
+    width: calc(100% * var(--azd-art-z));
+    height: calc(100% * var(--azd-art-z));
+    max-width: none;
+    left: calc((100% - 100% * var(--azd-art-z)) * var(--azd-art-x) / 100);
+    top: calc((100% - 100% * var(--azd-art-z)) * var(--azd-art-y) / 100);
     border: none;
     object-fit: cover;
-    object-position: 50% 0%;
+    object-position: calc(var(--azd-art-x) * 1%) calc(var(--azd-art-y) * 1%);
     cursor: grab;
     touch-action: none;
     user-select: none;
+}
+
+#azecraft-mission-dashboard .azd-art-zoom {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+}
+
+#azecraft-mission-dashboard .azd-art-zoom .azd-icon-button {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    background: var(--azd-bg);
+    font-size: 11px;
+}
+
+#azecraft-mission-dashboard .azd-card:hover .azd-art-zoom,
+#azecraft-mission-dashboard .azd-art-zoom:focus-within {
+    opacity: 1;
+}
+
+#azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-art-zoom {
+    display: none;
 }
 
 #azecraft-mission-dashboard .azd-card-art img.azd-art--panning {

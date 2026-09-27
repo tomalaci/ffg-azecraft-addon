@@ -141,8 +141,8 @@ on either one changes both, and it carries over to every mission.
 ### Full-body art
 
 Hover a card and click the image button in the corner of the art to set dashboard art for the
-character. Every card has the same picture box: the art fills it, centred and starting from the
-top, and you can drag it to show a different part. Leave the path empty to go back to the Actor portrait.
+character. Every card has the same picture box: the art fills it, zoomed in 1.5×, centred and
+starting from the top, and you can drag and zoom it to frame it differently. Leave the path empty to go back to the Actor portrait.
 Players who can't browse files can paste a path that a GM gives them. If an image can't be loaded,
 the card falls back to the portrait.
 
@@ -154,8 +154,10 @@ separate **floating panels** instead.
 
 The three mission tabs form one bar. Drag the line between two tabs to resize them (each keeps at
 least 180px), and double-click a line to reset to equal widths. Drag a character's art to choose
-which part of the picture shows in its card; a plain click still opens the sheet. Both are saved
-in your browser only, and an art position is forgotten when that character's art changes.
+which part of the picture shows in its card; a plain click still opens the sheet. Zoom it with the
+magnifier buttons that appear on hover, or Shift + mouse wheel over the art (1× fills the box
+exactly, up to 4×); the reset button returns to the default of 1.5×, centred, from the top. All of
+this is saved in your browser only, and an art view is forgotten when that character's art changes.
 
 These buttons in the dashboard header only affect **your** screen:
 

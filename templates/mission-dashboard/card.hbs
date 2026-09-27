@@ -55,7 +55,12 @@
         </div>
 
         <div class="azd-card-art {{#if card.hasFullArt}}azd-card-art--full{{/if}}">
-            <img src="{{card.art}}" alt="" loading="lazy" draggable="false" style="object-position: {{card.artPosition}}" data-art-src="{{card.art}}" data-tooltip="Click: open sheet · drag: pan the art" data-fallback="{{#if card.hasFullArt}}{{card.portrait}}{{else}}{{placeholderArt}}{{/if}}">
+            <img src="{{card.art}}" alt="" loading="lazy" draggable="false" style="{{card.artStyle}}" data-art-src="{{card.art}}" data-tooltip="Click: open sheet · drag: pan · Shift+wheel: zoom" data-fallback="{{#if card.hasFullArt}}{{card.portrait}}{{else}}{{placeholderArt}}{{/if}}">
+            <div class="azd-art-zoom" role="group" aria-label="Art zoom (your screen only)">
+                <button type="button" class="azd-icon-button" data-action="artZoom" data-step="-1" data-tooltip="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-magnifying-glass-minus" inert></i></button>
+                <button type="button" class="azd-icon-button" data-action="artZoom" data-step="0" data-tooltip="Reset view" aria-label="Reset art view"><i class="fa-solid fa-arrows-rotate" inert></i></button>
+                <button type="button" class="azd-icon-button" data-action="artZoom" data-step="1" data-tooltip="Zoom in" aria-label="Zoom in"><i class="fa-solid fa-magnifying-glass-plus" inert></i></button>
+            </div>
             {{#if card.canEditArt}}
             <button type="button" class="azd-icon-button azd-art-edit" data-action="editArt" data-tooltip="Set dashboard art" aria-label="Set dashboard art"><i class="fa-solid fa-image" inert></i></button>
             {{/if}}
