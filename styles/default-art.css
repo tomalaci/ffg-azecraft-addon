@@ -1,0 +1,46 @@
+/* Default actor art settings form. */
+
+#azecraft-default-art .azda-type {
+    margin: 0;
+    padding: 4px 8px 8px;
+}
+
+#azecraft-default-art .azda-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#azecraft-default-art .azda-preview {
+    display: flex;
+    flex: none;
+    gap: 4px;
+}
+
+#azecraft-default-art .azda-preview img {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--color-border, #777);
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+#azecraft-default-art .azda-fields {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+#azecraft-default-art .azda-row > button {
+    flex: none;
+}
+
+#azecraft-default-art .form-footer button {
+    white-space: nowrap;
+}
+
+#azecraft-default-art .azda-fields .form-group > label {
+    flex: 0 0 64px;
+}

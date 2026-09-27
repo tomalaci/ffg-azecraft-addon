@@ -4,7 +4,7 @@ Manifest URL: `https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/do
 
 Foundry VTT v13 addon module for the `starwarsffg` system.
 
-The module does three things:
+The module:
 
 - Replaces selected Star Wars FFG NPC actor sheet templates with local versions and enriches their
   biography content.
@@ -19,6 +19,9 @@ The module does three things:
 - Restyles player character sheets in the same Mass Effect look and removes the unused
   Specializations / Force Powers / Signature Abilities fields. See
   [docs/character-sheet.md](docs/character-sheet.md).
+- Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
+  with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
+  placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).
 
 ## Current Behavior
 
@@ -57,6 +60,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 
 `scripts/mission-dashboard/`, `templates/mission-dashboard/`, `styles/mission-dashboard.css`
 : Mission dashboard feature.
+
+`scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
+: Default actor art feature.
 
 `tests/`, `eslint.config.js`
 : Unit tests and lint config. Run `npm ci` once, then `.ai/check` (or `npm run check`) runs ESLint, syntax checks and the tests.

@@ -3,6 +3,7 @@ import { patchRollPowerModifiers } from "./scripts/roll-power-modifiers.js";
 import { initMissionDashboard } from "./scripts/mission-dashboard/index.js";
 import { initStoryPoints } from "./scripts/story-points/story-points.js";
 import { initCharacterSheetTheme } from "./scripts/character-sheet-theme.js";
+import { initDefaultArt } from "./scripts/default-art/default-art.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -12,4 +13,5 @@ Hooks.once("init", () => {
     initMissionDashboard();
     initStoryPoints();
     initCharacterSheetTheme();
+    initDefaultArt();
 });
