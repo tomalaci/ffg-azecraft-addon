@@ -1,0 +1,15 @@
+<span class="azd-panel-tools">
+    {{#if panel.paged}}
+    <span class="azd-pager" role="group" aria-label="{{label}} history">
+        <button type="button" class="azd-icon-button" data-action="pageEntry" data-panel="{{key}}" data-step="-1" {{disabled (not panel.hasPrevious)}} data-tooltip="Earlier entry" aria-label="Earlier entry"><i class="fa-solid fa-chevron-left" inert></i></button>
+        <span class="azd-pager-count" aria-live="polite">{{panel.position}}/{{panel.count}}</span>
+        <button type="button" class="azd-icon-button" data-action="pageEntry" data-panel="{{key}}" data-step="1" {{disabled (not panel.hasNext)}} data-tooltip="Later entry" aria-label="Later entry"><i class="fa-solid fa-chevron-right" inert></i></button>
+    </span>
+    {{/if}}
+    {{#if panel.isGM}}
+    <button type="button" class="azd-icon-button" data-action="newEntry" data-panel="{{key}}" data-tooltip="New entry (keeps the current one as history)" aria-label="New {{label}} entry"><i class="fa-solid fa-plus" inert></i></button>
+    {{/if}}
+    {{#if panel.canEdit}}
+    <button type="button" class="azd-icon-button" data-action="editPage" data-page-uuid="{{panel.uuid}}" data-tooltip="Edit source page" aria-label="Edit {{label}} page"><i class="fa-solid fa-pen-to-square" inert></i></button>
+    {{/if}}
+</span>

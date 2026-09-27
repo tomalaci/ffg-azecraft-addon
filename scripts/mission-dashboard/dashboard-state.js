@@ -1,0 +1,306 @@
+/**
+ * Scene flag schema for the mission dashboard: defaults, normalization, validation and narrow writes.
+ *
+ * Reads normalize in memory only; nothing here writes unless a GM explicitly saves.
+ */
+
+import {
+    DEFAULT_SLOT_COUNT,
+    FLAG_KEY,
+    MAX_PANEL_ENTRIES,
+    MAX_SLOT_COUNT,
+    MISSION_PANELS,
+    MODULE_ID,
+    PEOPLE_NOTE_MAX_LENGTH,
+    PEOPLE_TEXT_MAX_LENGTH,
+    SCHEMA_VERSION
+} from "./constants.js";
+
+function cleanString(value, maxLength) {
+    if (typeof value !== "string") {
+        return "";
+    }
+
+    return value.trim().slice(0, maxLength);
+}
+
+function cleanUuid(value) {
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function cleanId(value) {
+    return typeof value === "string" && /^[\w-]{1,64}$/.test(value) ? value : null;
+}
+
+/** Deterministic slot ids for a never-saved config, so repeated reads agree without writing. */
+export function defaultParty(count = DEFAULT_SLOT_COUNT) {
+    return Array.from({ length: count }, (_, index) => ({ id: `slot-${index + 1}`, actorUuid: null }));
+}
+
+function emptyMission() {
+    return Object.fromEntries(MISSION_PANELS.map(panel => [panel.key, []]));
+}
+
+/** Legacy single-page fields (pre-history drafts of this schema), read as one-entry lists. */
+const LEGACY_MISSION_KEYS = { summary: "summaryPageUuid", objective: "objectivePageUuid", intel: "intelPageUuid" };
+
+function normalizeEntries(raw, legacy) {
+    const list = Array.isArray(raw) ? raw : legacy ? [legacy] : [];
+    const seen = new Set();
+
+    return list
+        .map(cleanUuid)
+        .filter(uuid => uuid && !seen.has(uuid) && seen.add(uuid))
+        .slice(-MAX_PANEL_ENTRIES);
+}
+
+export function defaultDashboardConfig() {
+    return {
+        schemaVersion: SCHEMA_VERSION,
+        enabled: false,
+        party: defaultParty(),
+        mission: emptyMission(),
+        people: []
+    };
+}
+
+/**
+ * Normalize raw flag data into the current schema without mutating the input.
+ * @param {object|undefined} raw  scene.flags[MODULE_ID].dashboard
+ */
+export function normalizeDashboardConfig(raw) {
+    const config = defaultDashboardConfig();
+
+    if (!raw || typeof raw !== "object") {
+        return config;
+    }
+
+    config.enabled = raw.enabled === true;
+
+    if (Array.isArray(raw.party)) {
+        const seen = new Set();
+        config.party = raw.party
+            .slice(0, MAX_SLOT_COUNT)
+            .map((slot, index) => {
+                let id = cleanId(slot?.id) ?? `slot-${index + 1}`;
+
+                while (seen.has(id)) {
+                    id = `${id}-${index + 1}`;
+                }
+
+                seen.add(id);
+                return { id, actorUuid: cleanUuid(slot?.actorUuid) };
+            });
+    }
+
+    const mission = raw.mission ?? {};
+    config.mission = Object.fromEntries(MISSION_PANELS.map(({ key }) => [
+        key,
+        normalizeEntries(mission[key], mission[LEGACY_MISSION_KEYS[key]])
+    ]));
+
+    if (Array.isArray(raw.people)) {
+        config.people = raw.people
+            .map((person, index) => normalizePerson(person, index))
+            .filter(Boolean);
+    }
+
+    return config;
+}
+
+export function normalizePerson(person, index = 0) {
+    if (!person || typeof person !== "object") {
+        return null;
+    }
+
+    return {
+        id: cleanId(person.id) ?? `person-${index + 1}`,
+        actorUuid: cleanUuid(person.actorUuid),
+        role: cleanString(person.role, PEOPLE_TEXT_MAX_LENGTH),
+        status: cleanString(person.status, PEOPLE_TEXT_MAX_LENGTH),
+        relationship: cleanString(person.relationship, PEOPLE_TEXT_MAX_LENGTH),
+        note: cleanString(person.note, PEOPLE_NOTE_MAX_LENGTH)
+    };
+}
+
+export function readDashboardConfig(scene) {
+    return normalizeDashboardConfig(scene?.flags?.[MODULE_ID]?.[FLAG_KEY]);
+}
+
+export function isDashboardEnabled(scene) {
+    return scene?.flags?.[MODULE_ID]?.[FLAG_KEY]?.enabled === true;
+}
+
+/** Every document UUID the config refers to, grouped by purpose, for hook relevance checks. */
+export function referencedUuids(config) {
+    return {
+        actors: new Set(config.party.map(slot => slot.actorUuid).filter(Boolean)),
+        people: new Set(config.people.map(person => person.actorUuid).filter(Boolean)),
+        pages: new Set(Object.values(config.mission).flat())
+    };
+}
+
+/**
+ * Validate a config before saving.
+ * @returns {{errors: string[], warnings: string[]}}
+ */
+export function validateDashboardConfig(config) {
+    const errors = [];
+    const warnings = [];
+
+    if (!Array.isArray(config.party) || config.party.length < 1) {
+        errors.push("The party needs at least one slot.");
+    } else if (config.party.length > MAX_SLOT_COUNT) {
+        errors.push(`The party can have at most ${MAX_SLOT_COUNT} slots.`);
+    }
+
+    const ids = new Set();
+    const actorSlots = new Map();
+
+    for (const [index, slot] of (config.party ?? []).entries()) {
+        if (!cleanId(slot.id) || ids.has(slot.id)) {
+            errors.push(`Slot ${index + 1} has a missing or duplicate id.`);
+        }
+
+        ids.add(slot.id);
+
+        if (slot.actorUuid) {
+            if (actorSlots.has(slot.actorUuid)) {
+                errors.push(`Slots ${actorSlots.get(slot.actorUuid) + 1} and ${index + 1} are assigned the same Actor.`);
+            } else {
+                actorSlots.set(slot.actorUuid, index);
+            }
+        }
+    }
+
+    const personIds = new Set();
+
+    for (const [index, person] of (config.people ?? []).entries()) {
+        if (!person.actorUuid) {
+            errors.push(`Person of note ${index + 1} has no Actor selected.`);
+        }
+
+        if (!cleanId(person.id) || personIds.has(person.id)) {
+            errors.push(`Person of note ${index + 1} has a missing or duplicate id.`);
+        }
+
+        personIds.add(person.id);
+    }
+
+    const peopleActors = (config.people ?? []).map(person => person.actorUuid).filter(Boolean);
+
+    if (new Set(peopleActors).size !== peopleActors.length) {
+        warnings.push("The same Actor appears more than once in People of Note.");
+    }
+
+    return { errors, warnings };
+}
+
+/** Stable JSON used to detect whether the stored config changed while a form was open. */
+export function configFingerprint(config) {
+    return JSON.stringify(normalizeDashboardConfig(config));
+}
+
+/* -------------------------------------------- */
+/*  Writes (Foundry runtime only)               */
+/* -------------------------------------------- */
+
+export class DashboardConflictError extends Error {}
+
+function assertGM() {
+    if (!game.user?.isGM) {
+        throw new Error("Only a GM can change the mission dashboard configuration.");
+    }
+}
+
+/**
+ * Save a full dashboard config to a Scene, refusing if it changed since `expectedFingerprint` was taken.
+ * Only this module's dashboard flag is written; the rest of the Scene is untouched.
+ */
+export async function saveDashboardConfig(scene, config, { expectedFingerprint = null } = {}) {
+    assertGM();
+
+    const normalized = normalizeDashboardConfig(config);
+    const { errors } = validateDashboardConfig(normalized);
+
+    if (errors.length) {
+        throw new Error(errors.join(" "));
+    }
+
+    if (expectedFingerprint !== null && configFingerprint(readDashboardConfig(scene)) !== expectedFingerprint) {
+        throw new DashboardConflictError("The dashboard configuration was changed by someone else while you were editing it.");
+    }
+
+    const update = { [`flags.${MODULE_ID}.${FLAG_KEY}`]: normalized };
+    const stored = scene.flags?.[MODULE_ID]?.[FLAG_KEY]?.mission ?? {};
+
+    // Flag updates merge objects, so drop superseded single-page keys explicitly.
+    for (const legacy of Object.values(LEGACY_MISSION_KEYS)) {
+        if (legacy in stored) update[`flags.${MODULE_ID}.${FLAG_KEY}.mission.-=${legacy}`] = null;
+    }
+
+    return scene.update(update);
+}
+
+/**
+ * Append a page to the end (newest) of a mission panel's history. Reads the current Scene state,
+ * not a form's copy, so concurrent config edits to other fields are not overwritten.
+ */
+export async function appendMissionEntry(scene, panelKey, pageUuid) {
+    assertGM();
+
+    const config = readDashboardConfig(scene);
+    const entries = config.mission[panelKey];
+    if (!entries) throw new Error(`Unknown mission panel: ${panelKey}`);
+
+    const next = [...entries.filter(uuid => uuid !== pageUuid), pageUuid].slice(-MAX_PANEL_ENTRIES);
+    return scene.update({ [`flags.${MODULE_ID}.${FLAG_KEY}.mission.${panelKey}`]: next });
+}
+
+export async function setDashboardEnabled(scene, enabled) {
+    assertGM();
+    return scene.update({
+        [`flags.${MODULE_ID}.${FLAG_KEY}.enabled`]: Boolean(enabled),
+        [`flags.${MODULE_ID}.${FLAG_KEY}.schemaVersion`]: SCHEMA_VERSION
+    });
+}
+
+/**
+ * Create the next entry of a mission panel as a new page in the mission Journal (right after the
+ * panel's newest page) and make it the panel's current entry. The previous entry becomes history.
+ * @returns {Promise<JournalEntryPage>}
+ */
+export async function createMissionEntry(scene, panelKey) {
+    assertGM();
+
+    const panel = MISSION_PANELS.find(p => p.key === panelKey);
+    if (!panel) throw new Error(`Unknown mission panel: ${panelKey}`);
+
+    const config = readDashboardConfig(scene);
+    const resolve = uuid => {
+        try {
+            return foundry.utils.fromUuidSync(uuid, { strict: false });
+        } catch {
+            return null;
+        }
+    };
+    const own = config.mission[panelKey].map(resolve).filter(Boolean);
+    const anyPage = Object.values(config.mission).flat().map(resolve).find(Boolean);
+    const previous = own.at(-1) ?? null;
+    const journal = previous?.parent ?? anyPage?.parent ?? null;
+
+    if (!journal) {
+        throw new Error("Choose a mission Journal in the dashboard configuration first.");
+    }
+
+    const number = config.mission[panelKey].length + 1;
+    const [page] = await journal.createEmbeddedDocuments("JournalEntryPage", [{
+        name: number > 1 ? `${panel.pageName} ${number}` : panel.pageName,
+        type: "text",
+        text: { content: "" },
+        sort: previous ? previous.sort + 1 : Math.max(0, ...journal.pages.map(p => p.sort)) + 100000
+    }]);
+
+    await appendMissionEntry(scene, panelKey, page.uuid);
+    return page;
+}

@@ -1,7 +1,7 @@
 {
     "id": "ffg-azecraft-addon",
     "title": "FFG Azecraft Addon",
-    "description": "QoL fixes and additions for StarWarsFFG system.",
+    "description": "QoL fixes and additions for StarWarsFFG system, including a Mass Effect mission dashboard.",
     "version": "0.1.0",
     "authors": [
         {
@@ -25,6 +25,9 @@
     },
     "esmodules": [
         "main.js"
+    ],
+    "styles": [
+        "styles/mission-dashboard.css"
     ],
     "url": "https://github.com/tomalaci/ffg-azecraft-addon",
     "manifest": "https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json",

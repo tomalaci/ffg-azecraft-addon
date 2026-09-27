@@ -16,3 +16,16 @@
 - Treat Star Wars FFG system behavior as the primary integration surface.
 - When making changes, inspect the relevant system templates, sheet data flow, and text enrichment/rendering behavior first.
   - Note that some templates are available locally that are slightly modified, meant to replace original ones.
+
+## Git Workflow
+
+- Commit directly to `main`; no feature branches or pull requests are needed.
+- After finishing and validating a change (`.ai/check`, plus a live check where relevant), commit it with a short descriptive message and push it without asking.
+  Stage only the files of that change, not unrelated edits.
+- Pushing to `main` does not deploy anything. The hosted server only picks up the module when the user publishes a GitHub release with a version tag (the release workflow builds `module.json`/`module.zip`). Never create releases or tags yourself.
+
+## Local Testing
+
+- `compose.yml` runs Foundry 13.351 at <http://localhost:30000> with this repo mounted as the installed module.
+  Script, template and CSS changes load on a browser refresh; `module.json` changes need a container restart and relaunching the world.
+- Local logins, test documents and Playwright notes are in `.memory/local-test-environment.md` (not committed).

@@ -1,0 +1,150 @@
+<div class="azd-config-root">
+<div class="azd-config-body standard-form">
+    {{#if errors.length}}
+    <div class="azd-config-errors">
+        {{#each errors}}<p><i class="fa-solid fa-circle-exclamation" inert></i> {{this}}</p>{{/each}}
+    </div>
+    {{/if}}
+    {{#if warnings.length}}
+    <div class="azd-config-warnings">
+        {{#each warnings}}<p><i class="fa-solid fa-triangle-exclamation" inert></i> {{this}}</p>{{/each}}
+    </div>
+    {{/if}}
+
+    <fieldset>
+        <legend>Scene</legend>
+        <div class="form-group">
+            <label for="azd-enabled-{{scene.id}}">Show mission dashboard</label>
+            <div class="form-fields">
+                <input type="checkbox" id="azd-enabled-{{scene.id}}" name="enabled" {{checked draft.enabled}}>
+            </div>
+            <p class="hint">Shown to everyone viewing <strong>{{scene.name}}</strong>. Each person can still hide it on their own computer.</p>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Squad</legend>
+        <ol class="azd-config-rows">
+            {{#each slots as |slot|}}
+            <li class="azd-config-row">
+                <span class="azd-config-index">{{slot.number}}</span>
+                <select name="party.{{slot.index}}.actorUuid" aria-label="Slot {{slot.number}} actor">
+                    <option value="">— Empty —</option>
+                    {{#if slot.missing}}<option value="{{slot.actorUuid}}" selected>Missing Actor ({{slot.actorUuid}})</option>{{/if}}
+                    {{#each @root.partyGroups as |group|}}
+                    <optgroup label="{{group.label}}">
+                        {{#each group.actors as |actor|}}
+                        <option value="{{actor.uuid}}" {{#if (eq actor.uuid slot.actorUuid)}}selected{{/if}}>{{actor.name}}</option>
+                        {{/each}}
+                    </optgroup>
+                    {{/each}}
+                </select>
+                <button type="button" class="icon fa-solid fa-arrow-up" data-action="moveSlot" data-index="{{slot.index}}" data-direction="-1" {{disabled slot.first}} data-tooltip="Move up" aria-label="Move up"></button>
+                <button type="button" class="icon fa-solid fa-arrow-down" data-action="moveSlot" data-index="{{slot.index}}" data-direction="1" {{disabled slot.last}} data-tooltip="Move down" aria-label="Move down"></button>
+                <button type="button" class="icon fa-solid fa-trash" data-action="removeSlot" data-index="{{slot.index}}" {{disabled (and slot.first slot.last)}} data-tooltip="Remove slot" aria-label="Remove slot"></button>
+            </li>
+            {{/each}}
+        </ol>
+        <button type="button" data-action="addSlot" {{disabled (not canAddSlot)}}><i class="fa-solid fa-plus" inert></i> Add slot</button>
+        <p class="hint">Slots use world Actors. Linked tokens show the same values; damage on unlinked tokens is not shown.</p>
+    </fieldset>
+
+    <fieldset>
+        <legend>Mission Journal</legend>
+        <div class="form-group">
+            <label>Journal</label>
+            <div class="form-fields">
+                <select name="journalUuid">
+                    <option value="">— Choose a Journal —</option>
+                    {{#each journals as |journal|}}
+                    <option value="{{journal.uuid}}" {{#if (eq journal.uuid @root.journalUuid)}}selected{{/if}}>{{journal.name}}</option>
+                    {{/each}}
+                </select>
+                {{#if journalUuid}}<button type="button" class="icon fa-solid fa-book-open" data-action="openJournal" data-tooltip="Open Journal" aria-label="Open Journal"></button>{{/if}}
+            </div>
+            <p class="hint">Choosing a Journal pre-selects pages whose names contain Summary, Objective and Intel. The page selections are what is saved.</p>
+        </div>
+        <p class="hint">Each panel keeps a history of pages, oldest first. The last page is shown as current; players can browse earlier ones. The <i class="fa-solid fa-plus" inert></i> button on a dashboard panel adds the next page for you.</p>
+        {{#each panels as |panel|}}
+        <div class="azd-config-panel">
+            <div class="azd-config-panel-head">
+                <strong>{{panel.label}}</strong>
+                <button type="button" data-action="addEntry" data-panel="{{panel.key}}" {{disabled (not panel.canAdd)}}><i class="fa-solid fa-plus" inert></i> Add page</button>
+            </div>
+            {{#if panel.entries.length}}
+            <ol class="azd-config-rows">
+                {{#each panel.entries as |entry|}}
+                <li>
+                    <div class="azd-config-row">
+                        <span class="azd-config-index">{{entry.number}}</span>
+                        <select name="mission.{{panel.key}}.{{entry.index}}" aria-label="{{panel.label}} page {{entry.number}}">
+                            <option value="">— None —</option>
+                            {{#each entry.options as |option|}}
+                            <option value="{{option.uuid}}" {{#if (eq option.uuid entry.selected)}}selected{{/if}} {{disabled option.disabled}}>{{option.name}}</option>
+                            {{/each}}
+                        </select>
+                        {{#if entry.last}}<span class="azd-config-current" data-tooltip="Shown as the current entry">current</span>{{/if}}
+                        <button type="button" class="icon fa-solid fa-arrow-up" data-action="moveEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" data-direction="-1" {{disabled entry.first}} aria-label="Move earlier"></button>
+                        <button type="button" class="icon fa-solid fa-arrow-down" data-action="moveEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" data-direction="1" {{disabled entry.last}} aria-label="Move later"></button>
+                        <button type="button" class="icon fa-solid fa-trash" data-action="removeEntry" data-panel="{{panel.key}}" data-index="{{entry.index}}" aria-label="Remove from history" data-tooltip="Remove from history (the page itself is kept)"></button>
+                    </div>
+                    {{#if entry.missing}}<p class="hint azd-config-bad">This page no longer exists.</p>{{/if}}
+                    {{#if (and entry.playerAccess (ne entry.playerAccess "All players can read"))}}<p class="hint">{{entry.playerAccess}}</p>{{/if}}
+                </li>
+                {{/each}}
+            </ol>
+            {{else}}
+            <p class="hint">No pages.</p>
+            {{/if}}
+        </div>
+        {{/each}}
+        <div class="azd-config-buttons">
+            <button type="button" data-action="createJournal"><i class="fa-solid fa-book-medical" inert></i> Create mission Journal</button>
+            {{#if journalHiddenFromPlayers}}
+            <button type="button" data-action="shareJournal"><i class="fa-solid fa-users" inert></i> Share with players</button>
+            {{/if}}
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>People of Note</legend>
+        <p class="hint">Shown in Key Intel. Name and portrait come from the Actor; players only see people whose Actor they can see (Limited or higher). Everything written here is visible to players.</p>
+        <ol class="azd-config-people">
+            {{#each people as |person|}}
+            <li class="azd-config-person">
+                <div class="azd-config-row">
+                    <select name="people.{{person.index}}.actorUuid" aria-label="Person actor">
+                        <option value="">— Choose Actor —</option>
+                        {{#if person.missing}}<option value="{{person.actorUuid}}" selected>Missing Actor ({{person.actorUuid}})</option>{{/if}}
+                        {{#each @root.peopleGroups as |group|}}
+                        <optgroup label="{{group.label}}">
+                            {{#each group.actors as |actor|}}
+                            <option value="{{actor.uuid}}" {{#if (eq actor.uuid person.actorUuid)}}selected{{/if}}>{{actor.name}}</option>
+                            {{/each}}
+                        </optgroup>
+                        {{/each}}
+                    </select>
+                    <button type="button" class="icon fa-solid fa-arrow-up" data-action="movePerson" data-index="{{person.index}}" data-direction="-1" {{disabled person.first}} aria-label="Move up"></button>
+                    <button type="button" class="icon fa-solid fa-arrow-down" data-action="movePerson" data-index="{{person.index}}" data-direction="1" {{disabled person.last}} aria-label="Move down"></button>
+                    <button type="button" class="icon fa-solid fa-trash" data-action="removePerson" data-index="{{person.index}}" aria-label="Remove person"></button>
+                </div>
+                {{#if person.hiddenFromPlayers}}<p class="hint azd-config-bad"><i class="fa-solid fa-eye-slash" inert></i> No player can see this Actor yet, so players won't see this entry.</p>{{/if}}
+                <div class="azd-config-person-fields">
+                    <input type="text" name="people.{{person.index}}.role" value="{{person.role}}" maxlength="{{@root.textMax}}" placeholder="Role (e.g. ExoGeni researcher)">
+                    <input type="text" name="people.{{person.index}}.status" value="{{person.status}}" maxlength="{{@root.textMax}}" placeholder="Status (e.g. Missing)">
+                    <input type="text" name="people.{{person.index}}.relationship" value="{{person.relationship}}" maxlength="{{@root.textMax}}" placeholder="Relationship (e.g. Cooperative)">
+                    <textarea name="people.{{person.index}}.note" maxlength="{{@root.noteMax}}" rows="2" placeholder="Note (player-visible)">{{person.note}}</textarea>
+                </div>
+            </li>
+            {{/each}}
+        </ol>
+        <button type="button" data-action="addPerson"><i class="fa-solid fa-user-plus" inert></i> Add person</button>
+    </fieldset>
+</div>
+<footer class="form-footer">
+    <button type="button" class="azd-config-help" data-action="openHelp" data-tooltip="Help and GM quick start" aria-label="Help"><i class="fa-solid fa-circle-question" inert></i></button>
+    <button type="button" data-action="reload" data-tooltip="Discard edits and load the saved configuration"><i class="fa-solid fa-rotate" inert></i> Reload</button>
+    <button type="button" data-action="cancel"><i class="fa-solid fa-xmark" inert></i> Cancel</button>
+    <button type="submit"><i class="fa-solid fa-floppy-disk" inert></i> Save</button>
+</footer>
+</div>

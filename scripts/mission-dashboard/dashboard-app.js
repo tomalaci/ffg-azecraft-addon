@@ -1,0 +1,367 @@
+/**
+ * The frameless, viewport-fixed mission dashboard HUD.
+ *
+ * It renders a view model prepared by the controller; all async resolution happens there so a
+ * slow render can never insert another Scene's content. Parts are re-rendered individually.
+ */
+
+import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
+import { createMissionEntry } from "./dashboard-state.js";
+import { DashboardHelpApp } from "./help-app.js";
+import { LayoutWatcher } from "./layout.js";
+
+const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
+
+export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV2) {
+    constructor(controller, options = {}) {
+        super(options);
+        this.controller = controller;
+    }
+
+    /** Desire drafts keyed by Actor UUID: {text, original}. Survive re-renders and remote updates. */
+    drafts = new Map();
+
+    /** Cards expanded by this client while in compact mode. */
+    expanded = new Set();
+
+    /** @type {LayoutWatcher|null} */
+    #layout = null;
+
+    static DEFAULT_OPTIONS = {
+        id: "azecraft-mission-dashboard",
+        tag: "section",
+        classes: ["azd"],
+        window: { frame: false, positioned: false },
+        actions: {
+            openActor: MissionDashboardApp.#onOpenActor,
+            openItem: MissionDashboardApp.#onOpenItem,
+            editDesire: MissionDashboardApp.#onEditDesire,
+            cancelDesire: MissionDashboardApp.#onCancelDesire,
+            saveDesire: MissionDashboardApp.#onSaveDesire,
+            useLatestDesire: MissionDashboardApp.#onUseLatestDesire,
+            editArt: MissionDashboardApp.#onEditArt,
+            toggleCard: MissionDashboardApp.#onToggleCard,
+            editPage: MissionDashboardApp.#onEditPage,
+            configure: MissionDashboardApp.#onConfigure,
+            toggleHidden: MissionDashboardApp.#onToggleHidden,
+            cycleCompact: MissionDashboardApp.#onCycleCompact,
+            toggleMission: MissionDashboardApp.#onToggleMission,
+            openCampaign: MissionDashboardApp.#onOpenCampaign,
+            pageEntry: MissionDashboardApp.#onPageEntry,
+            openHelp: () => DashboardHelpApp.open(),
+            newEntry: MissionDashboardApp.#onNewEntry
+        }
+    };
+
+    static PARTS = {
+        header: { template: `${TEMPLATE_ROOT}/header.hbs` },
+        rail: { template: `${TEMPLATE_ROOT}/rail.hbs`, scrollable: [".azd-rail-cards"] },
+        mission: { template: `${TEMPLATE_ROOT}/mission.hbs`, scrollable: [".azd-objective-body", ".azd-summary-body"] },
+        intel: { template: `${TEMPLATE_ROOT}/intel.hbs`, scrollable: [".azd-intel-scroll"] }
+    };
+
+    /* -------------------------------------------- */
+    /*  Rendering                                   */
+    /* -------------------------------------------- */
+
+    _insertElement(element) {
+        // Inside #interface, below the core UI columns (z-index 30) but above the canvas.
+        const existing = document.getElementById(element.id);
+        if (existing) existing.replaceWith(element);
+        else document.getElementById("interface").prepend(element);
+    }
+
+    async _prepareContext() {
+        const view = this.controller.view;
+        const prefs = this.controller.preferences();
+        const cards = (view?.cards ?? []).map(card => {
+            const draft = card.uuid ? this.drafts.get(card.uuid) : null;
+
+            return {
+                ...card,
+                expanded: this.expanded.has(card.slotId),
+                editing: Boolean(draft),
+                draft: draft?.text ?? "",
+                draftConflict: Boolean(draft) && !draft.saving && draft.original !== card.desire,
+                desireMaxLength: DESIRE_MAX_LENGTH
+            };
+        });
+
+        return {
+            ...view,
+            cards,
+            visibleCards: cards.filter(card => card.availability !== "empty" || view?.isGM),
+            prefs,
+            compactLabel: { auto: "Auto", always: "On", never: "Off" }[prefs.compact],
+            placeholderArt: PLACEHOLDER_ART
+        };
+    }
+
+    _preSyncPartState(partId, newElement, priorElement, state) {
+        super._preSyncPartState(partId, newElement, priorElement, state);
+        const focus = priorElement.querySelector("textarea:focus, input:focus");
+        if (focus && "selectionStart" in focus) state.selection = [focus.selectionStart, focus.selectionEnd];
+    }
+
+    _syncPartState(partId, newElement, priorElement, state) {
+        super._syncPartState(partId, newElement, priorElement, state);
+        const focus = state.focus ? newElement.querySelector(state.focus) : null;
+        if (focus && state.selection) focus.setSelectionRange(...state.selection);
+    }
+
+    async _onFirstRender(context, options) {
+        await super._onFirstRender(context, options);
+
+        // Delegated listeners on the persistent root survive part re-renders.
+        this.element.addEventListener("input", event => {
+            const textarea = event.target.closest("textarea[data-desire-for]");
+            if (!textarea) return;
+            const draft = this.drafts.get(textarea.dataset.desireFor);
+            if (draft) draft.text = textarea.value;
+            const counter = textarea.closest(".azd-desire-editor")?.querySelector(".azd-desire-count");
+            if (counter) counter.textContent = `${textarea.value.length}/${DESIRE_MAX_LENGTH}`;
+        });
+
+        this.element.addEventListener("keydown", event => {
+            const textarea = event.target.closest("textarea[data-desire-for]");
+            if (!textarea) return;
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                this.#saveDesire(textarea.dataset.desireFor);
+            } else if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                this.drafts.delete(textarea.dataset.desireFor);
+                this.render({ parts: ["rail"] });
+            }
+        });
+
+        // Broken art paths fall back to the portrait, then to the placeholder.
+        this.element.addEventListener("error", event => {
+            const img = event.target;
+            if (!(img instanceof HTMLImageElement) || !img.dataset.fallback) return;
+            const next = img.dataset.fallback;
+            img.dataset.fallback = next === PLACEHOLDER_ART ? "" : PLACEHOLDER_ART;
+            img.src = next;
+            img.classList.add("azd-art--fallback");
+        }, true);
+
+        this.#layout = new LayoutWatcher(this.element, () => ({
+            compactPreference: this.controller.preferences().compact,
+            missionCollapsed: this.controller.preferences().missionCollapsed
+        }));
+        this.#layout.start();
+    }
+
+    async _onRender(context, options) {
+        await super._onRender(context, options);
+        this.applyPreferences();
+    }
+
+    applyPreferences() {
+        const prefs = this.controller.preferences();
+        this.element.classList.toggle("azd--hidden", prefs.hidden);
+        this.element.classList.toggle("azd--mission-collapsed", prefs.missionCollapsed);
+        this.#layout?.apply();
+    }
+
+    _onClose(options) {
+        this.#layout?.stop();
+        this.#layout = null;
+        super._onClose(options);
+    }
+
+    /* -------------------------------------------- */
+    /*  Actions                                     */
+    /* -------------------------------------------- */
+
+    static #resolve(uuid) {
+        try {
+            return uuid ? foundry.utils.fromUuidSync(uuid, { strict: false }) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    static #onOpenActor(event, target) {
+        const actor = MissionDashboardApp.#resolve(target.closest("[data-uuid]")?.dataset.uuid);
+        if (!actor?.testUserPermission(game.user, "LIMITED")) return;
+        actor.sheet?.render(true);
+    }
+
+    static #onOpenItem(event, target) {
+        const item = MissionDashboardApp.#resolve(target.dataset.itemUuid);
+        if (!item?.testUserPermission(game.user, "LIMITED")) return;
+        item.sheet?.render(true);
+    }
+
+    static #onToggleCard(event, target) {
+        const slotId = target.closest("[data-slot-id]")?.dataset.slotId;
+        if (!slotId) return;
+        if (this.expanded.has(slotId)) this.expanded.delete(slotId);
+        else this.expanded.add(slotId);
+        this.render({ parts: ["rail"] });
+    }
+
+    static #onEditDesire(event, target) {
+        const uuid = target.closest("[data-uuid]")?.dataset.uuid;
+        const card = this.controller.view?.cards.find(c => c.uuid === uuid);
+        if (!card?.canEditDesire) return;
+        this.drafts.set(uuid, { text: card.desire, original: card.desire });
+        this.expanded.add(card.slotId);
+        this.render({ parts: ["rail"] }).then(() => {
+            const textarea = this.element.querySelector(`textarea[data-desire-for="${CSS.escape(uuid)}"]`);
+            textarea?.focus();
+            textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+        });
+    }
+
+    static #onCancelDesire(event, target) {
+        this.drafts.delete(target.closest("[data-uuid]")?.dataset.uuid);
+        this.render({ parts: ["rail"] });
+    }
+
+    static #onUseLatestDesire(event, target) {
+        const uuid = target.closest("[data-uuid]")?.dataset.uuid;
+        const card = this.controller.view?.cards.find(c => c.uuid === uuid);
+        if (!card) return;
+        this.drafts.set(uuid, { text: card.desire, original: card.desire });
+        this.render({ parts: ["rail"] });
+    }
+
+    static #onSaveDesire(event, target) {
+        return this.#saveDesire(target.closest("[data-uuid]")?.dataset.uuid);
+    }
+
+    async #saveDesire(uuid) {
+        const draft = this.drafts.get(uuid);
+        const actor = MissionDashboardApp.#resolve(uuid);
+        if (!draft || !actor) return;
+
+        // UI visibility is not authorization: check again at the write boundary.
+        if (!actor.canUserModify(game.user, "update")) {
+            ui.notifications.error("You don't have permission to edit this character's Desire.");
+            return;
+        }
+
+        const text = draft.text.trim().slice(0, DESIRE_MAX_LENGTH);
+
+        draft.saving = true;
+
+        try {
+            await actor.setFlag(MODULE_ID, "dashboard.desire", text);
+
+            // Keep typing that happened while the save was in flight; it is now based on the saved text.
+            draft.saving = false;
+            if (draft.text.trim().slice(0, DESIRE_MAX_LENGTH) === text) this.drafts.delete(uuid);
+            else draft.original = text;
+            this.render({ parts: ["rail"] });
+        } catch (error) {
+            draft.saving = false;
+            console.error("Azecraft | Could not save Desire", error);
+            ui.notifications.error("Could not save the Desire. Your draft is kept.");
+        }
+    }
+
+    static async #onEditArt(event, target) {
+        const actor = MissionDashboardApp.#resolve(target.closest("[data-uuid]")?.dataset.uuid);
+        if (!actor?.canUserModify(game.user, "update")) {
+            ui.notifications.error("You don't have permission to change this character's art.");
+            return;
+        }
+
+        const current = actor.getFlag(MODULE_ID, "dashboard.fullArt") ?? "";
+        const canBrowse = game.user.can("FILES_BROWSE");
+        const escape = foundry.utils.escapeHTML;
+        const content = `
+            <p>Full-body art shown on the dashboard card. Leave empty to use the Actor portrait.</p>
+            <div class="form-group">
+                <label>Image path</label>
+                <div class="form-fields">
+                    <input type="text" name="path" value="${escape(current)}" placeholder="${escape(actor.img ?? "")}">
+                    ${canBrowse ? '<button type="button" class="icon fa-solid fa-file-import" data-azd-browse data-tooltip="Browse"></button>' : ""}
+                </div>
+            </div>`;
+
+        const result = await DialogV2.input({
+            window: { title: `Dashboard art: ${actor.name}` },
+            content,
+            ok: { label: "Save", icon: "fa-solid fa-save" },
+            render: (_event, dialog) => {
+                dialog.element.querySelector("[data-azd-browse]")?.addEventListener("click", () => {
+                    const input = dialog.element.querySelector("input[name=path]");
+                    new foundry.applications.apps.FilePicker.implementation({
+                        type: "image",
+                        current: input.value || actor.img,
+                        callback: path => { input.value = path; }
+                    }).render(true);
+                });
+            }
+        });
+
+        if (!result) return;
+
+        const path = String(result.path ?? "").trim();
+
+        if (path && (path.length > 500 || /^\s*(javascript|data):/i.test(path))) {
+            ui.notifications.error("That image path is not allowed.");
+            return;
+        }
+
+        if (path) await actor.setFlag(MODULE_ID, "dashboard.fullArt", path);
+        else await actor.unsetFlag(MODULE_ID, "dashboard.fullArt");
+    }
+
+    static #onEditPage(event, target) {
+        const page = MissionDashboardApp.#resolve(target.dataset.pageUuid);
+        if (!page?.canUserModify(game.user, "update")) return;
+        page.sheet.render(true);
+    }
+
+    static #onPageEntry(event, target) {
+        this.controller.showEntry(target.dataset.panel, Number(target.dataset.step));
+    }
+
+    static async #onNewEntry(event, target) {
+        if (!game.user.isGM) return;
+        const panel = MISSION_PANELS.find(p => p.key === target.dataset.panel);
+        const scene = game.scenes.viewed;
+        if (!panel || !scene) return;
+
+        const confirmed = await DialogV2.confirm({
+            window: { title: `New ${panel.label.toLowerCase()} entry` },
+            content: `<p>Create a new “${foundry.utils.escapeHTML(panel.pageName)}” page in the mission Journal and show it as the current ${foundry.utils.escapeHTML(panel.label.toLowerCase())}?</p><p class="hint">The current entry stays available as history. Its page is not changed.</p>`
+        });
+        if (!confirmed) return;
+
+        try {
+            const page = await createMissionEntry(scene, panel.key);
+            page.sheet.render(true);
+        } catch (error) {
+            ui.notifications.error(error.message);
+        }
+    }
+
+    static #onConfigure() {
+        if (!game.user.isGM) return;
+        this.controller.openConfig();
+    }
+
+    static async #onToggleHidden() {
+        await game.settings.set(MODULE_ID, SETTINGS.hidden, !this.controller.preferences().hidden);
+    }
+
+    static async #onCycleCompact() {
+        const order = ["auto", "always", "never"];
+        const current = this.controller.preferences().compact;
+        await game.settings.set(MODULE_ID, SETTINGS.compact, order[(order.indexOf(current) + 1) % order.length]);
+    }
+
+    static async #onToggleMission() {
+        await game.settings.set(MODULE_ID, SETTINGS.missionCollapsed, !this.controller.preferences().missionCollapsed);
+    }
+
+    static #onOpenCampaign() {
+        this.controller.openCampaign();
+    }
+}

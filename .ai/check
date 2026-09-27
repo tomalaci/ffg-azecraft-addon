@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Fast, side-effect-free validation: JS syntax, manifest JSON, unit tests.
+set -eu
+cd "$(dirname "$0")/.."
+for f in main.js scripts/*.js scripts/mission-dashboard/*.js; do node --check "$f"; done
+node -e 'JSON.parse(require("fs").readFileSync("module.json", "utf8"))'
+node --test --test-reporter=dot tests/
+echo "ok"

@@ -1,0 +1,97 @@
+<div class="azd-campaign-body">
+{{#if (eq state "ready")}}
+    <div class="azd-campaign-scroll">
+        <section class="azd-campaign-fame">
+            <div>
+                <span class="azd-section-label">{{fameLabel}}</span>
+                <span class="azd-campaign-total">{{fame}}</span>
+            </div>
+            {{#if isGM}}
+            <div class="azd-campaign-adjust">
+                <button type="button" data-action="adjust" data-delta="-1" aria-label="Decrease Fame">−1</button>
+                <button type="button" data-action="adjust" data-delta="1" aria-label="Increase Fame">+1</button>
+            </div>
+            {{/if}}
+        </section>
+
+        <section>
+            <h3 class="azd-campaign-heading">Faction reputation</h3>
+            {{#if factions.length}}
+            <ul class="azd-campaign-factions">
+                {{#each factions as |faction|}}
+                <li class="{{#if faction.archived}}azd-archived{{/if}}">
+                    <span class="azd-faction-name">{{faction.name}}{{#if faction.archived}} <span class="azd-muted">(archived)</span>{{/if}}</span>
+                    <span class="azd-campaign-total {{#if (gt faction.total 0)}}azd-positive{{else if (lt faction.total 0)}}azd-negative{{/if}}">{{faction.totalLabel}}</span>
+                    {{#if @root.isGM}}
+                    <span class="azd-campaign-adjust">
+                        {{#unless faction.archived}}
+                        <button type="button" data-action="adjust" data-faction-id="{{faction.id}}" data-delta="-1" aria-label="Decrease {{faction.name}}">−1</button>
+                        <button type="button" data-action="adjust" data-faction-id="{{faction.id}}" data-delta="1" aria-label="Increase {{faction.name}}">+1</button>
+                        {{/unless}}
+                        {{#unless faction.unknown}}
+                        <button type="button" class="icon fa-solid fa-pen" data-action="renameFaction" data-faction-id="{{faction.id}}" data-name="{{faction.name}}" data-tooltip="Rename" aria-label="Rename"></button>
+                        <button type="button" class="icon fa-solid {{#if faction.archived}}fa-box-open{{else}}fa-box-archive{{/if}}" data-action="archiveFaction" data-faction-id="{{faction.id}}" data-archived="{{faction.archived}}" data-tooltip="{{#if faction.archived}}Restore{{else}}Archive (keeps history){{/if}}" aria-label="Archive"></button>
+                        {{/unless}}
+                    </span>
+                    {{/if}}
+                </li>
+                {{/each}}
+            </ul>
+            {{else}}
+            <p class="azd-muted">No factions yet.</p>
+            {{/if}}
+            <div class="azd-campaign-buttons">
+                {{#if isGM}}<button type="button" data-action="addFaction"><i class="fa-solid fa-plus" inert></i> Add faction</button>{{/if}}
+                {{#if archivedCount}}<button type="button" data-action="toggleArchived">{{#if showArchived}}Hide{{else}}Show{{/if}} archived ({{archivedCount}})</button>{{/if}}
+            </div>
+        </section>
+
+        <section>
+            <h3 class="azd-campaign-heading">History <span class="azd-muted">({{historyCount}})</span></h3>
+            {{#if history.length}}
+            <ol class="azd-campaign-history">
+                {{#each history as |event|}}
+                <li class="{{#if event.corrected}}azd-corrected{{/if}}">
+                    <span class="azd-delta {{#if event.positive}}azd-positive{{else}}azd-negative{{/if}}">{{event.deltaLabel}}</span>
+                    <div class="azd-history-text">
+                        <div><strong>{{event.targetLabel}}</strong>: {{event.reason}}</div>
+                        <div class="azd-muted">
+                            {{event.authorName}} · {{event.date}}{{#if event.sessionLabel}} · {{event.sessionLabel}}{{/if}}
+                            {{#if event.correctsEventId}} · correction{{/if}}
+                            {{#if event.corrected}} · corrected{{/if}}
+                        </div>
+                    </div>
+                    {{#if event.canCorrect}}
+                    <button type="button" class="icon fa-solid fa-rotate-left" data-action="correct" data-event-id="{{event.eventId}}" data-tooltip="Record a correction" aria-label="Correct"></button>
+                    {{/if}}
+                </li>
+                {{/each}}
+            </ol>
+            {{#if historyTruncated}}<button type="button" data-action="toggleHistory">Show all</button>{{else if showAllHistory}}<button type="button" data-action="toggleHistory">Show recent</button>{{/if}}
+            {{else}}
+            <p class="azd-muted">No adjustments recorded.</p>
+            {{/if}}
+        </section>
+    </div>
+    <footer class="azd-campaign-footer azd-muted">
+        Ledger: {{ledgerName}}{{#if isGM}} · <button type="button" class="azd-link" data-action="openLedger">open Journal</button>{{/if}}
+    </footer>
+{{else}}
+    {{#if isGM}}
+        {{#if (eq state "missing")}}<p>The configured campaign ledger Journal no longer exists.</p>{{/if}}
+        {{#if (eq state "restricted")}}<p>The campaign ledger is not readable.</p>{{/if}}
+        {{#if (eq state "unconfigured")}}<p>No campaign ledger yet. The ledger is a Journal that stores every Fame and reputation change, shared by all GMs and Scenes.</p>{{/if}}
+        <div class="azd-campaign-buttons">
+            <button type="button" data-action="createLedger"><i class="fa-solid fa-book-medical" inert></i> Create ledger</button>
+        </div>
+        {{#if candidates.length}}
+        <p>Or use an existing ledger:</p>
+        <ul>
+            {{#each candidates as |c|}}<li><button type="button" class="azd-link" data-action="selectLedger" data-uuid="{{c.uuid}}">{{c.name}}</button></li>{{/each}}
+        </ul>
+        {{/if}}
+    {{else}}
+        <p class="azd-muted">Campaign standing is not available.</p>
+    {{/if}}
+{{/if}}
+</div>

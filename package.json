@@ -1,0 +1,9 @@
+{
+    "name": "ffg-azecraft-addon",
+    "private": true,
+    "type": "module",
+    "description": "Development-only manifest for running unit tests; not used by Foundry.",
+    "scripts": {
+        "test": "node --test tests/"
+    }
+}

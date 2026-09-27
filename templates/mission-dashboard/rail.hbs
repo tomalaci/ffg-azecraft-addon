@@ -1,0 +1,9 @@
+<aside class="azd-rail" aria-label="Squad">
+    <div class="azd-rail-cards">
+        {{#each visibleCards as |card|}}
+        {{> "modules/ffg-azecraft-addon/templates/mission-dashboard/card.hbs" card=card placeholderArt=@root.placeholderArt}}
+        {{else}}
+        <p class="azd-muted azd-rail-empty">No squad assigned.</p>
+        {{/each}}
+    </div>
+</aside>

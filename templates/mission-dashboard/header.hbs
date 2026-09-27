@@ -1,0 +1,36 @@
+<header class="azd-header azd-surface">
+    <div class="azd-header-title">
+        <span class="azd-kicker">Mission</span>
+        <span class="azd-title" data-tooltip="{{title}}">{{#if title}}{{title}}{{else}}{{sceneName}}{{/if}}</span>
+    </div>
+    <div class="azd-header-controls">
+        {{#if standing.ready}}
+        <button type="button" class="azd-chip" data-action="openCampaign" data-tooltip="Campaign standing: Fame and faction reputation" aria-label="Campaign standing">
+            <i class="fa-solid fa-ranking-star" inert></i> Fame {{standing.fame}}
+        </button>
+        {{else if isGM}}
+        <button type="button" class="azd-icon-button" data-action="openCampaign" data-tooltip="Campaign standing (not set up yet)" aria-label="Campaign standing">
+            <i class="fa-solid fa-ranking-star" inert></i>
+        </button>
+        {{/if}}
+        <button type="button" class="azd-icon-button" data-action="cycleCompact" data-tooltip="Compact cards: {{compactLabel}}" aria-label="Compact cards: {{compactLabel}}">
+            <i class="fa-solid fa-table-list" inert></i>
+        </button>
+        <button type="button" class="azd-icon-button" data-action="toggleMission" data-tooltip="{{#if prefs.missionCollapsed}}Expand{{else}}Collapse{{/if}} mission panels" aria-label="Toggle mission panels" aria-pressed="{{prefs.missionCollapsed}}">
+            <i class="fa-solid {{#if prefs.missionCollapsed}}fa-chevron-up{{else}}fa-chevron-down{{/if}}" inert></i>
+        </button>
+        <button type="button" class="azd-icon-button" data-action="openHelp" data-tooltip="Help and quick start" aria-label="Mission dashboard help">
+            <i class="fa-solid fa-circle-question" inert></i>
+        </button>
+        {{#if isGM}}
+        <button type="button" class="azd-icon-button" data-action="configure" data-tooltip="Configure mission dashboard (GM)" aria-label="Configure mission dashboard">
+            <i class="fa-solid fa-gear" inert></i>
+        </button>
+        {{/if}}
+        <button type="button" class="azd-icon-button azd-hide-toggle" data-action="toggleHidden" data-tooltip="{{#if prefs.hidden}}Show dashboard{{else}}Focus map: hide dashboard on this computer{{/if}}" aria-label="{{#if prefs.hidden}}Show dashboard{{else}}Hide dashboard{{/if}}">
+            <i class="fa-solid fa-eye-slash azd-when-shown" inert></i>
+            <i class="fa-solid fa-satellite-dish azd-when-hidden" inert></i>
+            <span class="azd-when-hidden">Dashboard</span>
+        </button>
+    </div>
+</header>

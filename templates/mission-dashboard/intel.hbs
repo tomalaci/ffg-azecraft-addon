@@ -1,0 +1,34 @@
+<section class="azd-panel azd-intel azd-surface" aria-label="Key intel">
+    <div class="azd-panel-head">
+        <span class="azd-section-label"><i class="fa-solid fa-folder-open" inert></i> Key intel</span>
+        {{> "azd-panel-tools" panel=intel key="intel" label="Key intel"}}
+    </div>
+    <div class="azd-panel-body azd-intel-scroll">
+        {{#if people.length}}
+        <ul class="azd-people" aria-label="People of note">
+            {{#each people as |person|}}
+            <li class="azd-person {{#if person.missing}}azd-person--missing{{/if}}" data-uuid="{{person.uuid}}">
+                {{#if person.img}}<img class="azd-person-img" src="{{person.img}}" alt="" loading="lazy" data-action="openActor" data-fallback="{{@root.placeholderArt}}">{{/if}}
+                <div class="azd-person-text">
+                    <button type="button" class="azd-name azd-person-name" data-action="openActor" {{#if person.missing}}disabled{{/if}}>{{person.name}}</button>
+                    {{#if person.hiddenFromPlayers}}<span class="azd-badge" data-tooltip="Players cannot see this Actor (needs Limited or higher), so this entry is hidden from them."><i class="fa-solid fa-eye-slash" inert></i> GM only</span>{{/if}}
+                    {{#if person.role}}<div class="azd-person-role">{{person.role}}</div>{{/if}}
+                    {{#if (or person.status person.relationship)}}
+                    <div class="azd-person-tags">
+                        {{#if person.status}}<span class="azd-tag"><span class="azd-muted">Status</span> {{person.status}}</span>{{/if}}
+                        {{#if person.relationship}}<span class="azd-tag"><span class="azd-muted">Rel.</span> {{person.relationship}}</span>{{/if}}
+                    </div>
+                    {{/if}}
+                    {{#if person.note}}<p class="azd-person-note">{{person.note}}</p>{{/if}}
+                </div>
+            </li>
+            {{/each}}
+        </ul>
+        {{/if}}
+        <div class="azd-journal-content">
+            {{#unless (and people.length (eq intel.access "unassigned"))}}
+            {{> "azd-page-state" panel=intel}}
+            {{/unless}}
+        </div>
+    </div>
+</section>

@@ -1,0 +1,94 @@
+<article class="azd-card azd-surface azd-card--{{card.availability}} {{#if card.expanded}}azd-card--expanded{{/if}}" data-slot-id="{{card.slotId}}" {{#if card.uuid}}data-uuid="{{card.uuid}}"{{/if}}>
+{{#if (eq card.availability "empty")}}
+    <div class="azd-card-placeholder"><i class="fa-regular fa-square-plus" inert></i> Empty slot</div>
+{{else if (eq card.availability "missing")}}
+    <div class="azd-card-placeholder">
+        <i class="fa-solid fa-user-slash" inert></i>
+        {{#if card.isGM}}Missing Actor <code>{{card.uuid}}</code>{{else}}Operative unavailable{{/if}}
+    </div>
+{{else if (eq card.availability "restricted")}}
+    <div class="azd-card-placeholder"><i class="fa-solid fa-lock" inert></i> Classified operative</div>
+{{else}}
+    <div class="azd-card-main">
+        <div class="azd-card-info">
+            <div class="azd-card-heading">
+                <button type="button" class="azd-name" data-action="openActor" data-tooltip="Open character sheet">{{card.name}}</button>
+                <button type="button" class="azd-icon-button azd-card-toggle" data-action="toggleCard" aria-expanded="{{card.expanded}}" data-tooltip="{{#if card.expanded}}Collapse{{else}}Expand{{/if}} card" aria-label="Toggle card details">
+                    <i class="fa-solid {{#if card.expanded}}fa-compress{{else}}fa-expand{{/if}}" inert></i>
+                </button>
+            </div>
+            {{#if card.subtitle}}<div class="azd-subtitle">{{card.subtitle}}</div>{{/if}}
+
+            {{#if (eq card.availability "limited")}}
+            <p class="azd-muted azd-limited-note">Details restricted.</p>
+            {{else}}
+            <div class="azd-tracks">
+                <div class="azd-track azd-track--wounds {{#if card.wounds.overThreshold}}azd-track--over{{/if}}">
+                    <span class="azd-track-label">Wounds</span>
+                    <span class="azd-track-value"><strong>{{card.wounds.valueLabel}}</strong> / {{card.wounds.thresholdLabel}}{{#if card.wounds.overThreshold}} <em class="azd-over">over</em>{{/if}}</span>
+                    <span class="azd-bar" aria-hidden="true"><span style="width: {{card.wounds.percent}}%"></span></span>
+                </div>
+                <div class="azd-track azd-track--strain {{#if card.strain.overThreshold}}azd-track--over{{/if}}">
+                    <span class="azd-track-label">Strain</span>
+                    <span class="azd-track-value"><strong>{{card.strain.valueLabel}}</strong> / {{card.strain.thresholdLabel}}{{#if card.strain.overThreshold}} <em class="azd-over">over</em>{{/if}}</span>
+                    <span class="azd-bar" aria-hidden="true"><span style="width: {{card.strain.percent}}%"></span></span>
+                </div>
+            </div>
+            <dl class="azd-derived">
+                <div><dt>Soak</dt><dd>{{card.soak}}</dd></div>
+                <div><dt>Def M</dt><dd data-tooltip="Melee defense">{{card.defense.melee}}</dd></div>
+                <div><dt>Def R</dt><dd data-tooltip="Ranged defense">{{card.defense.ranged}}</dd></div>
+            </dl>
+            <div class="azd-crits">
+                <span class="azd-section-label"><i class="fa-solid fa-kit-medical" inert></i> Critical injuries{{#if card.criticalInjuries.length}} <span class="azd-count">{{card.criticalInjuries.length}}</span>{{/if}}</span>
+                {{#if card.criticalInjuries.length}}
+                <ul>
+                    {{#each card.criticalInjuries as |crit|}}
+                    <li><button type="button" class="azd-link azd-crit" data-action="openItem" data-item-uuid="{{crit.uuid}}">{{crit.name}}{{#if crit.severity}} <span class="azd-muted">(sev {{crit.severity}})</span>{{/if}}</button></li>
+                    {{/each}}
+                </ul>
+                {{else}}
+                <span class="azd-muted azd-none">None</span>
+                {{/if}}
+            </div>
+            {{/if}}
+        </div>
+
+        <div class="azd-card-art {{#if card.hasFullArt}}azd-card-art--full{{/if}}">
+            <img src="{{card.art}}" alt="" loading="lazy" data-action="openActor" data-fallback="{{#if card.hasFullArt}}{{card.portrait}}{{else}}{{placeholderArt}}{{/if}}">
+            {{#if card.canEditArt}}
+            <button type="button" class="azd-icon-button azd-art-edit" data-action="editArt" data-tooltip="Set dashboard art" aria-label="Set dashboard art"><i class="fa-solid fa-image" inert></i></button>
+            {{/if}}
+        </div>
+    </div>
+
+    {{#if (ne card.availability "limited")}}
+    <div class="azd-desire">
+        <div class="azd-desire-head">
+            <span class="azd-section-label">Desire</span>
+            {{#if (and card.canEditDesire (not card.editing))}}
+            <button type="button" class="azd-icon-button" data-action="editDesire" data-tooltip="Edit Desire" aria-label="Edit Desire"><i class="fa-solid fa-pen" inert></i></button>
+            {{/if}}
+        </div>
+        {{#if card.editing}}
+        <div class="azd-desire-editor">
+            {{#if card.draftConflict}}
+            <p class="azd-warning"><i class="fa-solid fa-triangle-exclamation" inert></i> Changed elsewhere to: “{{card.desire}}”.
+                <button type="button" class="azd-link" data-action="useLatestDesire">Use that</button> or save to replace it.</p>
+            {{/if}}
+            <textarea id="azd-desire-{{card.slotId}}" data-desire-for="{{card.uuid}}" maxlength="{{card.desireMaxLength}}" rows="3" placeholder="What does this character want to pursue or experience?">{{card.draft}}</textarea>
+            <div class="azd-desire-actions">
+                <span class="azd-desire-count azd-muted">{{card.draft.length}}/{{card.desireMaxLength}}</span>
+                <button type="button" data-action="cancelDesire">Cancel</button>
+                <button type="button" class="azd-primary" data-action="saveDesire" data-tooltip="Ctrl+Enter">Save</button>
+            </div>
+        </div>
+        {{else if card.desire}}
+        <p class="azd-desire-text">{{card.desire}}</p>
+        {{else}}
+        <p class="azd-muted azd-desire-text">No desire set.</p>
+        {{/if}}
+    </div>
+    {{/if}}
+{{/if}}
+</article>

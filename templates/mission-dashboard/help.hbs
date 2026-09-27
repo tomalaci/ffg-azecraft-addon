@@ -1,0 +1,206 @@
+<div class="azd-help-body">
+    <nav class="azd-help-toc" aria-label="Help sections">
+        <button type="button" data-action="jump" data-target="overview">Overview</button>
+        <button type="button" data-action="jump" data-target="gm-quick-start">GM quick start</button>
+        <button type="button" data-action="jump" data-target="player-quick-start">Player quick start</button>
+        <button type="button" data-action="jump" data-target="cards">Squad cards</button>
+        <button type="button" data-action="jump" data-target="desire">Desire &amp; art</button>
+        <button type="button" data-action="jump" data-target="mission">Mission panels</button>
+        <button type="button" data-action="jump" data-target="history">Entry history</button>
+        <button type="button" data-action="jump" data-target="people">People of Note</button>
+        <button type="button" data-action="jump" data-target="reputation">Fame &amp; reputation</button>
+        <button type="button" data-action="jump" data-target="screen">Your screen</button>
+        <button type="button" data-action="jump" data-target="permissions">Who sees what</button>
+        <button type="button" data-action="jump" data-target="tips">Tips &amp; troubleshooting</button>
+    </nav>
+
+    <div class="azd-help-content">
+        <section data-section="overview">
+            <h2>Overview</h2>
+            <p>The mission dashboard is a heads-up display over a normal Scene: squad cards on the left, and the
+                current objective, mission summary and key intel along the bottom. The map in the middle stays a
+                normal, playable map. Panning and zooming move the map, not the dashboard.</p>
+            <p>The dashboard only <em>shows</em> information that lives elsewhere, so it is always up to date:</p>
+            <ul>
+                <li><strong>Characters</strong>: their normal Actor and character sheet.</li>
+                <li><strong>Mission text</strong>: pages in a mission Journal.</li>
+                <li><strong>Which characters and pages belong to the mission</strong>: the Scene.</li>
+                <li><strong>Fame and reputation</strong>: one campaign ledger shared by every GM and Scene.</li>
+            </ul>
+        </section>
+
+        <section data-section="gm-quick-start">
+            <h2><i class="fa-solid fa-gear" inert></i> GM quick start</h2>
+            <ol>
+                <li>Create or duplicate a Scene and prepare the map, tokens, walls and lights as usual.</li>
+                <li>Open the dashboard configuration: right-click the Scene in the Scenes sidebar and choose
+                    <strong>Configure Mission Dashboard</strong>. You can also use the Scene configuration's header menu,
+                    or the <i class="fa-solid fa-gear" inert></i> button on an existing dashboard.</li>
+                <li>Tick <strong>Show mission dashboard</strong>.</li>
+                <li>Under <strong>Squad</strong>, pick a character for each slot. The <em>Player Characters</em> folder
+                    is listed first. Add, remove and reorder slots as needed; empty slots are hidden from players.</li>
+                <li>Under <strong>Mission Journal</strong>, click <strong>Create mission Journal</strong>. This creates
+                    Summary, Current Objective, Key Intel and GM Notes pages and selects them. You can also choose an
+                    existing Journal.</li>
+                <li>Write the mission in the Journal. It starts hidden from players; click <strong>Share with
+                    players</strong> when you're ready. GM Notes always stays GM-only.</li>
+                <li>Optionally add <strong>People of Note</strong>, then click <strong>Save</strong>.</li>
+                <li>During play, use <i class="fa-solid fa-plus" inert></i> on a panel when the objective changes, and
+                    the <i class="fa-solid fa-ranking-star" inert></i> button to record Fame and reputation.</li>
+            </ol>
+            <p class="azd-help-note">Duplicating a Scene keeps its dashboard, but the copy still uses the <strong>same</strong>
+                mission Journal pages. For a new mission, create or choose a different Journal in the copy's configuration.</p>
+        </section>
+
+        <section data-section="player-quick-start">
+            <h2><i class="fa-solid fa-users" inert></i> Player quick start</h2>
+            <ul>
+                <li>Your character's card updates by itself when wounds, strain, gear or critical injuries change on
+                    the sheet.</li>
+                <li>Click <i class="fa-solid fa-pen" inert></i> next to <strong>Desire</strong> on your card to write
+                    what you'd like your character to pursue or experience. The GM reads these for plot hooks.</li>
+                <li>Click a name or portrait to open the sheet, and a critical injury to open its details.</li>
+                <li>Use ‹ and › on the mission panels to read earlier objectives and summaries.</li>
+                <li>Need the whole map? Click <i class="fa-solid fa-eye-slash" inert></i>. It only hides the dashboard
+                    on your screen, and the <strong>Dashboard</strong> button at the top brings it back.</li>
+            </ul>
+        </section>
+
+        <section data-section="cards">
+            <h2>Squad cards</h2>
+            <ul>
+                <li><strong>Wounds</strong> and <strong>Strain</strong> show the current value against the threshold,
+                    as on the sheet. A value above the threshold is red and marked <em>over</em>. The bar stops at full,
+                    but the number always shows the real value.</li>
+                <li><strong>Soak</strong>, <strong>Def M</strong> (melee) and <strong>Def R</strong> (ranged) are the
+                    sheet values, including gear and effects. A dash (—) means the value isn't set on the sheet.</li>
+                <li><strong>Critical injuries</strong> are listed with their severity. Click one to open it.</li>
+                <li>Cards always show the character's own Actor. Player-character tokens are normally linked, so damage
+                    on them shows up. Damage on an <em>unlinked</em> token (a copy) doesn't.</li>
+                <li>On small screens the cards become compact. Use <i class="fa-solid fa-expand" inert></i> on a card to
+                    see everything.</li>
+            </ul>
+        </section>
+
+        <section data-section="desire">
+            <h2><i class="fa-solid fa-pen" inert></i> Desire &amp; <i class="fa-solid fa-image" inert></i> art</h2>
+            <ul>
+                <li><strong>Desire</strong> belongs to the character and carries over to every mission. The character's
+                    owner and GMs can edit it, up to 500 characters. <strong>Save</strong> or Ctrl+Enter saves;
+                    <strong>Cancel</strong> or Escape discards your changes.</li>
+                <li>If someone else changes the Desire while you're typing, your text is kept. A warning shows their
+                    version, and you can switch to it or save yours.</li>
+                <li><strong>Full-body art</strong>: hover over the card art and click <i class="fa-solid fa-image" inert></i>.
+                    Pick an image, or paste a path from your GM. The art is shown whole, not cropped. Leave the path
+                    empty to go back to the portrait. If an image fails to load, the card falls back to the portrait.</li>
+            </ul>
+        </section>
+
+        <section data-section="mission">
+            <h2><i class="fa-solid fa-crosshairs" inert></i> Mission panels</h2>
+            <ul>
+                <li><strong>Current objective</strong> (orange) answers “what do we do next?” Keep it short. It stays
+                    visible even when the panels are collapsed.</li>
+                <li><strong>Mission summary</strong> answers “why are we here?”</li>
+                <li><strong>Key intel</strong> holds people, places and clues, with People of Note cards at the top.</li>
+                <li>Everything is normal Journal content: links to Actors and Journals, images and formatting all work.
+                    Secret blocks are only shown to GMs.</li>
+                <li>GMs: <i class="fa-solid fa-pen-to-square" inert></i> opens the page's editor. Changes appear for
+                    everyone as soon as you save.</li>
+            </ul>
+        </section>
+
+        <section data-section="history">
+            <h2><i class="fa-solid fa-clock-rotate-left" inert></i> Entry history</h2>
+            <ul>
+                <li>Each mission panel keeps a history of pages, and the newest one is shown. With more than one entry,
+                    ‹ 2/3 › arrows appear. Browsing only changes your own screen; <strong>Back to current</strong>
+                    returns to the newest.</li>
+                <li>GMs: <i class="fa-solid fa-plus" inert></i> creates the next page (for example <em>Current Objective 2</em>),
+                    makes it current for everyone and opens it for editing. The previous page stays as history,
+                    unchanged.</li>
+                <li>GMs can also add, reorder or remove history entries in the configuration. Removing an entry doesn't
+                    delete the page.</li>
+                <li>Players only see entries they can read. If the newest page is hidden from them, they keep seeing the
+                    previous one.</li>
+            </ul>
+        </section>
+
+        <section data-section="people">
+            <h2><i class="fa-solid fa-address-card" inert></i> People of Note</h2>
+            <ul>
+                <li>GMs add them in the configuration: choose the NPC's Actor, then fill in role, status, relationship and
+                    a note. The name and portrait come from the Actor.</li>
+                <li>A player only sees a person whose Actor they can see. Set the NPC's ownership to <strong>Limited</strong>
+                    or higher (right-click the Actor, then Configure Ownership). Limited shows the name and portrait but
+                    not the sheet. People players can't see are marked <strong>GM only</strong>.</li>
+                <li>Everything typed into these fields is visible to players. Keep secrets in GM Notes.</li>
+            </ul>
+        </section>
+
+        <section data-section="reputation">
+            <h2><i class="fa-solid fa-ranking-star" inert></i> Fame &amp; faction reputation</h2>
+            <ul>
+                <li><strong>Fame</strong> is how well known the squad is. <strong>Faction reputation</strong> is how much
+                    a particular organization likes them. Both are plain whole numbers that start at 0. There are no
+                    caps and no automatic effects on rolls.</li>
+                <li>Open the campaign window with the <strong>Fame</strong> button in the dashboard header. Everyone can
+                    see the totals and the history.</li>
+                <li>GMs: the first time, click <strong>Create ledger</strong>. Then add factions and use +1 / −1. Every
+                    change needs a <strong>reason</strong>, which players can read. For an existing campaign, enter the
+                    current values as opening balances, e.g. “+3: Opening balance”.</li>
+                <li>Fix mistakes with <i class="fa-solid fa-rotate-left" inert></i> <strong>Correct</strong>. It adds a
+                    reversing entry and marks the original as corrected. Archiving a faction hides it but keeps its
+                    history.</li>
+                <li>The ledger is shared by every GM and Scene, and two GMs adjusting at the same moment both get
+                    counted.</li>
+            </ul>
+        </section>
+
+        <section data-section="screen">
+            <h2>Your screen</h2>
+            <p>These only change <strong>your</strong> screen, never anyone else's:</p>
+            <ul>
+                <li><i class="fa-solid fa-eye-slash" inert></i> <strong>Focus map</strong>: hides the dashboard. The
+                    <strong>Dashboard</strong> button at the top of the screen brings it back. You can also bind a key
+                    to <em>Toggle mission dashboard</em> in Configure Controls.</li>
+                <li><i class="fa-solid fa-table-list" inert></i> <strong>Compact cards</strong>: cycles between Auto,
+                    On and Off. Auto turns compact mode on for small screens.</li>
+                <li><i class="fa-solid fa-chevron-down" inert></i> <strong>Collapse panels</strong>: shrinks the mission
+                    panels to one bar that still shows the objective.</li>
+                <li>Scrolling over the dashboard scrolls the dashboard; scrolling over the map zooms the map.</li>
+            </ul>
+        </section>
+
+        <section data-section="permissions">
+            <h2><i class="fa-solid fa-lock" inert></i> Who sees what</h2>
+            <table class="azd-help-table">
+                <thead><tr><th>Action</th><th>Who</th></tr></thead>
+                <tbody>
+                    <tr><td>Configure the dashboard, add history entries</td><td>GMs</td></tr>
+                    <tr><td>See a card's stats and Desire</td><td>Observer or higher on that character</td></tr>
+                    <tr><td>See only name and art</td><td>Limited on that character</td></tr>
+                    <tr><td>Edit Desire or art</td><td>The character's owners and GMs</td></tr>
+                    <tr><td>Read a mission panel</td><td>Anyone who can read that Journal page</td></tr>
+                    <tr><td>Record Fame or reputation</td><td>GMs</td></tr>
+                    <tr><td>Hide, compact or collapse</td><td>Everyone, for themselves</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section data-section="tips">
+            <h2>Tips &amp; troubleshooting</h2>
+            <ul>
+                <li><strong>A panel says “Classified” or “No briefing available”</strong>: the page isn't shared with
+                    players yet. Use <em>Share with players</em> in the configuration, or change the Journal's ownership.</li>
+                <li><strong>A character card is missing for a player</strong>: empty slots are hidden. A card for a
+                    deleted Actor shows as unavailable.</li>
+                <li><strong>A Person of Note is missing for players</strong>: set that NPC's Actor to Limited.</li>
+                <li><strong>The squad column is short</strong>: collapse the Scene navigation, or turn on compact cards.</li>
+                <li><strong>The dashboard is gone</strong>: check for the <strong>Dashboard</strong> button at the top of
+                    the screen (it may be hidden on your screen), or ask a GM whether this Scene has the dashboard
+                    enabled.</li>
+            </ul>
+        </section>
+    </div>
+</div>

@@ -53,7 +53,11 @@ jobs:
             --exclude ".git" \
             --exclude ".github" \
             --exclude "dist" \
-            --exclude "AGENTS.md"
+            --exclude "AGENTS.md" \
+            --exclude ".ai" \
+            --exclude "tests" \
+            --exclude "package.json" \
+            --exclude "compose.yml"
           cp dist/module.json dist/package/module.json
           cd dist/package
           zip -r ../module.zip .

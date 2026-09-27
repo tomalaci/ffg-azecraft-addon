@@ -1,0 +1,17 @@
+{{#if (and panel.paged (not panel.isLatest))}}
+<p class="azd-history-banner">
+    <i class="fa-solid fa-clock-rotate-left" inert></i> Earlier entry{{#if panel.title}}: {{panel.title}}{{/if}}
+    <button type="button" class="azd-link" data-action="pageEntry" data-panel="{{panel.kind}}" data-step="0">Back to current</button>
+</p>
+{{/if}}
+{{#if (eq panel.access "available")}}
+    {{#if panel.empty}}<p class="azd-muted">Nothing written yet.</p>{{else}}{{{panel.html}}}{{/if}}
+{{else if (eq panel.access "unassigned")}}
+    <p class="azd-muted">{{#if panel.isGM}}No page assigned. Use <i class="fa-solid fa-gear" inert></i> to choose one, or <i class="fa-solid fa-plus" inert></i> to create one.{{else}}No briefing available.{{/if}}</p>
+{{else if (eq panel.access "restricted")}}
+    <p class="azd-muted"><i class="fa-solid fa-lock" inert></i> Classified.{{#if panel.isGM}} Players can't read “{{panel.title}}”.{{/if}}</p>
+{{else if (eq panel.access "unsupported")}}
+    <p class="azd-muted">{{#if panel.isGM}}“{{panel.title}}” is not a text or image page.{{else}}Briefing unavailable.{{/if}}</p>
+{{else}}
+    <p class="azd-muted">{{#if panel.isGM}}The assigned page no longer exists.{{else}}Briefing unavailable.{{/if}}</p>
+{{/if}}

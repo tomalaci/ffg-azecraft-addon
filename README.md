@@ -4,7 +4,16 @@ Manifest URL: `https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/do
 
 Foundry VTT v13 addon module for the `starwarsffg` system.
 
-Current scope is narrow: this repo patches the system actor sheet class so the module can replace selected Star Wars FFG NPC actor templates with local versions and ensure biography content is enriched for those overridden sheets.
+The module does three things:
+
+- Replaces selected Star Wars FFG NPC actor sheet templates with local versions and enriches their
+  biography content.
+- Adds Biotics and Tech power modifiers to the dice roll dialog.
+- Adds a **mission dashboard**: a Mass Effect style HUD over a Scene with squad cards (stats,
+  critical injuries, full art, player Desires), mission summary and objective from Journal pages,
+  key intel with People of Note, and campaign-wide Fame and faction reputation. See
+  [docs/mission-dashboard.md](docs/mission-dashboard.md) for GMs and players and
+  [docs/mission-dashboard-development.md](docs/mission-dashboard-development.md) for developers.
 
 ## Current Behavior
 
@@ -41,6 +50,12 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 `templates/actors/`
 : Local sheet template replacements for supported actor types.
 
+`scripts/mission-dashboard/`, `templates/mission-dashboard/`, `styles/mission-dashboard.css`
+: Mission dashboard feature.
+
+`tests/`
+: Unit tests (`node --test tests/`). `.ai/check` runs them with syntax checks.
+
 ## Compatibility
 
 - Foundry Virtual Tabletop: `13`
@@ -67,7 +82,8 @@ docker compose down
 
 ## Notes
 
-- This repo currently has no build step or packaging pipeline.
+- This repo has no build step. The release workflow zips the repository (excluding development files).
+- Changes to `module.json` (for example `styles`) only load after restarting Foundry and relaunching the world; script, template and CSS changes load on a browser refresh.
 - Behavior depends on the upstream `ffg.ActorSheetFFG` class and the system template structure remaining compatible.
 - If the system changes its sheet registration, template getter, data shape, or biography handling, the patch in `scripts/override-actor-templates.js` will likely need adjustment.
 
