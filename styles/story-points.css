@@ -195,6 +195,20 @@ body.azsp-active #destiny-tracker {
     gap: 3px;
 }
 
+#azecraft-story-points .azsp-capacity {
+    align-items: center;
+}
+
+#azecraft-story-points .azsp-capacity-value {
+    min-width: 22px;
+    color: var(--azsp-text);
+    font-family: var(--azsp-font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
 #azecraft-story-points .azsp-muted {
     color: var(--azsp-muted);
     font-family: var(--azsp-font-heading);

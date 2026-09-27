@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { adjustPool, fromSystemPool, poolSegments, squadShare, toSystemPool, usePoint } from "../scripts/story-points/story-pool.js";
+import { adjustPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "../scripts/story-points/story-pool.js";
 
 test("segments: squad fills from the left, threat from the right", () => {
     assert.deepEqual(poolSegments({ squad: 3, threat: 2 }), ["squad", "squad", "squad", "threat", "threat"]);
@@ -22,4 +22,14 @@ test("GM adjustments never go below zero; mapping to the system's Light/Dark set
     assert.deepEqual(adjustPool({ squad: 1, threat: 0 }, "threat", 2), { squad: 1, threat: 2 });
     assert.deepEqual(toSystemPool({ squad: 4, threat: 1 }), { light: 4, dark: 1 });
     assert.deepEqual(fromSystemPool("2", undefined), { squad: 2, threat: 0 });
+});
+
+test("capacity changes keep the tug of war balanced", () => {
+    assert.equal(poolCapacity({ squad: 2, threat: 3 }), 5);
+    assert.deepEqual(resizePool({ squad: 0, threat: 0 }, 1), { squad: 1, threat: 0 });
+    assert.deepEqual(resizePool({ squad: 1, threat: 0 }, 1), { squad: 1, threat: 1 });
+    assert.deepEqual(resizePool({ squad: 3, threat: 1 }, 2), { squad: 3, threat: 3 });
+    assert.deepEqual(resizePool({ squad: 2, threat: 2 }, -1), { squad: 2, threat: 1 });
+    assert.deepEqual(resizePool({ squad: 4, threat: 1 }, -2), { squad: 2, threat: 1 });
+    assert.deepEqual(resizePool({ squad: 0, threat: 1 }, -5), { squad: 0, threat: 0 });
 });

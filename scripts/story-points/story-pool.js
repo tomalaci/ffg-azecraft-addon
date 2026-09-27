@@ -45,6 +45,30 @@ export function adjustPool(pool, side, delta) {
     return { ...p, [side]: Math.max(0, p[side] + Math.trunc(delta)) };
 }
 
+/** Total number of story points in play (both sides). */
+export function poolCapacity(pool) {
+    const { squad, threat } = normalizePool(pool);
+    return squad + threat;
+}
+
+/**
+ * GM capacity change: add or remove points from the pool as a whole. A new point goes to the side
+ * with fewer points (the squad on a tie) and a removed point comes from the side with more (the
+ * threat on a tie), so the tug of war stays as balanced as it was.
+ */
+export function resizePool(pool, delta) {
+    let p = normalizePool(pool);
+    const steps = Math.trunc(delta);
+    for (let i = 0; i < Math.abs(steps); i++) {
+        if (steps > 0) {
+            p = p.squad <= p.threat ? { ...p, squad: p.squad + 1 } : { ...p, threat: p.threat + 1 };
+        } else if (p.squad + p.threat > 0) {
+            p = p.threat >= p.squad ? { ...p, threat: p.threat - 1 } : { ...p, squad: p.squad - 1 };
+        }
+    }
+    return p;
+}
+
 /** Between the system's setting names and this widget's sides. */
 export function toSystemPool(pool) {
     const p = normalizePool(pool);

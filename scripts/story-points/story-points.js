@@ -10,7 +10,7 @@
  * socket) and owns the Group Manager / Request Destiny Roll actions.
  */
 
-import { SIDES, adjustPool, fromSystemPool, poolSegments, squadShare, toSystemPool, usePoint } from "./story-pool.js";
+import { SIDES, adjustPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SYSTEM_ID = "starwarsffg";
@@ -48,6 +48,7 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         actions: {
             use: StoryPointsApp.#onUse,
             adjust: StoryPointsApp.#onAdjust,
+            resize: StoryPointsApp.#onResizePool,
             systemMenu: StoryPointsApp.#onSystemMenu
         }
     };
@@ -81,6 +82,7 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 edge: side === SIDES.squad ? all[index + 1] !== SIDES.squad : all[index - 1] !== SIDES.threat
             })),
             empty: pool.squad + pool.threat === 0,
+            capacity: poolCapacity(pool),
             squadPercent: Math.round(squadShare(pool) * 100),
             canUseSquad: pool.squad > 0,
             canUseThreat: isGM && pool.threat > 0,
@@ -159,6 +161,12 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #onAdjust(event, target) {
         if (!game.user.isGM) return;
         await StoryPointsApp.#writePool(adjustPool(readPool(), target.dataset.side, Number(target.dataset.delta)));
+    }
+
+    /** GM: grow or shrink the whole pool (see resizePool for which side changes). */
+    static async #onResizePool(event, target) {
+        if (!game.user.isGM) return;
+        await StoryPointsApp.#writePool(resizePool(readPool(), Number(target.dataset.delta)));
     }
 
     static #onSystemMenu(event, target) {
