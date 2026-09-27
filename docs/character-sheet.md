@@ -75,8 +75,9 @@ off to get the parchment look back on all of them (the header fields stay remove
   the Specializations / Force Powers / Signature Abilities rows, the Force Pool, Force Powers and
   Signature Abilities lists and the Obligation tab removed, the medical counter labelled
   "Medi-gel", and empty Biotics and Tech tabs added; everything else is unchanged. The NPC templates
-  have the same removals. It is swapped in by `scripts/override-actor-templates.js`, the same mechanism as the
-  NPC templates. When the system updates, re-copy its template, remove those rows and add the Biotics and Tech tabs again.
+  (`ffg-minion/rival/nemesis-sheet.html`) have the same changes. All are swapped in by
+  `scripts/override-actor-templates.js`. When the system updates, re-copy its templates and redo
+  these changes (each is marked with an `Azecraft:` comment).
 - **Styles.** `styles/character-sheet.css` is added as an **unlayered** `<link>` at `setup` by
   `scripts/character-sheet-theme.js`. The system's `mandar.css` is unlayered too, so a stylesheet
   in Foundry's `modules` CSS layer (the `styles` in `module.json`) could never override it. Rules
