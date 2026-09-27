@@ -35,6 +35,10 @@ export const SETTINGS = {
     style: "dashboardStyle",
     columns: "dashboardColumns",
     ledger: "campaignLedgerUuid",
+    resourcesLedger: "resourcesLedgerUuid",
+    squads: "squads",
+    activeSquad: "activeSquadId",
+    ledgerChoices: "dashboardLedgerChoices",
     campaignDashboard: "campaignDashboard",
     showOnAllScenes: "showOnAllScenes"
 };

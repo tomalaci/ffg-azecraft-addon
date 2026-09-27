@@ -47,7 +47,7 @@
     font-size: 14px;
     line-height: 1.35;
 
-    --azd-header-height: 62px;
+    --azd-header-height: 66px;
     --azd-panels-left: calc(var(--azd-left, 100px) + var(--azd-rail-width, 330px) + 12px);
     --azd-panels-width: calc(100vw - var(--azd-panels-left) - var(--azd-right, 360px));
 }
@@ -176,6 +176,43 @@
 
 #azecraft-mission-dashboard .azd-kicker {
     font-size: 9px;
+}
+
+#azecraft-mission-dashboard .azd-squad {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font-size: 10px;
+}
+
+#azecraft-mission-dashboard .azd-squad > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#azecraft-mission-dashboard .azd-squad select {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    height: 18px;
+    padding: 0 2px;
+    border: 1px solid var(--azd-line-soft);
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.35);
+    color: var(--azd-accent);
+    font-family: var(--azd-font-heading);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    pointer-events: auto;
+}
+
+#azecraft-mission-dashboard .azd-squad option {
+    background: #0d1624;
+    color: var(--azd-text);
 }
 
 #azecraft-mission-dashboard .azd-title {
@@ -1231,6 +1268,17 @@
     margin-left: 6px;
     padding: 0 8px;
     font-size: 12px;
+}
+
+.azd-config .azd-config-squad-picker {
+    margin-bottom: 6px;
+}
+
+.azd-config .azd-config-squad-picker button {
+    flex: 0 0 auto;
+    width: auto;
+    height: 28px;
+    padding: 0 8px;
 }
 
 .azd-config .azd-config-panel {

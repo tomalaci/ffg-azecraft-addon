@@ -4,14 +4,15 @@
  */
 
 import { MISSION_PANELS, MODULE_ID, SETTINGS } from "./constants.js";
-import { isDashboardEnabled, referencedUuids, resolveSceneDashboard } from "./dashboard-state.js";
+import { isDashboardEnabled, normalizeDashboardConfig, referencedUuids } from "./dashboard-state.js";
+import { readActiveSquad, readSquads, rememberLedgerChoice, rememberedLedger } from "./squads.js";
 import { buildCharacterCard } from "./actor-adapter.js";
 import { buildPanel, buildPeople, missionTitle } from "./mission-data.js";
 import { ledgerPanel } from "./ledgers.js";
-import { buildStanding, getLedgerUuid } from "./campaign-reputation.js";
+import { TRACKERS, buildStanding, getTrackerUuid } from "./trackers.js";
 import { MissionDashboardApp } from "./dashboard-app.js";
 import { DashboardConfigApp } from "./dashboard-config.js";
-import { CampaignStandingApp } from "./campaign-app.js";
+import { TrackerApp } from "./tracker-app.js";
 
 const ALL_PARTS = ["header", "rail", "mission", "intel"];
 
@@ -46,11 +47,11 @@ export class DashboardController {
     #refs = { actors: new Set(), people: new Set(), pages: new Set() };
     #pending = new Set();
     #timer = null;
-    #campaignApp = null;
+    #trackerApps = {};
 
     /**
-     * What this client is viewing per tab: `ledger` (null = the default) and `index` into that
-     * ledger's entries (null = the newest). Local only; never shared.
+     * The entry this client is viewing per tab: `index` into the entries of `ledger` (null = the
+     * newest). In memory only. Which ledger a tab shows is remembered per squad in a client setting.
      */
     #panelView = {};
 
@@ -141,7 +142,9 @@ export class DashboardController {
         if (!parts.size) return;
 
         const generation = this.#sceneGeneration;
-        const { config, source } = resolveSceneDashboard(scene);
+        const squad = readActiveSquad();
+        const config = squad ?? normalizeDashboardConfig({});
+        const choices = game.settings.get(MODULE_ID, SETTINGS.ledgerChoices);
         const user = game.user;
         const view = this.view ?? { cards: [], mission: null, intel: null, people: [] };
         const needsMission = parts.has("mission") || parts.has("intel");
@@ -149,7 +152,8 @@ export class DashboardController {
 
         this.#refs = referencedUuids(config);
         view.isGM = user.isGM;
-        view.source = source;
+        view.squad = squad ? { id: squad.id, name: squad.name } : null;
+        view.squads = user.isGM ? readSquads().map(s => ({ id: s.id, name: s.name, active: s.id === squad?.id })) : [];
         view.sceneName = scene.navName || scene.name;
 
         if (parts.has("rail") || parts.has("header")) {
@@ -157,7 +161,7 @@ export class DashboardController {
         }
 
         if (parts.has("header")) {
-            view.title = missionTitle({ summary: view.mission?.summary, objective: view.mission?.objective }, scene);
+            view.title = missionTitle({ objective: view.mission?.objective, summary: view.mission?.summary }, scene);
             view.standing = this.#standingSummary();
         }
 
@@ -174,7 +178,11 @@ export class DashboardController {
 
         const seq = this.#missionSeq;
         const [summary, objective, intel] = await Promise.all(
-            ["summary", "objective", "intel"].map(key => buildPanel(key, config.ledgers[key], user, this.#panelView[key]))
+            ["summary", "objective", "intel"].map(key => buildPanel(key, config.ledgers[key], user, {
+                ledger: squad ? rememberedLedger(choices, squad, key) : null,
+                index: this.#panelView[key]?.index ?? null,
+                indexLedger: this.#panelView[key]?.ledger ?? null
+            }))
         );
 
         // Dropped if the Scene changed, the HUD unmounted, or a newer mission refresh was queued.
@@ -183,7 +191,7 @@ export class DashboardController {
         view.mission = { summary, objective, objectiveText: plainText(objective.html) };
         view.intel = intel;
         view.people = buildPeople(config, user);
-        view.title = missionTitle({ summary, objective }, scene);
+        view.title = missionTitle({ objective, summary }, scene);
         // The first mount waits for mission content so no placeholder text flashes.
         await this.#render(this.app ? ["mission", "intel", "header"] : ALL_PARTS);
     }
@@ -203,14 +211,22 @@ export class DashboardController {
         await this.app.render({ parts });
     }
 
+    /** Header chips: Fame and Credits, when their trackers are readable. */
     #standingSummary() {
-        try {
-            const standing = buildStanding();
-            return standing.state === "ready" ? { ready: true, fame: standing.fame } : { ready: false, state: standing.state };
-        } catch (error) {
-            console.warn("Azecraft | Could not read campaign standing", error);
-            return { ready: false, state: "error" };
+        const summary = {};
+        for (const kind of Object.keys(TRACKERS)) {
+            try {
+                const standing = buildStanding(kind);
+                summary[kind] = { ready: standing.state === "ready", state: standing.state };
+                if (standing.state !== "ready") continue;
+                if (kind === "reputation") summary[kind].value = standing.fame;
+                else summary[kind].value = (standing.entries.find(e => e.id === "credits")?.total ?? 0).toLocaleString();
+            } catch (error) {
+                console.warn(`Azecraft | Could not read the ${kind} tracker`, error);
+                summary[kind] = { ready: false, state: "error" };
+            }
         }
+        return summary;
     }
 
     /**
@@ -236,7 +252,11 @@ export class DashboardController {
     showLedger(panelKey, ledgerUuid) {
         if (!MISSION_PANELS.some(p => p.key === panelKey)) return;
         this.#panelView[panelKey] = { ledger: ledgerUuid || null, index: null };
-        this.refresh(panelKey === "intel" ? "intel" : "mission");
+
+        // Remembered per squad in this browser; the setting's onChange refreshes the tabs.
+        const squad = readActiveSquad();
+        if (squad) rememberLedgerChoice(squad, panelKey, ledgerUuid || null);
+        else this.refresh(panelKey === "intel" ? "intel" : "mission");
     }
 
     /* -------------------------------------------- */
@@ -248,9 +268,11 @@ export class DashboardController {
         DashboardConfigApp.openFor(scene);
     }
 
-    openCampaign() {
-        this.#campaignApp ??= new CampaignStandingApp();
-        this.#campaignApp.render({ force: true });
+    /** Open the Reputation or Resources tracker window. */
+    openTracker(kind = "reputation") {
+        if (!TRACKERS[kind]) return;
+        this.#trackerApps[kind] ??= new TrackerApp(kind);
+        this.#trackerApps[kind].render({ force: true });
     }
 
     /* -------------------------------------------- */
@@ -287,14 +309,14 @@ export class DashboardController {
         // Any change to a mission ledger (new entry, edit, ownership, rename) can change a tab.
         const onPage = page => {
             if (ledgerPanel(page.parent)) this.refresh("mission", "intel");
-            if (page.parent?.uuid === getLedgerUuid()) this.#onLedgerChanged();
+            if (this.#isTracker(page.parent)) this.#onTrackerChanged();
         };
 
         for (const hook of ["createJournalEntryPage", "updateJournalEntryPage", "deleteJournalEntryPage"]) Hooks.on(hook, onPage);
 
         const onEntry = entry => {
             if (ledgerPanel(entry)) this.refresh("mission", "intel");
-            if (entry.uuid === getLedgerUuid()) this.#onLedgerChanged();
+            if (this.#isTracker(entry)) this.#onTrackerChanged();
         };
 
         for (const hook of ["createJournalEntry", "updateJournalEntry", "deleteJournalEntry"]) Hooks.on(hook, onEntry);
@@ -306,12 +328,16 @@ export class DashboardController {
         });
     }
 
-    onLedgerSettingChanged() {
-        this.#onLedgerChanged();
+    #isTracker(entry) {
+        return Boolean(entry) && Object.keys(TRACKERS).some(kind => entry.uuid === getTrackerUuid(kind));
     }
 
-    #onLedgerChanged() {
+    onTrackerSettingChanged() {
+        this.#onTrackerChanged();
+    }
+
+    #onTrackerChanged() {
         this.refresh("header");
-        if (this.#campaignApp?.rendered) this.#campaignApp.render();
+        for (const app of Object.values(this.#trackerApps)) if (app.rendered) app.render();
     }
 }

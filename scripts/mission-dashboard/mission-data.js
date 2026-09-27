@@ -92,9 +92,11 @@ export function selectEntry(uuids, accessOf, isGM, requested = null) {
  * @param {User} user
  * @param {{ledger?: string|null, index?: number|null}} [view]  This client's selection
  */
-export async function buildPanel(kind, defaultLedger, user, { ledger: choice = null, index: requestedIndex = null } = {}) {
+export async function buildPanel(kind, defaultLedger, user, { ledger: choice = null, index, indexLedger = null } = {}) {
     const ledgers = visibleLedgers(kind, user);
     const ledgerUuid = chooseLedger(ledgers.map(l => l.uuid), defaultLedger, choice);
+    // A remembered entry position only applies to the ledger it was made in.
+    const requestedIndex = indexLedger && indexLedger !== ledgerUuid ? null : index ?? null;
     const ledger = ledgers.find(l => l.uuid === ledgerUuid) ?? null;
     const pages = new Map(ledgerPages(ledger).map(page => [page.uuid, page]));
     const accessOf = uuid => pageAccess(uuid, pages.get(uuid), user);
@@ -140,11 +142,11 @@ export async function buildPanel(kind, defaultLedger, user, { ledger: choice = n
 }
 
 /**
- * Mission title: the name of the summary ledger being shown (else the objective ledger), otherwise
+ * Mission title: the name of the objective ledger being shown (else the summary ledger), otherwise
  * the Scene's navigation name.
  */
 export function missionTitle(panels, scene) {
-    const name = panels.summary?.ledgerName ?? panels.objective?.ledgerName;
+    const name = panels.objective?.ledgerName ?? panels.summary?.ledgerName;
     // The header already says "Mission", so drop a "Mission: " prefix.
     if (name) return name.replace(/^mission\s*[:\-–—]\s*/i, "") || name;
     return scene?.navName || scene?.name || "";

@@ -70,8 +70,9 @@ function findFolder(kind) {
 }
 
 /**
- * Make sure the "Mission Dashboard" folder and its per-tab subfolders exist. Idempotent.
- * @returns {Promise<Record<string, Folder>>} subfolders by tab key
+ * Make sure the "Mission Dashboard" folder and its subfolders (one per tab, plus Trackers) exist.
+ * Idempotent.
+ * @returns {Promise<Record<string, Folder>>} subfolders by tab key, plus `trackers`
  */
 export async function ensureLedgerFolders() {
     assertGM();
@@ -86,14 +87,16 @@ export async function ensureLedgerFolders() {
         });
     }
 
+    // One subfolder per mission tab, plus "Trackers" for the Reputation and Resources Journals.
+    const subfolders = [...MISSION_PANELS.map(panel => ({ key: panel.key, name: panel.folderName })), { key: "trackers", name: "Trackers" }];
     const folders = {};
-    for (const [index, panel] of MISSION_PANELS.entries()) {
-        folders[panel.key] = findFolder(panel.key) ?? await Folder.implementation.create({
-            name: panel.folderName,
+    for (const [index, sub] of subfolders.entries()) {
+        folders[sub.key] = findFolder(sub.key) ?? await Folder.implementation.create({
+            name: sub.name,
             type: "JournalEntry",
             folder: root.id,
             sort: (index + 1) * 100000,
-            flags: { [MODULE_ID]: { [FOLDER_FLAG]: panel.key } }
+            flags: { [MODULE_ID]: { [FOLDER_FLAG]: sub.key } }
         });
     }
 

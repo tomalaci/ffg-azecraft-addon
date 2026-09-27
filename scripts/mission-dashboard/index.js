@@ -7,6 +7,8 @@ import { isDashboardEnabled, setDashboardEnabled } from "./dashboard-state.js";
 import { DashboardController } from "./controller.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { ensureLedgerFolders } from "./ledgers.js";
+import { ensureSquads } from "./squads.js";
+import { ensureTrackers } from "./trackers.js";
 
 // Keys are Handlebars partial names; most partials are referenced by their path.
 const TEMPLATES = Object.fromEntries(
@@ -90,8 +92,18 @@ function registerSettings() {
         onChange: () => controller?.sync()
     });
 
+    // Superseded by squads; read once to create the first squad (see ensureSquads).
     game.settings.register(MODULE_ID, SETTINGS.campaignDashboard, {
-        name: "Campaign dashboard",
+        name: "Campaign dashboard (legacy)",
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {}
+    });
+
+    // World scope: squads and the squad every Scene shows. Changes re-sync every client.
+    game.settings.register(MODULE_ID, SETTINGS.squads, {
+        name: "Mission dashboard squads",
         scope: "world",
         config: false,
         type: Object,
@@ -99,15 +111,36 @@ function registerSettings() {
         onChange: () => controller?.sync()
     });
 
-    // World scope: the campaign reputation ledger shared by every GM and Scene.
-    game.settings.register(MODULE_ID, SETTINGS.ledger, {
-        name: "Campaign reputation ledger",
+    game.settings.register(MODULE_ID, SETTINGS.activeSquad, {
+        name: "Active squad",
         scope: "world",
         config: false,
         type: String,
         default: "",
-        onChange: () => controller?.onLedgerSettingChanged()
+        onChange: () => controller?.sync()
     });
+
+    // Client scope: the ledger this browser last chose per squad and tab (with the squad's revision).
+    game.settings.register(MODULE_ID, SETTINGS.ledgerChoices, {
+        name: "Last active mission ledgers",
+        scope: "client",
+        config: false,
+        type: Object,
+        default: {},
+        onChange: () => controller?.refresh("mission", "intel", "header")
+    });
+
+    // World scope: the Reputation and Resources tracker Journals shared by every GM and Scene.
+    for (const [key, name] of [[SETTINGS.ledger, "Reputation tracker"], [SETTINGS.resourcesLedger, "Resources tracker"]]) {
+        game.settings.register(MODULE_ID, key, {
+            name,
+            scope: "world",
+            config: false,
+            type: String,
+            default: "",
+            onChange: () => controller?.onTrackerSettingChanged()
+        });
+    }
 }
 
 function registerKeybindings() {
@@ -170,10 +203,15 @@ export function initMissionDashboard() {
 
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates(TEMPLATES));
 
-    // The "Mission Dashboard" Journal folders are created once, by the active GM only.
-    Hooks.once("ready", () => {
-        if (game.users.activeGM?.isSelf) {
-            ensureLedgerFolders().catch(error => console.warn("Azecraft | Could not create mission ledger folders", error));
+    // First-run setup, by the active GM only: Journal folders, the first squad, and the trackers.
+    Hooks.once("ready", async () => {
+        if (!game.users.activeGM?.isSelf) return;
+        try {
+            await ensureLedgerFolders();
+            await ensureSquads();
+            await ensureTrackers();
+        } catch (error) {
+            console.warn("Azecraft | Mission dashboard setup failed", error);
         }
     });
 
@@ -187,7 +225,9 @@ export function initMissionDashboard() {
             /** Enable the dashboard on a Scene. GM only. */
             enable: (scene = game.scenes.viewed) => setDashboardEnabled(scene, true),
             disable: (scene = game.scenes.viewed) => setDashboardEnabled(scene, false),
-            openCampaign: () => controller.openCampaign(),
+            /** Open a tracker window: "reputation" (default) or "resources". */
+            openTracker: kind => controller.openTracker(kind),
+            openCampaign: () => controller.openTracker("reputation"),
             /** Open the help window, optionally at a section such as "gm-quick-start". */
             openHelp: section => DashboardHelpApp.open(section),
             refresh: () => controller.sync()

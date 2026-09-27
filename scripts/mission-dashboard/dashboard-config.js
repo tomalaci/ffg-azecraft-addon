@@ -1,8 +1,8 @@
 /**
- * GM configuration opened for one Scene: whether the dashboard shows there, and whether the Scene uses
- * the campaign dashboard (shared by all Scenes) or its own squad, mission pages and People of Note.
- * Edits working copies of both; saving writes only the store the Scene uses, and refuses (with an
- * explicit overwrite choice) if someone else saved that store in the meantime.
+ * GM configuration: this Scene's options (show the dashboard here, fit into the frame on open) and
+ * the squads (members, default ledgers per tab, People of Note). Edits a working copy of all squads;
+ * saving writes them in one go and refuses (with an explicit overwrite choice) if someone else saved
+ * squads in the meantime. The active squad is changed from the dashboard header, not here.
  */
 
 import {
@@ -12,22 +12,22 @@ import {
     PARTY_FOLDER_NAME,
     PEOPLE_NOTE_MAX_LENGTH,
     PEOPLE_TEXT_MAX_LENGTH,
-    MODULE_ID,
     SETTINGS,
+    MODULE_ID,
     TEMPLATE_ROOT
 } from "./constants.js";
+import { readSceneOptions, saveSceneOptions, validateDashboardConfig } from "./dashboard-state.js";
 import {
-    DashboardConflictError,
-    configFingerprint,
-    normalizeDashboardConfig,
-    readCampaignConfig,
-    readDashboardConfig,
-    resolveSceneDashboard,
-    saveCampaignConfig,
-    saveSceneDashboard,
-    sceneUsesOwnConfig,
-    validateDashboardConfig
-} from "./dashboard-state.js";
+    SquadConflictError,
+    defaultSquad,
+    newSquadId,
+    normalizeSquads,
+    readActiveSquad,
+    readSquads,
+    saveSquads,
+    squadsFingerprint,
+    validateSquads
+} from "./squads.js";
 import { createLedger, ledgerPages, ledgersFor } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 
@@ -93,39 +93,29 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         this.#reload();
     }
 
-    /** Whether the dashboard shows on this Scene, and which config it uses ("campaign" or "scene"). */
+    /** This Scene's own options. */
     shown = true;
-    source = "campaign";
     fitOnOpen = false;
 
-    /** Working copies per source and fingerprints of the stored configs they started from. */
-    drafts = {};
-    fingerprints = {};
+    /** Working copy of every squad, the one being edited, and the fingerprint of what was stored. */
+    squads = [];
+    editingId = null;
+    fingerprint = null;
 
-    /** The working copy the form currently edits. */
+    /** The squad the form currently edits. */
     get draft() {
-        return this.drafts[this.source];
-    }
-
-    get #flag() {
-        return this.scene.flags?.[MODULE_ID]?.dashboard;
+        return this.squads.find(squad => squad.id === this.editingId) ?? this.squads[0];
     }
 
     #reload() {
-        const resolved = resolveSceneDashboard(this.scene);
-        const sceneStored = readDashboardConfig(this.scene);
-        const campaign = readCampaignConfig();
-        // A Scene that never had its own config starts from a copy of the campaign dashboard.
-        const sceneHasOwn = sceneUsesOwnConfig(this.#flag) || Array.isArray(this.#flag?.party);
+        const stored = readSquads();
+        const options = readSceneOptions(this.scene);
 
-        this.shown = resolved.shown;
-        this.fitOnOpen = this.#flag?.fitOnOpen === true;
-        this.source = resolved.source;
-        this.drafts = {
-            scene: foundry.utils.deepClone(sceneHasOwn ? sceneStored : campaign),
-            campaign: foundry.utils.deepClone(campaign)
-        };
-        this.fingerprints = { scene: configFingerprint(sceneStored), campaign: configFingerprint(campaign) };
+        this.shown = options.shown;
+        this.fitOnOpen = options.fitOnOpen;
+        this.squads = foundry.utils.deepClone(stored.length ? stored : [defaultSquad("Main Squad")]);
+        this.fingerprint = squadsFingerprint(stored);
+        this.editingId = readActiveSquad()?.id ?? this.squads[0].id;
     }
 
     static DEFAULT_OPTIONS = {
@@ -149,7 +139,9 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             newLedger: DashboardConfigApp.#onNewLedger,
             openLedger: DashboardConfigApp.#onOpenLedger,
             reload: DashboardConfigApp.#onReload,
-            copyToCampaign: DashboardConfigApp.#onCopyToCampaign,
+            newSquad: DashboardConfigApp.#onNewSquad,
+            duplicateSquad: DashboardConfigApp.#onDuplicateSquad,
+            deleteSquad: DashboardConfigApp.#onDeleteSquad,
             openHelp: () => DashboardHelpApp.open("gm-quick-start"),
             cancel: DashboardConfigApp.#onCancel
         }
@@ -190,16 +182,17 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         });
 
         const showOnAllScenes = game.settings.get(MODULE_ID, SETTINGS.showOnAllScenes);
-        const campaignScenes = game.scenes.filter(scene => !sceneUsesOwnConfig(scene.flags?.[MODULE_ID]?.dashboard));
+        const activeId = readActiveSquad()?.id ?? this.squads[0]?.id;
 
         return {
             scene: this.scene,
             draft: this.draft,
             shown: this.shown,
             fitOnOpen: this.fitOnOpen,
-            isCampaign: this.source === "campaign",
             showOnAllScenes,
-            campaignSceneCount: campaignScenes.length,
+            squads: this.squads.map(squad => ({ id: squad.id, name: squad.name, editing: squad.id === this.draft.id, active: squad.id === activeId })),
+            editingActive: this.draft.id === activeId,
+            canDeleteSquad: this.squads.length > 1,
             slots: this.draft.party.map((slot, index) => ({
                 ...slot,
                 index,
@@ -248,9 +241,9 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         // Keep the working copy in step with the form so row actions never lose typed values.
         this.element.addEventListener("change", event => {
             this.#readForm();
-            if (event.target.name === "source") {
-                // The form's fields were read into the previous source's copy; now show the other copy.
-                this.source = event.target.value === "scene" ? "scene" : "campaign";
+            if (event.target.name === "editSquad") {
+                // The form's fields were read into the previous squad's copy; now show the other squad.
+                this.editingId = event.target.value;
                 this.render();
             } else if (event.target.matches("select")) {
                 this.render();
@@ -263,6 +256,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(this.element).object);
         this.shown = Boolean(data.shown);
         this.fitOnOpen = Boolean(data.fitOnOpen);
+        if (typeof data.squadName === "string") this.draft.name = data.squadName.trim().slice(0, 80) || this.draft.name;
 
         for (const [index, slot] of this.draft.party.entries()) {
             slot.actorUuid = data.party?.[index]?.actorUuid || null;
@@ -367,12 +361,34 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         this.render();
     }
 
-    /** Make this Scene's own setup the campaign dashboard (applied on save). */
-    static #onCopyToCampaign() {
+    static #onNewSquad() {
         this.#readForm();
-        this.drafts.campaign = foundry.utils.deepClone(this.drafts.scene);
-        this.source = "campaign";
-        ui.notifications.info("Copied into the campaign dashboard. Save to apply it to every Scene that uses the campaign dashboard.");
+        const squad = defaultSquad(`Squad ${this.squads.length + 1}`);
+        this.squads.push(squad);
+        this.editingId = squad.id;
+        this.render();
+    }
+
+    static #onDuplicateSquad() {
+        this.#readForm();
+        const copy = { ...foundry.utils.deepClone(this.draft), id: newSquadId(), name: `${this.draft.name} (copy)` };
+        this.squads.push(copy);
+        this.editingId = copy.id;
+        this.render();
+    }
+
+    static async #onDeleteSquad() {
+        this.#readForm();
+        if (this.squads.length <= 1) return;
+
+        const confirmed = await DialogV2.confirm({
+            window: { title: "Delete squad" },
+            content: `<p>Delete the squad <strong>${foundry.utils.escapeHTML(this.draft.name)}</strong> when you save?</p><p class="hint">Its members, default ledgers and People of Note settings are removed. Actors and ledgers themselves are not touched. If it is the active squad, the first remaining squad becomes active.</p>`
+        });
+        if (!confirmed) return;
+
+        this.squads = this.squads.filter(squad => squad.id !== this.draft.id);
+        this.editingId = this.squads[0].id;
         this.render();
     }
 
@@ -382,8 +398,8 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
 
     static async #onSubmit() {
         this.#readForm();
-        const config = normalizeDashboardConfig(this.draft);
-        const { errors } = validateDashboardConfig(config);
+        const squads = normalizeSquads({ squads: this.squads });
+        const errors = validateSquads(squads);
 
         if (errors.length) {
             ui.notifications.error(errors.join(" "));
@@ -392,32 +408,20 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
         }
 
         const save = async ({ force = false } = {}) => {
-            if (this.source === "campaign") {
-                if (configFingerprint(config) !== this.fingerprints.campaign) {
-                    await saveCampaignConfig(config, { expectedFingerprint: force ? null : this.fingerprints.campaign });
-                }
-                await saveSceneDashboard(this.scene, { shown: this.shown, fitOnOpen: this.fitOnOpen, source: "campaign" });
-            } else {
-                await saveSceneDashboard(this.scene, {
-                    shown: this.shown,
-                    fitOnOpen: this.fitOnOpen,
-                    source: "scene",
-                    config,
-                    expectedFingerprint: force ? null : this.fingerprints.scene
-                });
-            }
+            await saveSquads(squads, { expectedFingerprint: force ? null : this.fingerprint });
+            await saveSceneOptions(this.scene, { shown: this.shown, fitOnOpen: this.fitOnOpen });
         };
 
         try {
             await save();
         } catch (error) {
-            if (!(error instanceof DashboardConflictError)) {
+            if (!(error instanceof SquadConflictError)) {
                 ui.notifications.error(error.message);
                 return;
             }
 
             const choice = await DialogV2.wait({
-                window: { title: "Dashboard changed elsewhere" },
+                window: { title: "Squads changed elsewhere" },
                 content: `<p>${foundry.utils.escapeHTML(error.message)}</p><p>Overwrite their changes with yours, or reload the latest version (your unsaved edits are discarded)?</p>`,
                 buttons: [
                     { action: "overwrite", label: "Overwrite", icon: "fa-solid fa-floppy-disk" },
@@ -433,9 +437,7 @@ export class DashboardConfigApp extends HandlebarsApplicationMixin(ApplicationV2
             }
         }
 
-        ui.notifications.info(this.source === "campaign"
-            ? "Campaign dashboard saved."
-            : `Mission dashboard saved for ${this.scene.name}.`);
+        ui.notifications.info("Mission dashboard saved.");
         this.close();
     }
 

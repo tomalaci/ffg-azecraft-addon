@@ -1,10 +1,7 @@
 /**
- * Dashboard configuration: defaults, normalization, validation, resolution and narrow writes.
- *
- * Two stores hold the same config shape (squad, mission panels, People of Note):
- * - the campaign dashboard, a world setting shared by every Scene that does not have its own; and
- * - a Scene's own config, in the Scene flag, for one-off missions.
- * The Scene flag also says whether the dashboard shows on that Scene at all.
+ * Dashboard config shape shared by squads (members, People of Note, default ledgers): defaults,
+ * normalization and validation. Plus the per-Scene options: whether the dashboard shows on a Scene
+ * and whether it fits the Scene into the frame when opened.
  *
  * Reads normalize in memory only; nothing here writes unless a GM explicitly saves.
  */
@@ -113,64 +110,25 @@ export function normalizePerson(person, index = 0) {
     };
 }
 
-/**
- * Does a Scene flag hold the Scene's own config rather than deferring to the campaign dashboard?
- * Scenes configured before the campaign dashboard existed (no `source`) kept everything on the Scene.
- */
-export function sceneUsesOwnConfig(flag) {
-    if (!flag || typeof flag !== "object") return false;
-    if (flag.source === "scene") return true;
-    if (flag.source === "campaign") return false;
-    return Array.isArray(flag.party) || Boolean(flag.mission) || Boolean(flag.ledgers);
-}
-
 /** Whether the dashboard shows on a Scene: on every Scene unless hidden there, or only where enabled. */
 export function isShownOnScene(flag, showOnAllScenes) {
     return showOnAllScenes ? flag?.enabled !== false : flag?.enabled === true;
-}
-
-/**
- * Resolve what a Scene shows. Pure.
- * @param {object|undefined} flag         scene.flags[MODULE_ID].dashboard
- * @param {{showOnAllScenes: boolean, campaign: object}} world
- * @returns {{shown: boolean, source: "scene"|"campaign", config: object}}
- */
-export function resolveDashboard(flag, { showOnAllScenes, campaign }) {
-    const source = sceneUsesOwnConfig(flag) ? "scene" : "campaign";
-
-    return {
-        shown: isShownOnScene(flag, showOnAllScenes),
-        source,
-        config: normalizeDashboardConfig(source === "scene" ? flag : campaign)
-    };
 }
 
 function sceneFlag(scene) {
     return scene?.flags?.[MODULE_ID]?.[FLAG_KEY];
 }
 
-function campaignRaw() {
-    return game.settings.get(MODULE_ID, SETTINGS.campaignDashboard) ?? {};
-}
-
-/** The Scene's own config (normalized), whether or not the Scene currently uses it. */
-export function readDashboardConfig(scene) {
-    return normalizeDashboardConfig(sceneFlag(scene));
-}
-
-export function readCampaignConfig() {
-    return normalizeDashboardConfig(campaignRaw());
-}
-
-export function resolveSceneDashboard(scene) {
-    return resolveDashboard(sceneFlag(scene), {
-        showOnAllScenes: game.settings.get(MODULE_ID, SETTINGS.showOnAllScenes),
-        campaign: campaignRaw()
-    });
+/** Per-Scene options: whether the dashboard shows there and whether the Scene fits into the frame on open. */
+export function readSceneOptions(scene) {
+    return {
+        shown: isShownOnScene(sceneFlag(scene), game.settings.get(MODULE_ID, SETTINGS.showOnAllScenes)),
+        fitOnOpen: sceneFlag(scene)?.fitOnOpen === true
+    };
 }
 
 export function isDashboardEnabled(scene) {
-    return Boolean(scene) && resolveSceneDashboard(scene).shown;
+    return Boolean(scene) && readSceneOptions(scene).shown;
 }
 
 /** Every document UUID the config refers to, grouped by purpose, for hook relevance checks. */
@@ -247,88 +205,24 @@ export function configFingerprint(config) {
 /*  Writes (Foundry runtime only)               */
 /* -------------------------------------------- */
 
-export class DashboardConflictError extends Error {}
-
 function assertGM() {
     if (!game.user?.isGM) {
         throw new Error("Only a GM can change the mission dashboard configuration.");
     }
 }
 
-function validateOrThrow(config) {
-    const normalized = normalizeDashboardConfig(config);
-    const { errors } = validateDashboardConfig(normalized);
-    if (errors.length) throw new Error(errors.join(" "));
-    return normalized;
-}
-
 /**
- * Save a Scene's dashboard settings. With `source: "scene"` the given config becomes the Scene's own;
- * with `source: "campaign"` only visibility and source are written, and any earlier Scene config is
- * kept so the GM can switch back. Refuses if the Scene's own config changed since `expectedFingerprint`.
- * Only this module's flag is written; the rest of the Scene is untouched.
+ * Save a Scene's own dashboard options. Only this module's flag is written; the rest of the Scene is
+ * untouched. Squad data from earlier builds (party, ledgers…) left in the flag is ignored.
  */
-export async function saveSceneDashboard(scene, { shown, source, fitOnOpen = false, config = null, expectedFingerprint = null }) {
+export async function saveSceneOptions(scene, { shown, fitOnOpen = false }) {
     assertGM();
-
     const base = `flags.${MODULE_ID}.${FLAG_KEY}`;
-    const update = {
+    return scene.update({
         [`${base}.enabled`]: Boolean(shown),
-        [`${base}.source`]: source === "scene" ? "scene" : "campaign",
         [`${base}.fitOnOpen`]: Boolean(fitOnOpen),
         [`${base}.schemaVersion`]: SCHEMA_VERSION
-    };
-
-    if (source === "scene") {
-        const normalized = validateOrThrow(config);
-
-        if (expectedFingerprint !== null && configFingerprint(readDashboardConfig(scene)) !== expectedFingerprint) {
-            throw new DashboardConflictError("This Scene's dashboard was changed by someone else while you were editing it.");
-        }
-
-        Object.assign(update, {
-            [`${base}.party`]: normalized.party,
-            [`${base}.ledgers`]: normalized.ledgers,
-            [`${base}.people`]: normalized.people
-        });
-
-        // Flag updates merge objects, so drop the superseded page-list key explicitly.
-        if (sceneFlag(scene)?.mission) update[`${base}.-=mission`] = null;
-    }
-
-    return scene.update(update);
-}
-
-/** Save the campaign dashboard shared by every Scene without its own config. */
-export async function saveCampaignConfig(config, { expectedFingerprint = null } = {}) {
-    assertGM();
-
-    const normalized = validateOrThrow(config);
-
-    if (expectedFingerprint !== null && configFingerprint(campaignRaw()) !== expectedFingerprint) {
-        throw new DashboardConflictError("The campaign dashboard was changed by someone else while you were editing it.");
-    }
-
-    const { enabled, ...stored } = normalized;
-    return game.settings.set(MODULE_ID, SETTINGS.campaignDashboard, stored);
-}
-
-/**
- * Set a tab's default ledger in whichever store the Scene uses (its own config or the campaign
- * dashboard). Reads the current stored state, so other config fields are not overwritten.
- */
-export async function setDefaultLedger(scene, panelKey, ledgerUuid) {
-    assertGM();
-    if (!MISSION_PANELS.some(panel => panel.key === panelKey)) throw new Error(`Unknown mission tab: ${panelKey}`);
-
-    if (resolveSceneDashboard(scene).source === "scene") {
-        return scene.update({ [`flags.${MODULE_ID}.${FLAG_KEY}.ledgers.${panelKey}`]: ledgerUuid ?? null });
-    }
-
-    const campaign = foundry.utils.deepClone(campaignRaw());
-    delete campaign.mission;
-    campaign.ledgers = { ...normalizeDashboardConfig(campaign).ledgers, [panelKey]: ledgerUuid ?? null };
-    return game.settings.set(MODULE_ID, SETTINGS.campaignDashboard, campaign);
+    });
 }
 
 export async function setDashboardEnabled(scene, enabled) {

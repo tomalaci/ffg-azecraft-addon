@@ -1,16 +1,34 @@
 <header class="azd-header azd-surface">
     <div class="azd-header-title">
-        <span class="azd-kicker">Mission</span>
+        <span class="azd-kicker azd-squad">
+            <i class="fa-solid fa-people-group" inert></i>
+            {{#if (and isGM (gt squads.length 1))}}
+            <select data-squad-select aria-label="Active squad (changes it for everyone)" data-tooltip="Active squad: changes it for everyone">
+                {{#each squads as |s|}}<option value="{{s.id}}" {{#if s.active}}selected{{/if}}>{{s.name}}</option>{{/each}}
+            </select>
+            {{else}}
+            <span>{{#if squad}}{{squad.name}}{{else}}Mission{{/if}}</span>
+            {{/if}}
+        </span>
         <span class="azd-title" data-tooltip="{{title}}">{{#if title}}{{title}}{{else}}{{sceneName}}{{/if}}</span>
     </div>
     <div class="azd-header-controls">
-        {{#if standing.ready}}
-        <button type="button" class="azd-chip" data-action="openCampaign" data-tooltip="Campaign standing: Fame and faction reputation" aria-label="Campaign standing">
-            <i class="fa-solid fa-ranking-star" inert></i> Fame {{standing.fame}}
+        {{#if standing.reputation.ready}}
+        <button type="button" class="azd-chip" data-action="openTracker" data-kind="reputation" data-tooltip="Reputation: Fame and faction standing" aria-label="Reputation">
+            <i class="fa-solid fa-ranking-star" inert></i> Fame {{standing.reputation.value}}
         </button>
         {{else if isGM}}
-        <button type="button" class="azd-icon-button" data-action="openCampaign" data-tooltip="Campaign standing (not set up yet)" aria-label="Campaign standing">
+        <button type="button" class="azd-icon-button" data-action="openTracker" data-kind="reputation" data-tooltip="Reputation (not set up yet)" aria-label="Reputation">
             <i class="fa-solid fa-ranking-star" inert></i>
+        </button>
+        {{/if}}
+        {{#if standing.resources.ready}}
+        <button type="button" class="azd-chip" data-action="openTracker" data-kind="resources" data-tooltip="Resources: Credits and materials" aria-label="Resources">
+            <i class="fa-solid fa-coins" inert></i> {{standing.resources.value}} cr
+        </button>
+        {{else if isGM}}
+        <button type="button" class="azd-icon-button" data-action="openTracker" data-kind="resources" data-tooltip="Resources (not set up yet)" aria-label="Resources">
+            <i class="fa-solid fa-coins" inert></i>
         </button>
         {{/if}}
         <button type="button" class="azd-icon-button" data-action="cycleCompact" data-tooltip="Compact cards: {{compactLabel}}" aria-label="Compact cards: {{compactLabel}}">

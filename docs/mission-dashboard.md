@@ -13,26 +13,33 @@ The dashboard only shows information that lives elsewhere:
 | Desire | The character sheet's **Motivations → Desire** field (Basic Information tab) |
 | Full-body art | The character's Actor (saved with the character, shared across missions) |
 | Mission summary, current objective, key intel | Journal pages you choose |
-| Which characters, pages and People of Note belong to this mission | The Scene |
-| Fame and faction reputation | The campaign ledger Journal (shared by all GMs and Scenes) |
+| Which characters, People of Note and default ledgers are shown | The active squad (world setting) |
+| Reputation (Fame, factions) and Resources (Credits, materials) | Tracker Journals in *Mission Dashboard › Trackers* (shared by all GMs, squads and Scenes) |
 | Hidden, compact or collapsed | Each person's own browser |
 
 In the game, the **(?)** button in the dashboard header opens a help window with a GM quick start, a
 player quick start and a short reference for every feature. The configuration and Campaign Standing
 windows have a Help entry too.
 
-## Campaign dashboard and per-Scene setups
+## Squads
 
-Every Scene shows the dashboard, including Scenes created later. Normally all of them share one
-**campaign dashboard**: the squad, mission pages and People of Note are set up once and appear
-everywhere. That fits a campaign that moves between a ship, a hub and battle maps during one
-mission.
+Every Scene shows the dashboard of the **active squad**, including Scenes created later. A squad is
+a group of characters with its own:
 
-A GM can give a Scene **its own squad and mission** instead, for a one-off mission or a side
-party. In that Scene's configuration, choose *This Scene's own squad and mission* under **Squad
-and mission**. It starts as a copy of the campaign dashboard. To promote a Scene's own setup to the
-campaign dashboard, click **Use as campaign dashboard** and save. That Scene switches back to the
-campaign dashboard, but its old setup is kept, so you can switch back to it later.
+- **members**, shown as the character cards;
+- **People of Note**;
+- **default ledgers**, one per tab (Current Objective, Mission Summary, Key Intel).
+
+GMs can create as many squads as they need, for example a ground team and a ship crew. The first
+time the module runs, it creates **Main Squad** from the earlier dashboard setup.
+
+- **Active squad (GMs only):** switch it with the dropdown at the top-left of the dashboard. It
+  changes for everyone. Every player's tabs jump to that squad's default ledgers at their newest
+  entry, so you are asked to confirm first.
+- **Default ledgers:** changing a squad's default ledger, in the configuration or with ☆ on a tab,
+  sends everyone's view of that tab back to the new default.
+- **Remembered choices:** otherwise each person's browser remembers, per squad, which ledger they
+  last chose on each tab.
 
 To keep the dashboard off one Scene (a title card, say), untick **Show dashboard on this Scene** or
 right-click the Scene and choose **Hide Mission Dashboard on this Scene**. **Show Mission Dashboard
@@ -47,17 +54,18 @@ look at the Scene art, and brings it back with the **Dashboard** button.
 
 1. Click the gear button in the dashboard header on any Scene. You can also right-click a Scene in
    the Scenes sidebar and choose **Configure Mission Dashboard**, or use **Mission Dashboard** in a
-   Scene configuration window's header menu (⋮).
-2. Keep **Squad and mission** on **Campaign dashboard** (or pick the Scene's own setup, see above).
-3. Keep **Show dashboard on this Scene** ticked.
-4. Under **Squad**, choose a character for each slot. Characters from the *Player Characters* Actor
-   folder are listed first. There are six slots by default. Use **Add slot**, the arrows and the
-   trash button to change the count and order. Empty slots are hidden from players. Each character
+   Scene configuration window's header menu (⋮). The top section holds this Scene's own options:
+   *Show dashboard on this Scene* and *Fit into the frame when opened*.
+2. Under **Squads**, pick the squad to edit, or use **New**, the copy button (duplicate) or the
+   bin (delete). Give it a name.
+3. Under **Members**, choose a character for each slot. Characters from the *Player Characters*
+   Actor folder are listed first. There are six slots by default. Use **Add slot**, the arrows and
+   the bin to change the count and order. Empty slots are hidden from players, and each character
    can only be in one slot.
-5. Under **Mission ledgers**, the default ledger per tab is chosen (see below). Leave it on *Most
-   recent ledger*, or click the book button to create one.
-6. Optionally add **People of Note** (see below).
-7. Click **Save**.
+4. Under **Default ledgers**, choose each tab's default ledger for this squad, or leave it on
+   *Most recent ledger*. The book button creates a new ledger.
+5. Optionally add **People of Note** (see below).
+6. Click **Save**. All squads are saved together.
 
 ### Ledgers and entries
 
@@ -67,8 +75,8 @@ are that tab's entries, oldest first. The module keeps ledgers in its own Journa
 The active GM's client creates these folders automatically. Your other Journals are never touched.
 You can rename or move the folders and ledgers; they're recognized by a hidden tag, not by name.
 
-- **What everyone sees first**: the newest entry of the tab's default ledger. If no default is set,
-  the most recently created ledger is used.
+- **What everyone sees first**: the newest entry of the active squad's default ledger for the tab.
+  If no default is set, the most recently created ledger is used.
 - **Switching and browsing (everyone)**: the dropdown under a tab's title switches ledgers (★ marks
   the default), and ‹ 2/3 › browses entries. This only changes your own screen. An *Earlier entry*
   banner with **Back to current** shows when you're not on the newest entry.
@@ -76,8 +84,8 @@ You can rename or move the folders and ledgers; they're recognized by a hidden t
   opens it for editing. It becomes the newest entry for everyone; earlier entries stay as history.
 - **New ledger (GM, book button)**: creates a ledger in the right folder for a new operation or side
   job. It can become the default, and you can leave it hidden from players while you prepare it.
-- **Set as default (GM, ☆)**: makes the ledger you're viewing the tab's default. The default is
-  stored with the dashboard setup: the campaign dashboard, or a Scene's own setup.
+- **Set as default (GM, ☆)**: makes the ledger you're viewing the active squad's default for that
+  tab, and sends everyone's view of that tab to it. Ledgers themselves are shared by all squads.
 - **Permissions**: players only see ledgers and entries they can read. Secret blocks in an entry are
   only shown to GMs. The pencil button opens the entry's editor.
 
@@ -174,35 +182,39 @@ These buttons in the dashboard header only affect **your** screen:
 
 The same options are in **Game Settings → Configure Settings → FFG Azecraft Addon**.
 
-## Fame and faction reputation
+## Reputation and resources
 
-**Fame** is how well known the squad is. **Faction reputation** is how much a particular
-organization likes them. Fame was called Renown in earlier planning. Both are plain whole numbers
-that start at 0. There are no caps and no automatic effects on rolls.
+Two campaign trackers are shared by every GM, squad and Scene. Both are Journals in **Mission
+Dashboard › Trackers**:
 
-Open the campaign window with the **Fame** button in the dashboard header, or from the console with
-`game.modules.get("ffg-azecraft-addon").api.missionDashboard.openCampaign()`.
+- **Reputation**: **Fame** (how well known the organization is; called Renown in earlier planning)
+  and **faction reputation** (how much a particular organization likes them). It starts with the
+  major Mass Effect factions: Systems Alliance, Citadel Council, C-Sec, the Asari, Turian, Salarian
+  and Krogan governments, the Quarian Migrant Fleet, the Volus, the Batarian Hegemony, Cerberus,
+  the Shadow Broker, the Terminus Systems, Blue Suns, Eclipse, Blood Pack and the Geth.
+- **Resources**: **Credits** plus raw materials (Element Zero, Platinum, Palladium, Iridium,
+  Aluminum, Titanium, Iron, Copper, Nickel, Lithium, Omni-gel). GMs can add custom resources.
 
-### First-time setup (GM)
+All values are plain whole numbers that start at 0. There are no caps and no automatic effects on
+rolls. Open the trackers with the Fame and credits chips in the dashboard header. Everyone can see
+the totals and the history.
 
-Open the campaign window and click **Create ledger**. This creates a Journal named
-*Campaign Reputation Ledger*. Players can read it but can't change it, and every Scene and every GM
-uses the same one. If the ledger Journal is ever deleted, the window lets a GM create a new one or
-select another existing ledger. It is never recreated automatically.
+The first time the module runs, the active GM's client creates both trackers. If a tracker Journal
+is later deleted, it is not recreated silently: its window offers to create a new one or to select
+an existing tracker Journal.
 
 ### Recording changes (GM)
 
-- **Add faction**, then use **+1** or **−1** on its row, or on Fame. A dialog opens where you can
-  change the amount and must enter a **reason**. Players see the reason, so keep it player-safe. The
-  session label is optional.
+- Use **−** or **+** on a row (or on Fame). A dialog opens where you set the amount and must enter
+  a **reason**. Players see the reason, so keep it player-safe. The session label is optional.
 - For an existing campaign, record the current values as opening entries, for example
-  “+3 Systems Alliance: Opening balance”.
-- Mistakes are fixed with **Correct** (the ↺ button in History). It records a new entry that reverses
-  the original. The original stays in the history, marked *corrected*.
-- **Archive** hides a faction from the list without losing its history, and **Rename** keeps its
+  "+3 Systems Alliance: Opening balance" or "+12,000 Credits: Starting funds".
+- Mistakes are fixed with **Correct** (the ↺ button in History). It records a new entry that
+  reverses the original. The original stays in the history, marked *corrected*.
+- **Archive** hides an entry from the list without losing its history, and **Rename** keeps its
   history attached.
 
-Each change is a separate page in the ledger Journal, so two GMs recording at the same moment both
+Each change is a separate page in the tracker Journal, so two GMs recording at the same moment both
 get counted. The history is a campaign log for the table, not a tamper-proof audit: a GM can still
 edit the Journal directly.
 
@@ -215,8 +227,9 @@ edit the Journal directly.
 | See only a card's name and art | Limited on that Actor |
 | Edit Desire or full art | The Actor's owners and GMs |
 | Read mission panels | Anyone who can read the page (Observer) and see its Journal (Limited) |
-| Record Fame or reputation changes, manage factions | GMs |
-| Read Fame, reputation and history | Anyone who can read the ledger Journal |
+| Manage squads, change the active squad | GMs |
+| Record reputation or resource changes, manage factions and resources | GMs |
+| Read reputation, resources and their history | Anyone who can read the tracker Journals |
 | Hide, compact or collapse the dashboard | Each person, for themselves only |
 
 In this campaign, player characters use Observer as their default ownership, so every player sees

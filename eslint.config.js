@@ -1,6 +1,7 @@
 // Lint config (dev only): mainly catches undefined and unused names before they reach Foundry.
 import js from "@eslint/js";
 import globals from "globals";
+import importX from "eslint-plugin-import-x";
 
 /** Globals provided by the Foundry VTT V13 client and the starwarsffg system at runtime. */
 const foundryGlobals = Object.fromEntries([
@@ -26,6 +27,16 @@ export default [
             ecmaVersion: "latest",
             sourceType: "module",
             globals: { ...globals.node }
+        }
+    },
+    {
+        // Imported names and files must exist (catches exports removed or renamed in a refactor).
+        files: ["main.js", "scripts/**/*.js", "tests/**/*.js"],
+        plugins: { "import-x": importX },
+        rules: {
+            "import-x/named": "error",
+            "import-x/no-unresolved": "error",
+            "import-x/export": "error"
         }
     },
     {

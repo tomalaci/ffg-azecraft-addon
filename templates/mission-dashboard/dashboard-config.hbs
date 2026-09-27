@@ -27,24 +27,28 @@
             </div>
             <p class="hint">For art and landing Scenes: when someone opens this Scene, their view zooms so the whole Scene image sits inside the dashboard frame. Anyone can also use <i class="fa-solid fa-crop-simple" inert></i> in the dashboard header at any time.</p>
         </div>
-        <div class="form-group stacked">
-            <label>Squad and mission</label>
-            <div class="azd-config-source">
-                <label><input type="radio" name="source" value="campaign" {{checked isCampaign}}> Campaign dashboard <span class="hint">(shared by all {{campaignSceneCount}} Scenes that use it)</span></label>
-                <label><input type="radio" name="source" value="scene" {{checked (not isCampaign)}}> This Scene's own squad and mission <span class="hint">(e.g. a one-off mission)</span></label>
-            </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>Squads</legend>
+        <p class="hint">Every Scene shows the <strong>active</strong> squad: its members, People of Note and default ledgers. Create as many squads as you need; switch the active one from the dashboard header (it changes it for everyone).</p>
+        <div class="azd-config-row azd-config-squad-picker">
+            <select name="editSquad" aria-label="Squad to edit">
+                {{#each squads as |s|}}<option value="{{s.id}}" {{#if s.editing}}selected{{/if}}>{{s.name}}{{#if s.active}} (active){{/if}}</option>{{/each}}
+            </select>
+            <button type="button" data-action="newSquad" data-tooltip="New squad"><i class="fa-solid fa-plus" inert></i> New</button>
+            <button type="button" data-action="duplicateSquad" data-tooltip="Duplicate this squad"><i class="fa-solid fa-copy" inert></i></button>
+            <button type="button" data-action="deleteSquad" data-tooltip="Delete this squad" {{disabled (not canDeleteSquad)}}><i class="fa-solid fa-trash" inert></i></button>
+        </div>
+        <div class="form-group">
+            <label>Squad name</label>
+            <div class="form-fields"><input type="text" name="squadName" value="{{draft.name}}" maxlength="80" required></div>
+            {{#if editingActive}}<p class="hint"><i class="fa-solid fa-circle-check" inert></i> This is the active squad.</p>{{/if}}
         </div>
     </fieldset>
 
-    {{#if isCampaign}}
-    <p class="azd-config-banner"><i class="fa-solid fa-globe" inert></i> You are editing the <strong>campaign dashboard</strong>. Changes apply to every Scene that uses it.</p>
-    {{else}}
-    <p class="azd-config-banner azd-config-banner--scene"><i class="fa-solid fa-map" inert></i> You are editing <strong>{{scene.name}}</strong>'s own dashboard. Other Scenes are not affected.
-        <button type="button" class="azd-config-inline" data-action="copyToCampaign" data-tooltip="Replace the campaign dashboard with this setup and switch this Scene to it">Use as campaign dashboard</button></p>
-    {{/if}}
-
     <fieldset>
-        <legend>Squad</legend>
+        <legend>Members of {{draft.name}}</legend>
         <ol class="azd-config-rows">
             {{#each slots as |slot|}}
             <li class="azd-config-row">
@@ -71,8 +75,8 @@
     </fieldset>
 
     <fieldset>
-        <legend>Mission ledgers</legend>
-        <p class="hint">Each tab shows a <strong>ledger</strong>: a Journal whose pages are that tab's entries, newest shown first. Ledgers are kept in the “Mission Dashboard” Journal folder. Everyone can switch between the ledgers they can read, and page through entries, on their own screen; the default below is what everyone sees first.</p>
+        <legend>Default ledgers of {{draft.name}}</legend>
+        <p class="hint">Each tab shows a <strong>ledger</strong>: a Journal whose pages are that tab's entries, newest shown first. Ledgers live in the “Mission Dashboard” Journal folder and are shared by all squads; each squad picks its own defaults. Everyone can switch ledgers and page through entries on their own screen. Changing a default here sends everyone back to it when this squad is shown.</p>
         {{#each panels as |panel|}}
         <div class="form-group">
             <label>{{panel.label}}</label>
@@ -93,7 +97,7 @@
     </fieldset>
 
     <fieldset>
-        <legend>People of Note</legend>
+        <legend>People of Note of {{draft.name}}</legend>
         <p class="hint">Shown in Key Intel. Name and portrait come from the Actor; players only see people whose Actor they can see (Limited or higher). Everything written here is visible to players.</p>
         <ol class="azd-config-people">
             {{#each people as |person|}}

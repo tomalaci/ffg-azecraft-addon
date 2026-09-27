@@ -25,12 +25,13 @@ scripts/mission-dashboard/
   actor-adapter.js         starwarsffg Actor -> permission-filtered card view model
   mission-data.js          tab view models: ledger choice, entry paging, page access, enrichment; People of Note
   ledgers.js               mission ledgers: module Journal folders, ledger/entry creation, ledger choice
+  squads.js                squads, active squad, per-squad remembered ledgers (revisions), migration
+  trackers.js              Reputation and Resources trackers: definitions, totals, adjustments
   art-view.js              card art pan/zoom maths and CSS variables (pure)
-  campaign-reputation.js   ledger schema, totals, validation, ledger writes
   controller.js            per-client lifecycle, hook routing, coalescing, stale-render guard
   dashboard-app.js         the HUD (frameless ApplicationV2, Handlebars parts)
   dashboard-config.js      GM configuration window
-  campaign-app.js          Fame/reputation window
+  tracker-app.js           Reputation / Resources window
   help-app.js              in-game help (quick starts + feature reference), openable at a section
   layout.js                measures core UI, publishes CSS variables
 templates/mission-dashboard/*.hbs
@@ -75,38 +76,47 @@ card.
 
 ## Persisted data
 
-### Where the config lives
+### Squads (world settings)
 
-The same config shape is stored in one of two places:
+`squads` holds `{ schemaVersion, squads: [...] }`, and `activeSquadId` names the squad that every
+Scene shows (`pickActiveSquad` falls back to the first squad). Each squad looks like this:
 
-- the **campaign dashboard**, in the world setting `campaignDashboard` (GM-written). Every Scene
-  without its own config uses it.
-- a **Scene's own config**, in the Scene flag, when `source: "scene"`.
+```js
+{
+  id: "squad-<random>",
+  name: "Main Squad",
+  party: [{ id: "slot-1", actorUuid: "Actor.<id>" | null }, ...],   // 1..12 slots, 6 by default
+  people: [{ id, actorUuid, role, status, relationship, note }],     // player-visible text only
+  ledgers: { objective: uuid | null, summary: uuid | null, intel: uuid | null },  // default ledger per tab
+  revisions: { objective: 0, summary: 0, intel: 0 }
+}
+```
 
-`resolveDashboard(flag, { showOnAllScenes, campaign })` is pure and returns `{ shown, source,
-config }`:
-
-- `shown` is `flag.enabled !== false` when the world setting `showOnAllScenes` (default `true`) is
-  on, and `flag.enabled === true` when it is off.
-- `source` is `"scene"` when `flag.source === "scene"`, or, for legacy flags with no `source`, when
-  the flag holds `party`/`mission`/`ledgers`. Otherwise it is `"campaign"`.
-
-Switching a Scene to the campaign dashboard only writes `source`; its own config stays in the flag,
-so it can be switched back. `setDefaultLedger` writes to whichever store
-the Scene uses. Settings `onChange` re-syncs every client, so campaign edits show everywhere.
+- **Remembered ledgers.** The client setting `dashboardLedgerChoices` is
+  `{ [squadId]: { [tab]: { uuid, revision } } }`. `rememberedLedger` only honours a choice whose
+  `revision` equals the squad's current revision for that tab.
+- **Resets.** `setSquadDefaultLedger`, a default changed in `saveSquads`, and `setActiveSquad` bump
+  revisions (one tab, or all three for activation). That sends every client back to the default
+  without anyone writing to other users' storage.
+- **Writes.** All squad writes are GM-only read-modify-writes of the current setting. `saveSquads`
+  checks a fingerprint that ignores revisions, so a concurrent edit is detected and the GM chooses
+  whether to overwrite or reload.
+- **Migration.** `ensureSquads` runs on the active GM's `ready`. When no squads exist, it creates
+  "Main Squad" from the earlier `campaignDashboard` world setting. That setting, and any
+  per-Scene `party`/`ledgers`/`source` data from earlier builds, is no longer used.
 
 ### Scene flag: `flags["ffg-azecraft-addon"].dashboard`
 
 ```js
 {
   schemaVersion: 1,
-  enabled: true,                 // false hides it on this Scene; absent means "follow the world setting"
-  source: "campaign" | "scene",  // which config this Scene shows
-  party: [{ id: "slot-1", actorUuid: "Actor.<id>" | null }, ...],   // 1..12 slots, 6 by default
-  ledgers: { objective: uuid | null, summary: uuid | null, intel: uuid | null },  // default ledger (JournalEntry) per tab
-  people: [{ id, actorUuid, role, status, relationship, note }]       // player-visible text only
+  enabled: true,      // false hides it on this Scene; absent means "follow the world setting"
+  fitOnOpen: false    // fit the Scene into the frame when someone opens it
 }
 ```
+
+`isShownOnScene(flag, showOnAllScenes)` is pure. With the world setting `showOnAllScenes` (default
+`true`) on, it returns `flag.enabled !== false`; with it off, it returns `flag.enabled === true`.
 
 - **Ledgers.** A ledger is a JournalEntry with `flags["ffg-azecraft-addon"].missionLedger = { panel }`.
   Ledgers live in module folders tagged `flags["ffg-azecraft-addon"].dashboardFolder` (`root`,
@@ -133,30 +143,34 @@ the Scene uses. Settings `onChange` re-syncs every client, so campaign edits sho
 
 ### World settings
 
-`showOnAllScenes` (Boolean, default true) and `campaignDashboard` (Object: `party`, `ledgers`,
-`people`).
+`showOnAllScenes` (Boolean, default true), `squads`, `activeSquadId`, `campaignLedgerUuid`
+(Reputation tracker) and `resourcesLedgerUuid` (Resources tracker). `campaignDashboard` is legacy
+and is only read by the migration.
 
 ### Client settings (per browser)
 
-`dashboardHidden`, `dashboardCompact` (`auto`/`always`/`never`), `dashboardMissionCollapsed`.
+`dashboardHidden`, `dashboardCompact` (`auto`/`always`/`never`), `dashboardMissionCollapsed`,
+`dashboardStyle`, `dashboardColumns` and `dashboardLedgerChoices`. The card art views are in
+`localStorage` (see below).
 
-### World setting
+### Tracker Journals (Reputation and Resources)
 
-`campaignLedgerUuid`: the UUID of the ledger JournalEntry.
-
-### Ledger Journal
-
-- Entry flag `ledger = { schemaVersion, factions: [{ id, name, archived }] }`.
+- Both are defined in `TRACKERS` in `trackers.js`. Each tracker is a JournalEntry in the module
+  folder tagged `dashboardFolder: "trackers"`, created with its default entries by
+  `ensureTrackers` on the active GM's `ready`. An existing tracker Journal is moved into that folder
+  rather than recreated. A deleted one is never recreated silently.
+- The entry flag is `ledger = { schemaVersion, kind: "reputation" | "resources", entries: [{ id,
+  name, archived }] }`. Older reputation ledgers used `factions` and had no `kind`; they are read as
+  reputation. Default entries have ids derived from their names (for example `credits`).
 - Each adjustment is its own JournalEntryPage whose `_id` is the `eventId`, with flag
-  `adjustment = { schemaVersion, eventId, target: {kind: "fame"|"faction", id}, delta, reason,
-  authorUserId, createdAt, sessionLabel, sceneUuid, correctsEventId }`. The page body is derived
-  text for humans only.
+  `adjustment = { schemaVersion, eventId, target: {kind: "fame"|"entry", id}, delta, reason,
+  authorUserId, createdAt, sessionLabel, sceneUuid, correctsEventId }`. Older pages used
+  `kind: "faction"` and still count. The page body is derived text for humans only.
 - Totals are recomputed from the pages every time, so there is no stored total that could be lost
-  to a concurrent overwrite.
-- Creating a page with a fixed `_id` (`keepId: true`) makes a repeated submission of the same dialog
-  idempotent.
-- Faction definition edits are a read-modify-write of the entry flag from the current document.
-  Two GMs editing faction *names* at the same instant can still lose one edit. Adjustments can't.
+  to a concurrent overwrite. Creating a page with a fixed `_id` (`keepId: true`) makes a repeated
+  submission of the same dialog idempotent.
+- Entry definition edits are a read-modify-write of the entry flag from the current document. Two
+  GMs renaming entries at the same instant can still lose one edit. Adjustments can't.
 
 ## Lifecycle and rendering
 

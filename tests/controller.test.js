@@ -1,6 +1,6 @@
 /**
- * Controller lifecycle with stubbed Foundry globals: stale async mission renders from a previous
- * Scene must never be rendered after switching Scenes.
+ * Controller lifecycle with stubbed Foundry globals: stale async mission renders (from a previous
+ * Scene or a previously active squad) must never be rendered.
  */
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
@@ -12,13 +12,18 @@ const pending = [];
 let viewed = null;
 let DashboardController;
 
+/** World settings seen by the stubbed game.settings. */
+const world = { squads: { squads: [] }, activeSquadId: "" };
+
+/**
+ * View a Scene whose active squad's default summary ledger is `ledgerUuid`. Each call makes a
+ * different squad active (as when a GM switches squads or Scenes).
+ */
 function makeScene(id, ledgerUuid) {
-    return {
-        id,
-        name: id,
-        navName: "",
-        flags: { "ffg-azecraft-addon": { dashboard: { enabled: true, source: "scene", party: [], ledgers: { summary: ledgerUuid } } } }
-    };
+    const squadId = `squad-${id}`;
+    world.squads = { squads: [{ id: squadId, name: `Squad ${id}`, party: [], ledgers: { summary: ledgerUuid } }] };
+    world.activeSquadId = squadId;
+    return { id, name: id, navName: "", flags: { "ffg-azecraft-addon": { dashboard: { enabled: true } } } };
 }
 
 before(async () => {
@@ -60,7 +65,16 @@ before(async () => {
         user: { id: "p", isGM: false },
         users: [],
         scenes: { get viewed() { return viewed; } },
-        settings: { get: (_m, key) => (key === "dashboardCompact" ? "auto" : key === "campaignLedgerUuid" ? "" : false) },
+        settings: {
+            get: (_m, key) => ({
+                dashboardCompact: "auto",
+                campaignLedgerUuid: "",
+                resourcesLedgerUuid: "",
+                squads: world.squads,
+                activeSquadId: world.activeSquadId,
+                dashboardLedgerChoices: {}
+            })[key] ?? false
+        },
         journal: ledgers
     };
     globalThis.Hooks = { on() {}, off() {} };

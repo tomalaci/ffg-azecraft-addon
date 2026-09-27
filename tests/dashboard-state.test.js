@@ -2,8 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-    resolveDashboard,
-    sceneUsesOwnConfig,
+    isShownOnScene,
     configFingerprint,
     normalizeDashboardConfig,
     referencedUuids,
@@ -91,32 +90,9 @@ test("referenced uuids for hook relevance", () => {
     assert.deepEqual([...refs.ledgers].sort(), ["JournalEntry.o", "JournalEntry.s"]);
 });
 
-const campaign = { party: [{ id: "c1", actorUuid: "Actor.pc" }], ledgers: { objective: "JournalEntry.c" } };
-
-test("every Scene shows the campaign dashboard by default, including never-configured ones", () => {
-    const resolved = resolveDashboard(undefined, { showOnAllScenes: true, campaign });
-    assert.equal(resolved.shown, true);
-    assert.equal(resolved.source, "campaign");
-    assert.deepEqual(resolved.config.party.map(s => s.actorUuid), ["Actor.pc"]);
-    assert.equal(resolved.config.ledgers.objective, "JournalEntry.c");
-});
-
-test("a Scene can be hidden, or shown only when enabled if show-on-all is off", () => {
-    assert.equal(resolveDashboard({ enabled: false }, { showOnAllScenes: true, campaign }).shown, false);
-    assert.equal(resolveDashboard(undefined, { showOnAllScenes: false, campaign }).shown, false);
-    assert.equal(resolveDashboard({ enabled: true }, { showOnAllScenes: false, campaign }).shown, true);
-});
-
-test("a Scene's own config is used when chosen, and legacy configured Scenes keep theirs", () => {
-    const own = { source: "scene", party: [{ id: "s1", actorUuid: "Actor.other" }], ledgers: { objective: "JournalEntry.s" } };
-    assert.equal(resolveDashboard(own, { showOnAllScenes: true, campaign }).config.ledgers.objective, "JournalEntry.s");
-
-    // Switched back to the campaign dashboard: the Scene's old config is kept but ignored.
-    const back = { ...own, source: "campaign" };
-    assert.equal(resolveDashboard(back, { showOnAllScenes: true, campaign }).source, "campaign");
-
-    // Configured before the campaign dashboard existed (no source field).
-    assert.equal(sceneUsesOwnConfig({ enabled: true, party: [], mission: {} }), true);
-    // Only visibility stored (e.g. hidden from the Scene directory menu): still the campaign dashboard.
-    assert.equal(sceneUsesOwnConfig({ enabled: false, schemaVersion: 1 }), false);
+test("the dashboard shows on every Scene unless hidden there, or only where enabled", () => {
+    assert.equal(isShownOnScene(undefined, true), true);
+    assert.equal(isShownOnScene({ enabled: false }, true), false);
+    assert.equal(isShownOnScene(undefined, false), false);
+    assert.equal(isShownOnScene({ enabled: true }, false), true);
 });

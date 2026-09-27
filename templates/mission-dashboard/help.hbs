@@ -3,12 +3,13 @@
         <button type="button" data-action="jump" data-target="overview">Overview</button>
         <button type="button" data-action="jump" data-target="gm-quick-start">GM quick start</button>
         <button type="button" data-action="jump" data-target="player-quick-start">Player quick start</button>
+        <button type="button" data-action="jump" data-target="squads">Squads</button>
         <button type="button" data-action="jump" data-target="cards">Squad cards</button>
         <button type="button" data-action="jump" data-target="desire">Desire &amp; art</button>
         <button type="button" data-action="jump" data-target="mission">Mission panels</button>
         <button type="button" data-action="jump" data-target="history">Ledgers &amp; entries</button>
         <button type="button" data-action="jump" data-target="people">People of Note</button>
-        <button type="button" data-action="jump" data-target="reputation">Fame &amp; reputation</button>
+        <button type="button" data-action="jump" data-target="reputation">Reputation &amp; resources</button>
         <button type="button" data-action="jump" data-target="screen">Your screen</button>
         <button type="button" data-action="jump" data-target="permissions">Who sees what</button>
         <button type="button" data-action="jump" data-target="tips">Tips &amp; troubleshooting</button>
@@ -17,46 +18,43 @@
     <div class="azd-help-content">
         <section data-section="overview">
             <h2>Overview</h2>
-            <p>The mission dashboard is a heads-up display over a normal Scene: squad cards on the left, and the
-                current objective, mission summary and key intel along the bottom. The map in the middle stays a
-                normal, playable map. Panning and zooming move the map, not the dashboard.</p>
-            <p>The dashboard is on <strong>every Scene</strong>. Normally all Scenes share one <strong>campaign
-                dashboard</strong> (squad, mission and People of Note). A GM can give a single Scene its own squad and
-                mission for a one-off mission. To see the Scene art without it, anyone can minimize it on their own screen.</p>
+            <p>The mission dashboard is on <strong>every Scene</strong> and shows the <strong>active squad</strong>: its
+                members on the left, and the current objective, mission summary and key intel along the bottom. The map in
+                the middle stays a normal, playable map. To see the Scene art without it, anyone can minimize it on their
+                own screen.</p>
             <p>The dashboard only <em>shows</em> information that lives elsewhere, so it is always up to date:</p>
             <ul>
                 <li><strong>Characters</strong>: their normal Actor and character sheet.</li>
-                <li><strong>Mission text</strong>: ledgers, i.e. Journals in the <em>Mission Dashboard</em> Journal
-                    folder, one per operation per tab.</li>
-                <li><strong>Which characters and pages belong to the mission</strong>: the campaign dashboard, or a
-                    Scene's own setup.</li>
-                <li><strong>Fame and reputation</strong>: one campaign ledger shared by every GM and Scene.</li>
+                <li><strong>Mission text</strong>: ledgers, i.e. Journals in the <em>Mission Dashboard</em> Journal folder.
+                    Ledgers are shared by all squads.</li>
+                <li><strong>Which characters, People of Note and default ledgers</strong>: the active squad.</li>
+                <li><strong>Reputation and resources</strong>: tracker Journals in <em>Mission Dashboard › Trackers</em>,
+                    shared by every GM, squad and Scene.</li>
             </ul>
         </section>
 
         <section data-section="gm-quick-start">
             <h2><i class="fa-solid fa-gear" inert></i> GM quick start</h2>
             <ol>
-                <li>Click <i class="fa-solid fa-gear" inert></i> in the dashboard header on any Scene. You can also
-                    right-click a Scene and choose <strong>Configure Mission Dashboard</strong>.</li>
-                <li>Leave <strong>Squad and mission</strong> on <strong>Campaign dashboard</strong>. What you set up
-                    appears on every Scene, including new ones. Pick <em>This Scene's own squad and mission</em> only for
-                    a one-off mission; <strong>Use as campaign dashboard</strong> turns a Scene's own setup into the
-                    campaign one.</li>
-                <li>Under <strong>Squad</strong>, pick a character for each slot. The <em>Player Characters</em> folder
-                    is listed first. Add, remove and reorder slots as needed; empty slots are hidden from players.</li>
+                <li>Click <i class="fa-solid fa-gear" inert></i> in the dashboard header on any Scene (or right-click a Scene
+                    and choose <strong>Configure Mission Dashboard</strong>).</li>
+                <li>Under <strong>Squads</strong>, rename “Main Squad” or create more squads with <strong>New</strong>.
+                    For each squad, pick its <strong>members</strong> (the <em>Player Characters</em> folder is listed
+                    first), its <strong>default ledgers</strong> and any <strong>People of Note</strong>. Save.</li>
                 <li>On each tab (objective, summary, intel), click <i class="fa-solid fa-book-medical" inert></i>
                     <strong>New ledger</strong> and name it after the operation. It is filed under the <em>Mission
-                    Dashboard</em> Journal folder, becomes the default and opens its first entry for writing. Untick
-                    <em>Players can read it</em> to prepare it privately.</li>
-                <li>Optionally add <strong>People of Note</strong>, then click <strong>Save</strong>.</li>
-                <li>During play, use <i class="fa-solid fa-plus" inert></i> on a panel when the objective changes, and
-                    the <i class="fa-solid fa-ranking-star" inert></i> button to record Fame and reputation.</li>
+                    Dashboard</em> Journal folder, can become the active squad's default, and opens its first entry for
+                    writing. Untick <em>Players can read it</em> to prepare it privately.</li>
+                <li>Switch the <strong>active squad</strong> with the dropdown at the top-left of the dashboard. It changes
+                    for everyone and resets everyone's tabs to that squad's defaults, so you are asked to confirm.</li>
+                <li>During play, use <i class="fa-solid fa-plus" inert></i> on a tab when the objective changes, and the
+                    <i class="fa-solid fa-ranking-star" inert></i> Fame / <i class="fa-solid fa-coins" inert></i> credits
+                    chips to record reputation and resources.</li>
             </ol>
-            <p class="azd-help-note">New Scenes need no setup: they show the campaign dashboard. To hide the dashboard on
-                one Scene (e.g. a title screen), untick <strong>Show dashboard on this Scene</strong>, or right-click the
-                Scene and choose <strong>Hide Mission Dashboard on this Scene</strong>. The module setting
-                <em>Show mission dashboard on every Scene</em> switches the always-on behaviour off.</p>
+            <p class="azd-help-note">New Scenes need no setup. To hide the dashboard on one Scene (e.g. a title screen),
+                untick <strong>Show dashboard on this Scene</strong> in its configuration, or right-click the Scene and
+                choose <strong>Hide Mission Dashboard on this Scene</strong>. The module setting <em>Show mission dashboard
+                on every Scene</em> switches the always-on behaviour off.</p>
         </section>
 
         <section data-section="player-quick-start">
@@ -70,6 +68,21 @@
                 <li>Use ‹ and › on the mission panels to read earlier objectives and summaries.</li>
                 <li>Need the whole map? Click <i class="fa-solid fa-eye-slash" inert></i>. It only hides the dashboard
                     on your screen, and the <strong>Dashboard</strong> button at the top brings it back.</li>
+            </ul>
+        </section>
+
+        <section data-section="squads">
+            <h2><i class="fa-solid fa-people-group" inert></i> Squads</h2>
+            <ul>
+                <li>A squad is a group of characters with its own <strong>members</strong>, <strong>People of Note</strong>
+                    and <strong>default ledgers</strong> for the three tabs. GMs can create as many as they like (e.g. a
+                    ground team and a ship crew).</li>
+                <li>One squad is <strong>active</strong> for everyone; its name is at the top-left of the dashboard. Only
+                    GMs can change it (dropdown there, with a warning) or manage squads (configuration window).</li>
+                <li>Changing the active squad sends <strong>everyone's</strong> tabs to that squad's default ledgers at
+                    their newest entry. Changing a squad's default ledger does the same for that tab.</li>
+                <li>Otherwise the dashboard remembers, per squad and in your browser, which ledger you last chose on each
+                    tab.</li>
             </ul>
         </section>
 
@@ -132,8 +145,8 @@
                     ledger you're viewing. It becomes the newest entry for everyone, and earlier entries stay as history.</li>
                 <li>GMs: <i class="fa-solid fa-book-medical" inert></i> creates a new ledger, for example for a new
                     operation or a side job. <i class="fa-regular fa-star" inert></i> makes the ledger you're viewing the
-                    default for this dashboard (the campaign dashboard, or this Scene's own). With no default set, the
-                    most recently created ledger is shown.</li>
+                    active squad's default, which sends everyone's view of that tab to it. With no default set, the most
+                    recently created ledger is shown.</li>
                 <li>Ledgers live in <em>Mission Dashboard › Objectives / Mission Summaries / Key Intel</em> in the
                     Journal sidebar; rename, reorder or edit their pages there as usual. Your other Journals are never
                     touched.</li>
@@ -155,21 +168,19 @@
         </section>
 
         <section data-section="reputation">
-            <h2><i class="fa-solid fa-ranking-star" inert></i> Fame &amp; faction reputation</h2>
+            <h2><i class="fa-solid fa-ranking-star" inert></i> Reputation &amp; <i class="fa-solid fa-coins" inert></i> resources</h2>
             <ul>
-                <li><strong>Fame</strong> is how well known the squad is. <strong>Faction reputation</strong> is how much
-                    a particular organization likes them. Both are plain whole numbers that start at 0. There are no
-                    caps and no automatic effects on rolls.</li>
-                <li>Open the campaign window with the <strong>Fame</strong> button in the dashboard header. Everyone can
-                    see the totals and the history.</li>
-                <li>GMs: the first time, click <strong>Create ledger</strong>. Then add factions and use +1 / −1. Every
-                    change needs a <strong>reason</strong>, which players can read. For an existing campaign, enter the
-                    current values as opening balances, e.g. “+3: Opening balance”.</li>
-                <li>Fix mistakes with <i class="fa-solid fa-rotate-left" inert></i> <strong>Correct</strong>. It adds a
-                    reversing entry and marks the original as corrected. Archiving a faction hides it but keeps its
-                    history.</li>
-                <li>The ledger is shared by every GM and Scene, and two GMs adjusting at the same moment both get
-                    counted.</li>
+                <li><strong>Reputation</strong> tracks <strong>Fame</strong> (how well known the organization is) and how
+                    much each <strong>faction</strong> likes them. It starts with the major Mass Effect factions.</li>
+                <li><strong>Resources</strong> tracks <strong>Credits</strong> and raw materials (Element Zero, Platinum,
+                    Palladium, Iridium, Aluminum…). GMs can add custom resources.</li>
+                <li>Both are plain whole numbers with no caps or automatic effects. Open them with the Fame and credits
+                    chips in the dashboard header. Everyone can see the totals and the history.</li>
+                <li>GMs: use − / + on a row, set the amount, and give a <strong>reason</strong> (players can read it).
+                    Fix mistakes with <i class="fa-solid fa-rotate-left" inert></i> <strong>Correct</strong>, which adds
+                    a reversing entry. Archiving hides an entry but keeps its history.</li>
+                <li>Both live in <em>Mission Dashboard › Trackers</em> and are shared by every GM, squad and Scene; two
+                    GMs adjusting at the same moment both get counted.</li>
             </ul>
         </section>
 
@@ -206,13 +217,14 @@
             <table class="azd-help-table">
                 <thead><tr><th>Action</th><th>Who</th></tr></thead>
                 <tbody>
-                    <tr><td>Configure the dashboard, create ledgers and entries</td><td>GMs</td></tr>
+                    <tr><td>Configure the dashboard, manage squads, create ledgers and entries</td><td>GMs</td></tr>
+                    <tr><td>Change the active squad</td><td>GMs</td></tr>
                     <tr><td>Switch ledgers and browse entries</td><td>Everyone, for themselves</td></tr>
                     <tr><td>See a card's stats and Desire</td><td>Observer or higher on that character</td></tr>
                     <tr><td>See only name and art</td><td>Limited on that character</td></tr>
                     <tr><td>Edit Desire or art</td><td>The character's owners and GMs</td></tr>
                     <tr><td>Read a mission panel</td><td>Anyone who can read that Journal page</td></tr>
-                    <tr><td>Record Fame or reputation</td><td>GMs</td></tr>
+                    <tr><td>Record reputation or resource changes</td><td>GMs</td></tr>
                     <tr><td>Hide, compact or collapse</td><td>Everyone, for themselves</td></tr>
                 </tbody>
             </table>
@@ -229,8 +241,8 @@
                 <li><strong>The squad column is short</strong>: collapse the Scene navigation, or turn on compact cards.</li>
                 <li><strong>The dashboard is gone</strong>: check for the <strong>Dashboard</strong> button at the top of
                     the screen (you may have minimized it), or ask a GM whether it's hidden on this Scene.</li>
-                <li><strong>This Scene shows a different squad</strong>: it has its own setup. A GM can switch it back to
-                    <em>Campaign dashboard</em> in the configuration.</li>
+                <li><strong>My tab jumped to a different ledger</strong>: a GM changed the active squad or that squad's
+                    default ledger. Pick your ledger again from the tab's dropdown.</li>
             </ul>
         </section>
     </div>

@@ -6,7 +6,7 @@
  */
 
 import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
-import { setDefaultLedger } from "./dashboard-state.js";
+import { setActiveSquad, setSquadDefaultLedger } from "./squads.js";
 import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
@@ -104,7 +104,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             toggleHidden: MissionDashboardApp.#onToggleHidden,
             cycleCompact: MissionDashboardApp.#onCycleCompact,
             toggleMission: MissionDashboardApp.#onToggleMission,
-            openCampaign: MissionDashboardApp.#onOpenCampaign,
+            openTracker: MissionDashboardApp.#onOpenTracker,
             pageEntry: MissionDashboardApp.#onPageEntry,
             openHelp: () => DashboardHelpApp.open(),
             fitScene: MissionDashboardApp.#onFitScene,
@@ -190,10 +190,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         await super._onFirstRender(context, options);
 
         // Delegated listeners on the persistent root survive part re-renders.
-        // Ledger switcher: a local choice, like paging.
+        // Ledger switcher (a local choice, like paging) and the GM's active-squad selector.
         this.element.addEventListener("change", event => {
             const select = event.target.closest("select[data-ledger-panel]");
-            if (select) this.controller.showLedger(select.dataset.ledgerPanel, select.value);
+            if (select) return this.controller.showLedger(select.dataset.ledgerPanel, select.value);
+            const squadSelect = event.target.closest("select[data-squad-select]");
+            if (squadSelect) return this.#changeActiveSquad(squadSelect);
         });
 
         this.element.addEventListener("input", event => {
@@ -497,7 +499,8 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
         try {
             const ledger = await createLedger(panel.key, result.name, { playersCanRead: Boolean(result.playersCanRead) });
-            if (result.makeDefault) await setDefaultLedger(scene, panel.key, ledger.uuid);
+            const squad = this.controller.view?.squad;
+            if (result.makeDefault && squad) await setSquadDefaultLedger(squad.id, panel.key, ledger.uuid);
             this.controller.showLedger(panel.key, ledger.uuid);
             ledger.pages.contents[0]?.sheet.render(true);
         } catch (error) {
@@ -512,7 +515,9 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         if (!view?.ledgerUuid || !scene) return;
 
         try {
-            await setDefaultLedger(scene, target.dataset.panel, view.ledgerUuid);
+            const squad = this.controller.view?.squad;
+            if (!squad) return;
+            await setSquadDefaultLedger(squad.id, target.dataset.panel, view.ledgerUuid);
             ui.notifications.info(`“${view.ledgerName}” is now the default ledger.`);
         } catch (error) {
             ui.notifications.error(error.message);
@@ -649,7 +654,34 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         await game.settings.set(MODULE_ID, SETTINGS.missionCollapsed, !this.controller.preferences().missionCollapsed);
     }
 
-    static #onOpenCampaign() {
-        this.controller.openCampaign();
+    static #onOpenTracker(event, target) {
+        this.controller.openTracker(target.dataset.kind);
+    }
+
+    /** GM: make another squad active for everyone, after a warning (it resets everyone's tabs). */
+    async #changeActiveSquad(select) {
+        const current = this.controller.view?.squad;
+        const next = this.controller.view?.squads?.find(squad => squad.id === select.value);
+        if (!game.user.isGM || !next || next.id === current?.id) return;
+
+        const escape = foundry.utils.escapeHTML;
+        const confirmed = await DialogV2.confirm({
+            window: { title: "Change active squad" },
+            content: `<p>Make <strong>${escape(next.name)}</strong> the active squad for <strong>everyone</strong>?</p>
+                <p class="hint">Every player's dashboard switches to this squad's members, and every Objective, Summary and Intel tab jumps to this squad's default ledger at its newest entry. Anything people were reading in other ledgers is replaced.</p>`
+        });
+
+        if (!confirmed) {
+            select.value = current?.id ?? "";
+            return;
+        }
+
+        try {
+            await setActiveSquad(next.id);
+            ui.notifications.info(`${next.name} is now the active squad.`);
+        } catch (error) {
+            select.value = current?.id ?? "";
+            ui.notifications.error(error.message);
+        }
     }
 }

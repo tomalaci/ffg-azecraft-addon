@@ -1,55 +1,68 @@
 /**
- * Campaign standing window: Fame, faction reputation totals and the adjustment history.
- * Everyone with read access sees totals and history; only GMs adjust or manage factions.
+ * Tracker window for Reputation (Fame + factions) or Resources (Credits + materials): totals and the
+ * adjustment history. Everyone with read access sees them; only GMs adjust or manage entries.
  */
 
 import { MODULE_ID, REASON_MAX_LENGTH, TEMPLATE_ROOT } from "./constants.js";
-import { DashboardHelpApp } from "./help-app.js";
 import {
     FAME_LABEL,
-    addFaction,
+    TRACKERS,
+    addEntry,
     buildStanding,
-    createLedger,
-    findLedgerCandidates,
+    createTracker,
+    findTrackerCandidates,
     recordAdjustment,
-    renameFaction,
-    selectLedger,
-    setFactionArchived,
+    renameEntry,
+    selectTracker,
+    setEntryArchived,
     validateAdjustment
-} from "./campaign-reputation.js";
+} from "./trackers.js";
+import { DashboardHelpApp } from "./help-app.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 const HISTORY_PREVIEW = 15;
 
 function signed(delta) {
-    return delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
+    const amount = Math.abs(delta).toLocaleString();
+    return delta > 0 ? `+${amount}` : `−${amount}`;
 }
 
-export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV2) {
+function totalLabel(total, signedTotals) {
+    return signedTotals && total > 0 ? `+${total.toLocaleString()}` : total.toLocaleString();
+}
+
+export class TrackerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     showAllHistory = false;
     showArchived = false;
 
+    constructor(kind, options = {}) {
+        const tracker = TRACKERS[kind];
+        super(foundry.utils.mergeObject({
+            id: `azecraft-tracker-${kind}`,
+            window: { title: tracker.title, icon: tracker.icon }
+        }, options));
+        this.kind = kind;
+        this.tracker = tracker;
+    }
+
     static DEFAULT_OPTIONS = {
-        id: "azecraft-campaign-standing",
         classes: ["azd-campaign"],
         window: {
-            title: "Campaign Standing",
-            icon: "fa-solid fa-ranking-star",
             resizable: true,
             controls: [{ icon: "fa-solid fa-circle-question", label: "Help", action: "openHelp" }]
         },
         position: { width: 520, height: 640 },
         actions: {
-            adjust: CampaignStandingApp.#onAdjust,
-            correct: CampaignStandingApp.#onCorrect,
-            addFaction: CampaignStandingApp.#onAddFaction,
-            renameFaction: CampaignStandingApp.#onRenameFaction,
-            archiveFaction: CampaignStandingApp.#onArchiveFaction,
-            createLedger: CampaignStandingApp.#onCreateLedger,
-            selectLedger: CampaignStandingApp.#onSelectLedger,
-            toggleHistory: CampaignStandingApp.#onToggleHistory,
-            toggleArchived: CampaignStandingApp.#onToggleArchived,
-            openLedger: CampaignStandingApp.#onOpenLedger,
+            adjust: TrackerApp.#onAdjust,
+            correct: TrackerApp.#onCorrect,
+            addEntry: TrackerApp.#onAddEntry,
+            renameEntry: TrackerApp.#onRenameEntry,
+            archiveEntry: TrackerApp.#onArchiveEntry,
+            createTracker: TrackerApp.#onCreateTracker,
+            selectTracker: TrackerApp.#onSelectTracker,
+            toggleHistory: TrackerApp.#onToggleHistory,
+            toggleArchived: TrackerApp.#onToggleArchived,
+            openJournal: TrackerApp.#onOpenJournal,
             openHelp: () => DashboardHelpApp.open("reputation")
         }
     };
@@ -59,14 +72,22 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
     };
 
     async _prepareContext() {
-        const standing = buildStanding();
+        const standing = buildStanding(this.kind);
         const isGM = game.user.isGM;
+        const tracker = this.tracker;
+        const base = {
+            isGM,
+            title: tracker.title,
+            hasFame: tracker.hasFame,
+            entryNoun: tracker.entryNoun,
+            entriesLabel: tracker.entriesLabel
+        };
 
         if (standing.state !== "ready") {
             return {
-                isGM,
+                ...base,
                 state: standing.state,
-                candidates: isGM ? findLedgerCandidates().map(e => ({ uuid: e.uuid, name: e.name })) : []
+                candidates: isGM ? findTrackerCandidates(this.kind).map(e => ({ uuid: e.uuid, name: e.name })) : []
             };
         }
 
@@ -78,18 +99,18 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
             canCorrect: isGM && !event.corrected && !event.correctsEventId
         });
 
-        const factions = standing.factions
-            .filter(f => this.showArchived || !f.archived)
-            .map(f => ({ ...f, totalLabel: f.total > 0 ? `+${f.total}` : String(f.total) }));
+        const entries = standing.entries
+            .filter(e => this.showArchived || !e.archived)
+            .map(e => ({ ...e, totalLabel: totalLabel(e.total, tracker.hasFame) }));
 
         return {
-            isGM,
+            ...base,
             state: "ready",
             ledgerName: standing.entry.name,
             fame: standing.fame,
             fameLabel: FAME_LABEL,
-            factions,
-            archivedCount: standing.factions.filter(f => f.archived).length,
+            entries,
+            archivedCount: standing.entries.filter(e => e.archived).length,
             showArchived: this.showArchived,
             history: (this.showAllHistory ? standing.history : standing.history.slice(0, HISTORY_PREVIEW)).map(format),
             historyCount: standing.history.length,
@@ -106,30 +127,33 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
      * Ask for an adjustment and record it. The event id is fixed for the lifetime of one request,
      * so re-submitting after an error can never create a duplicate entry.
      */
-    async #requestAdjustment({ target = { kind: "fame" }, delta = 1, correcting = null } = {}) {
+    async #requestAdjustment({ target, delta = 1, correcting = null } = {}) {
         if (!game.user.isGM) return;
 
-        const standing = buildStanding();
+        const standing = buildStanding(this.kind);
         if (standing.state !== "ready") return;
 
+        const tracker = this.tracker;
         const eventId = foundry.utils.randomID(16);
         const escape = foundry.utils.escapeHTML;
-        let values = { targetKey: target.kind === "fame" ? "fame" : target.id, delta, reason: "", sessionLabel: "" };
+        const firstEntry = standing.entries.find(e => !e.archived)?.id ?? "";
+        const initialKey = target?.kind === "fame" ? "fame" : target?.id ?? (tracker.hasFame ? "fame" : firstEntry);
+        let values = { targetKey: initialKey, delta, reason: "", sessionLabel: "" };
 
         while (true) {
-            const options = [`<option value="fame" ${values.targetKey === "fame" ? "selected" : ""}>${FAME_LABEL}</option>`]
-                .concat(standing.factions
-                    .filter(f => !f.archived || f.id === values.targetKey)
-                    .map(f => `<option value="${escape(f.id)}" ${values.targetKey === f.id ? "selected" : ""}>${escape(f.name)}</option>`));
+            const options = (tracker.hasFame ? [`<option value="fame" ${values.targetKey === "fame" ? "selected" : ""}>${FAME_LABEL}</option>`] : [])
+                .concat(standing.entries
+                    .filter(e => !e.archived || e.id === values.targetKey)
+                    .map(e => `<option value="${escape(e.id)}" ${values.targetKey === e.id ? "selected" : ""}>${escape(e.name)}</option>`));
             const correctionNote = correcting
                 ? `<p class="hint">Correcting: <strong>${escape(signed(correcting.delta))} ${escape(correcting.targetLabel ?? "")}</strong>: ${escape(correcting.reason)}</p>`
                 : "";
 
             const result = await DialogV2.input({
-                window: { title: correcting ? "Correct adjustment" : "Adjust campaign standing" },
+                window: { title: correcting ? "Correct adjustment" : `Adjust ${tracker.title.toLowerCase()}` },
                 position: { width: 440 },
                 content: `${correctionNote}
-                    <div class="form-group"><label>Target</label><div class="form-fields"><select name="targetKey" ${correcting ? "disabled" : ""}>${options.join("")}</select></div></div>
+                    <div class="form-group"><label>${tracker.hasFame ? "Target" : "Resource"}</label><div class="form-fields"><select name="targetKey" ${correcting ? "disabled" : ""}>${options.join("")}</select></div></div>
                     <div class="form-group"><label>Change</label><div class="form-fields"><input type="number" name="delta" step="1" value="${escape(String(values.delta))}" required></div></div>
                     <div class="form-group stacked"><label>Reason (required, visible to players)</label><textarea name="reason" maxlength="${REASON_MAX_LENGTH}" rows="3" required>${escape(values.reason)}</textarea></div>
                     <div class="form-group"><label>Session (optional)</label><div class="form-fields"><input type="text" name="sessionLabel" maxlength="60" value="${escape(values.sessionLabel)}" placeholder="e.g. Session 18"></div></div>`,
@@ -145,8 +169,12 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
                 sessionLabel: String(result.sessionLabel ?? "").trim()
             };
 
-            const chosenTarget = values.targetKey === "fame" ? { kind: "fame" } : { kind: "faction", id: values.targetKey };
-            const errors = validateAdjustment({ target: chosenTarget, delta: values.delta, reason: values.reason, correctsEventId: correcting?.eventId }, standing.entry.flags[MODULE_ID].ledger);
+            const chosenTarget = values.targetKey === "fame" ? { kind: "fame" } : { kind: "entry", id: values.targetKey };
+            const errors = validateAdjustment(
+                { target: chosenTarget, delta: values.delta, reason: values.reason, correctsEventId: correcting?.eventId },
+                standing.entry.flags[MODULE_ID].ledger,
+                tracker
+            );
 
             if (errors.length) {
                 ui.notifications.warn(errors.join(" "));
@@ -154,7 +182,7 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
             }
 
             try {
-                await recordAdjustment({
+                await recordAdjustment(this.kind, {
                     eventId,
                     target: chosenTarget,
                     delta: values.delta,
@@ -173,20 +201,20 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     static #onAdjust(event, target) {
-        const factionId = target.dataset.factionId;
+        const entryId = target.dataset.entryId;
         const delta = Number(target.dataset.delta ?? 1);
-        return this.#requestAdjustment({ target: factionId ? { kind: "faction", id: factionId } : { kind: "fame" }, delta });
+        return this.#requestAdjustment({ target: entryId ? { kind: "entry", id: entryId } : { kind: "fame" }, delta });
     }
 
     static #onCorrect(event, target) {
-        const standing = buildStanding();
+        const standing = buildStanding(this.kind);
         const original = standing.history?.find(e => e.eventId === target.dataset.eventId);
         if (!original) return;
         return this.#requestAdjustment({ target: original.target, delta: -original.delta, correcting: original });
     }
 
     /* -------------------------------------------- */
-    /*  Factions and ledger                         */
+    /*  Entries and tracker Journal                 */
     /* -------------------------------------------- */
 
     static async #askName(title, value = "") {
@@ -206,28 +234,28 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
         }
     }
 
-    static async #onAddFaction() {
-        const name = await CampaignStandingApp.#askName("Add faction");
-        if (name) await CampaignStandingApp.#guard(() => addFaction(name));
+    static async #onAddEntry() {
+        const name = await TrackerApp.#askName(`Add ${this.tracker.entryNoun}`);
+        if (name) await TrackerApp.#guard(() => addEntry(this.kind, name));
     }
 
-    static async #onRenameFaction(event, target) {
-        const id = target.dataset.factionId;
-        const name = await CampaignStandingApp.#askName("Rename faction", target.dataset.name);
-        if (name) await CampaignStandingApp.#guard(() => renameFaction(id, name));
+    static async #onRenameEntry(event, target) {
+        const id = target.dataset.entryId;
+        const name = await TrackerApp.#askName(`Rename ${this.tracker.entryNoun}`, target.dataset.name);
+        if (name) await TrackerApp.#guard(() => renameEntry(this.kind, id, name));
     }
 
-    static async #onArchiveFaction(event, target) {
-        await CampaignStandingApp.#guard(() => setFactionArchived(target.dataset.factionId, target.dataset.archived !== "true"));
+    static async #onArchiveEntry(event, target) {
+        await TrackerApp.#guard(() => setEntryArchived(this.kind, target.dataset.entryId, target.dataset.archived !== "true"));
     }
 
-    static async #onCreateLedger() {
-        await CampaignStandingApp.#guard(() => createLedger());
+    static async #onCreateTracker() {
+        await TrackerApp.#guard(() => createTracker(this.kind));
         this.render();
     }
 
-    static async #onSelectLedger(event, target) {
-        await CampaignStandingApp.#guard(() => selectLedger(target.dataset.uuid));
+    static async #onSelectTracker(event, target) {
+        await TrackerApp.#guard(() => selectTracker(this.kind, target.dataset.uuid));
         this.render();
     }
 
@@ -241,7 +269,7 @@ export class CampaignStandingApp extends HandlebarsApplicationMixin(ApplicationV
         this.render();
     }
 
-    static #onOpenLedger() {
-        buildStanding().entry?.sheet.render(true);
+    static #onOpenJournal() {
+        buildStanding(this.kind).entry?.sheet.render(true);
     }
 }
