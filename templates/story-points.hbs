@@ -34,19 +34,13 @@
 
     {{#if isGM}}
     <div class="azsp-gm">
-        <span>
-            <button type="button" class="azsp-icon" data-action="adjust" data-side="squad" data-delta="-1" data-tooltip="Remove a {{label.squad}} point" aria-label="Remove a {{label.squad}} point">−</button>
-            <button type="button" class="azsp-icon" data-action="adjust" data-side="squad" data-delta="1" data-tooltip="Add a {{label.squad}} point" aria-label="Add a {{label.squad}} point">+</button>
-        </span>
+        <button type="button" class="azsp-icon azsp-take azsp-take--squad" data-action="adjust" data-side="squad" data-delta="1" {{disabled (not pool.threat)}} data-tooltip="Move a point from {{label.threat}} to {{label.squad}}" aria-label="Move a point from {{label.threat}} to {{label.squad}}"><i class="fa-solid fa-plus" inert></i></button>
         <span class="azsp-capacity">
             <button type="button" class="azsp-icon" data-action="resize" data-delta="-1" {{disabled empty}} data-tooltip="Remove a story point from play (from the side with more)" aria-label="Decrease story point capacity">−</button>
             <span class="azsp-capacity-value" data-tooltip="Story points in play">{{capacity}}</span>
             <button type="button" class="azsp-icon" data-action="resize" data-delta="1" data-tooltip="Add a story point to play (to the side with fewer)" aria-label="Increase story point capacity">+</button>
         </span>
-        <span>
-            <button type="button" class="azsp-icon" data-action="adjust" data-side="threat" data-delta="-1" data-tooltip="Remove a {{label.threat}} point" aria-label="Remove a {{label.threat}} point">−</button>
-            <button type="button" class="azsp-icon" data-action="adjust" data-side="threat" data-delta="1" data-tooltip="Add a {{label.threat}} point" aria-label="Add a {{label.threat}} point">+</button>
-        </span>
+        <button type="button" class="azsp-icon azsp-take azsp-take--threat" data-action="adjust" data-side="threat" data-delta="1" {{disabled (not pool.squad)}} data-tooltip="Move a point from {{label.squad}} to {{label.threat}}" aria-label="Move a point from {{label.squad}} to {{label.threat}}"><i class="fa-solid fa-plus" inert></i></button>
     </div>
     {{/if}}
 </div>

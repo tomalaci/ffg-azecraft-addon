@@ -199,6 +199,22 @@ body.azsp-active #destiny-tracker {
     align-items: center;
 }
 
+/* GM: one wide + under each side, pulling a point over from the other side. */
+#azecraft-story-points .azsp-take {
+    flex: 0 0 82px;
+    width: 82px;
+    height: 22px;
+    font-size: 13px;
+}
+
+#azecraft-story-points .azsp-take--squad { border-left: 3px solid var(--azsp-squad); }
+#azecraft-story-points .azsp-take--threat { border-right: 3px solid var(--azsp-threat); }
+
+#azecraft-story-points .azsp-take:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
 #azecraft-story-points .azsp-capacity-value {
     min-width: 22px;
     color: var(--azsp-text);

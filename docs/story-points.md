@@ -19,8 +19,11 @@ fills from the right in red. As the players spend Destiny, the blue shrinks and 
   the active GM's client applies the change.
 - **GMs:**
   - Click the red **Doom** box to spend a Doom point.
-  - Use − / + under each side to remove or add points (e.g. at the start of a session).
-  - Use − / + in the middle, around the total, to change how many story points are in play. A new
+  - Use the **+** under a side to pull a point over from the other side: + under Doom moves one
+    Destiny point to Doom, + under Destiny moves one Doom point to Destiny. The total stays the
+    same, and no chat message is posted.
+  - Use − / + in the middle, around the total, to change how many story points are in play (e.g.
+    at the start of a session). A new
     point goes to the side with fewer points (Destiny on a tie), and a removed point comes from the
     side with more (Doom on a tie), so the balance stays as it was.
   - The two buttons at the top open the system's **Group Manager** and **Request story point

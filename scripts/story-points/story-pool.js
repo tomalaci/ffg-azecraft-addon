@@ -38,11 +38,17 @@ export function usePoint(pool, side) {
     return null;
 }
 
-/** GM adjustment: add or remove points on one side (never below zero). */
-export function adjustPool(pool, side, delta) {
-    const p = normalizePool(pool);
+/**
+ * GM adjustment: move points between the sides, keeping the total. A positive delta moves points to
+ * `side` from the other side, a negative one moves them away; it stops when the giving side is empty.
+ */
+export function shiftPool(pool, side, delta) {
+    let p = normalizePool(pool);
     if (!(side in p)) return p;
-    return { ...p, [side]: Math.max(0, p[side] + Math.trunc(delta)) };
+    const steps = Math.trunc(delta);
+    const other = side === SIDES.squad ? SIDES.threat : SIDES.squad;
+    for (let i = 0; i < Math.abs(steps); i++) p = usePoint(p, steps > 0 ? other : side) ?? p;
+    return p;
 }
 
 /** Total number of story points in play (both sides). */

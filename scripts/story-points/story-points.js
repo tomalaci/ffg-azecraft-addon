@@ -10,7 +10,7 @@
  * socket) and owns the Group Manager / Request Destiny Roll actions.
  */
 
-import { SIDES, adjustPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
+import { SIDES, shiftPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SYSTEM_ID = "starwarsffg";
@@ -157,10 +157,10 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         });
     }
 
-    /** GM: add or remove a point on one side. */
+    /** GM: move a point to or from one side (the other side gives or takes it). */
     static async #onAdjust(event, target) {
         if (!game.user.isGM) return;
-        await StoryPointsApp.#writePool(adjustPool(readPool(), target.dataset.side, Number(target.dataset.delta)));
+        await StoryPointsApp.#writePool(shiftPool(readPool(), target.dataset.side, Number(target.dataset.delta)));
     }
 
     /** GM: grow or shrink the whole pool (see resizePool for which side changes). */
