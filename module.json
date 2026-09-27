@@ -30,7 +30,8 @@
         "styles/mission-dashboard.css",
         "styles/story-points.css",
         "styles/default-art.css",
-        "styles/powers.css"
+        "styles/powers.css",
+        "styles/ammo.css"
     ],
     "url": "https://github.com/tomalaci/ffg-azecraft-addon",
     "manifest": "https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json",

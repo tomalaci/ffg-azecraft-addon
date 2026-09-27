@@ -21,6 +21,9 @@ The module:
 - Restyles player character sheets in the same Mass Effect look and removes the unused
   Specializations / Force Powers / Signature Abilities fields. See
   [docs/character-sheet.md](docs/character-sheet.md).
+- Adds Mass Effect **ammunition upgrades**: apply carried ammo gear to a weapon, with its quality
+  (e.g. Burn 2, or +1) shown on the weapon and roll chat card until it runs out. See
+  [docs/ammo.md](docs/ammo.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).
@@ -62,6 +65,12 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 
 `scripts/mission-dashboard/`, `templates/mission-dashboard/`, `styles/mission-dashboard.css`
 : Mission dashboard feature.
+
+`scripts/ammo/`, `styles/ammo.css`
+: Ammunition upgrades.
+
+`scripts/powers/`, `templates/actors/parts/`, `styles/powers.css`
+: Biotics / Tech tabs and power presets.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.

@@ -1,0 +1,80 @@
+/* Ammunition upgrades (scripts/ammo/ammo.js): the line under a weapon's name on the character
+ * sheet, the apply dialog and the chat notice. */
+
+.azam {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 1px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.azam-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 5px;
+    border: 1px solid rgba(255, 157, 66, 0.6);
+    color: #ff9d42;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.azam-action {
+    opacity: 0.75;
+    cursor: pointer;
+}
+
+.azam-action:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+.azam-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.azam-option {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    align-items: center;
+}
+
+.azam-option input {
+    grid-row: 1 / 3;
+    width: var(--checkbox-size, 18px);
+    height: var(--checkbox-size, 18px);
+    margin: 0;
+}
+
+.azam-option-name {
+    font-weight: 700;
+}
+
+.azam-option-rule {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    opacity: 0.75;
+    font-size: 12px;
+}
+
+.azam-option-count {
+    opacity: 0.75;
+    font-size: 12px;
+}
+
+.azam-option--none {
+    opacity: 0.5;
+}
+
+.azam-chat {
+    border-left: 3px solid #ff9d42;
+    padding-left: 6px;
+}
