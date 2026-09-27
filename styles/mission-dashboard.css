@@ -377,11 +377,11 @@
     pointer-events: auto;
 }
 
-/* Fade edges: cards scroll under a glowing edge line with a flickering static band, top (just
- * under the header) and bottom. They show only where more cards are scrolled out of view. */
+/* Fade edges: cards scroll under a glowing edge line with light beams fading inward and a glint
+ * sweeping along it, top (just under the header) and bottom. They show only where more cards are
+ * scrolled out of view. */
 #azecraft-mission-dashboard .azd-rail {
-    --azd-fade: 34px;
-    --azd-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='48'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.7' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.85 0 0 0 0 1 0 0 0 4 -2.35'/%3E%3C/filter%3E%3Crect width='160' height='48' filter='url(%23n)'/%3E%3C/svg%3E");
+    --azd-fade: 38px;
 }
 
 #azecraft-mission-dashboard .azd-rail::before,
@@ -396,16 +396,24 @@
     opacity: 0;
     transition: opacity 200ms ease-out;
     background:
-        var(--azd-noise),
-        linear-gradient(var(--azd-fade-dir), rgba(114, 212, 255, 0.28), rgba(114, 212, 255, 0) 10px),
-        linear-gradient(var(--azd-fade-dir), #0a1220 0%, rgba(10, 18, 32, 0.85) 30%, rgba(10, 18, 32, 0) 100%);
-    background-size: 160px 48px, auto, auto;
-    -webkit-mask-image: linear-gradient(var(--azd-fade-dir), #000 35%, transparent);
-    mask-image: linear-gradient(var(--azd-fade-dir), #000 35%, transparent);
+        /* Glint sweeping along the edge line. */
+        radial-gradient(ellipse 50% 100% at 50% var(--azd-edge), rgba(200, 240, 255, 0.55), rgba(114, 212, 255, 0) 70%),
+        /* Two sets of light shafts at different spacings, so the beams look irregular. */
+        repeating-linear-gradient(90deg, transparent 0 20px, rgba(114, 212, 255, 0.2) 23px 26px, transparent 29px 46px),
+        repeating-linear-gradient(90deg, transparent 0 12px, rgba(114, 212, 255, 0.12) 14px 15px, transparent 17px 31px),
+        /* Glow at the edge and the fade that the cards scroll under. */
+        linear-gradient(var(--azd-fade-dir), rgba(114, 212, 255, 0.3), rgba(114, 212, 255, 0) 12px),
+        linear-gradient(var(--azd-fade-dir), #0a1220 0%, rgba(10, 18, 32, 0.8) 35%, rgba(10, 18, 32, 0) 100%);
+    background-size: 160px 100%, auto, auto, auto, auto;
+    background-repeat: no-repeat, repeat, repeat, no-repeat, no-repeat;
+    background-position: -30% 0, 0 0, 0 0, 0 0, 0 0;
+    -webkit-mask-image: linear-gradient(var(--azd-fade-dir), #000 20%, transparent);
+    mask-image: linear-gradient(var(--azd-fade-dir), #000 20%, transparent);
 }
 
 #azecraft-mission-dashboard .azd-rail::before {
     --azd-fade-dir: to bottom;
+    --azd-edge: 0%;
     top: 0;
     border-top: 1px solid var(--azd-line);
     box-shadow: 0 -1px 8px rgba(114, 212, 255, 0.45);
@@ -413,6 +421,7 @@
 
 #azecraft-mission-dashboard .azd-rail::after {
     --azd-fade-dir: to top;
+    --azd-edge: 100%;
     bottom: 0;
     border-bottom: 1px solid var(--azd-line);
     box-shadow: 0 1px 8px rgba(114, 212, 255, 0.45);
@@ -424,15 +433,21 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    #azecraft-mission-dashboard .azd-rail::before,
+    #azecraft-mission-dashboard .azd-rail::before {
+        animation: azd-beams 7s linear infinite;
+    }
+
+    /* The bottom edge runs the other way, half a cycle apart. */
     #azecraft-mission-dashboard .azd-rail::after {
-        animation: azd-static 900ms steps(6) infinite;
+        animation: azd-beams 7s linear infinite reverse;
+        animation-delay: -3.5s;
     }
 }
 
-@keyframes azd-static {
-    0% { background-position: 0 0, 0 0, 0 0; }
-    100% { background-position: 480px 144px, 0 0, 0 0; }
+/* Each shaft set moves exactly one period, so the loop is seamless. */
+@keyframes azd-beams {
+    0% { background-position: -30% 0, 0 0, 0 0, 0 0, 0 0; }
+    100% { background-position: 130% 0, 46px 0, -31px 0, 0 0, 0 0; }
 }
 
 #azecraft-mission-dashboard .azd-rail-empty {
