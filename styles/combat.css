@@ -1,0 +1,32 @@
+/* "Apply damage" helper on weapon roll chat cards (scripts/combat/apply-damage.js). */
+
+.azdm {
+    margin-top: 6px;
+}
+
+.azdm button {
+    width: 100%;
+    line-height: 26px;
+}
+
+.azdm-table {
+    width: 100%;
+    margin: 0 0 8px;
+}
+
+.azdm-table th {
+    text-align: left;
+}
+
+.azdm-table input {
+    width: 64px;
+}
+
+.azdm-num {
+    text-align: center;
+}
+
+.azdm-chat {
+    border-left: 3px solid #ff5d55;
+    padding-left: 6px;
+}

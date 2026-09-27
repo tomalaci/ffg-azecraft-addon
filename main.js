@@ -6,6 +6,7 @@ import { initCharacterSheetTheme } from "./scripts/character-sheet-theme.js";
 import { initDefaultArt } from "./scripts/default-art/default-art.js";
 import { initPowerTabs } from "./scripts/powers/power-tabs.js";
 import { initAmmo } from "./scripts/ammo/ammo.js";
+import { initApplyDamage } from "./scripts/combat/apply-damage.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -18,4 +19,5 @@ Hooks.once("init", () => {
     initDefaultArt();
     initPowerTabs();
     initAmmo();
+    initApplyDamage();
 });
