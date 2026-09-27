@@ -2,7 +2,7 @@
     "id": "ffg-azecraft-addon",
     "title": "FFG Azecraft Addon",
     "description": "QoL fixes and additions for StarWarsFFG system.",
-    "version": "0.3.1",
+    "version": "0.1.0",
     "authors": [
         {
             "name": "Tomass"
