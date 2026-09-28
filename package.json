@@ -5,7 +5,7 @@
     "description": "Development-only manifest for linting and unit tests; not used by Foundry.",
     "scripts": {
         "lint": "eslint .",
-        "test": "node --test tests/",
+        "test": "node --test \"tests/*.test.js\"",
         "check": ".ai/check"
     },
     "devDependencies": {
