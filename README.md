@@ -27,6 +27,9 @@ The module:
 - Adds an **Apply damage** helper to weapon roll chat cards (GM only): damage after soak and Pierce
   / Breach for the targeted tokens, checked and editable before it is applied. See
   [docs/apply-damage.md](docs/apply-damage.md).
+- Shows **lightweight copies** of large actor art (made automatically by the GM's browser) in
+  the dashboard, the Actors tab and sheets; the originals stay untouched. See
+  [docs/lightweight-images.md](docs/lightweight-images.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).
@@ -77,6 +80,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 
 `scripts/powers/`, `templates/actors/parts/`, `styles/powers.css`
 : Biotics / Tech tabs and power presets.
+
+`scripts/thumbnails/`
+: Lightweight copies of large images.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.

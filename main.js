@@ -8,6 +8,7 @@ import { initPowerTabs } from "./scripts/powers/power-tabs.js";
 import { initAmmo } from "./scripts/ammo/ammo.js";
 import { initApplyDamage } from "./scripts/combat/apply-damage.js";
 import { initSheetSize } from "./scripts/sheet-size.js";
+import { initThumbnails } from "./scripts/thumbnails/thumbnails.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -22,4 +23,5 @@ Hooks.once("init", () => {
     initAmmo();
     initApplyDamage();
     initSheetSize();
+    initThumbnails();
 });

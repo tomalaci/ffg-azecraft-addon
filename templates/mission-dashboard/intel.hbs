@@ -9,7 +9,7 @@
         <ul class="azd-people" aria-label="People of note">
             {{#each people as |person|}}
             <li class="azd-person {{#if person.missing}}azd-person--missing{{/if}}" data-uuid="{{person.uuid}}">
-                {{#if person.img}}<img class="azd-person-img" src="{{person.img}}" alt="" loading="lazy" data-tooltip="Click: view art · double-click: open sheet" data-fallback="{{@root.placeholderArt}}">{{/if}}
+                {{#if person.img}}<img class="azd-person-img" src="{{person.displayImg}}" data-art-src="{{person.img}}" alt="" loading="lazy" data-tooltip="Click: view art · double-click: open sheet" data-fallback="{{@root.placeholderArt}}">{{/if}}
                 <div class="azd-person-text">
                     <button type="button" class="azd-name azd-person-name" data-action="openActor" {{#if person.missing}}disabled{{/if}}>{{person.name}}</button>
                     {{#if person.hiddenFromPlayers}}<span class="azd-badge" data-tooltip="Players cannot see this Actor (needs Limited or higher), so this entry is hidden from them."><i class="fa-solid fa-eye-slash" inert></i> GM only</span>{{/if}}

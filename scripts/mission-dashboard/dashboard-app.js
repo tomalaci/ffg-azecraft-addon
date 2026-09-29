@@ -6,6 +6,7 @@
  */
 
 import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
+import { displaySrc } from "../thumbnails/thumbnails.js";
 import { setActiveSquad, setSquadDefaultLedger } from "./squads.js";
 import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
@@ -160,6 +161,9 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
                 ...card,
                 expanded: this.expanded.has(card.slotId),
                 artStyle,
+                // Show the lightweight copy of large art; the original stays in data-art-src.
+                displayArt: card.art ? displaySrc(card.art) : card.art,
+                displayPortrait: card.portrait ? displaySrc(card.portrait) : card.portrait,
                 editing: Boolean(draft),
                 draft: draft?.text ?? "",
                 draftConflict: Boolean(draft) && !draft.saving && draft.original !== card.desire,
@@ -167,8 +171,11 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             };
         });
 
+        const people = view?.people?.map(person => ({ ...person, displayImg: person.img ? displaySrc(person.img) : person.img }));
+
         return {
             ...view,
+            ...(people ? { people } : {}),
             cards,
             visibleCards: cards.filter(card => card.availability !== "empty" || view?.isGM),
             prefs,
@@ -678,7 +685,8 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     /** Show the art the dashboard displays (full-body art or portrait) in Foundry's image viewer. */
     #showArt(img) {
-        const src = img.getAttribute("src");
+        // Always the original image, not the lightweight copy on the card.
+        const src = img.dataset.artSrc || img.dataset.azecraftOriginalSrc || img.getAttribute("src");
         if (!src || src === PLACEHOLDER_ART) return;
         const actor = MissionDashboardApp.#resolve(img.closest("[data-uuid]")?.dataset.uuid);
         const canSee = actor?.testUserPermission(game.user, "LIMITED");
