@@ -64,11 +64,13 @@ test("the frame window is the map area between the rail, bottom bar and sidebar"
     assert.deepEqual(view, { left: 532, top: 0, right: 1572, bottom: 764 });
 });
 
-test("framed: the squad column ends where the mission tabs begin", () => {
-    const { values } = computeLayout(desktop);
-    // hotbar inset 84 + mission panels 220 = 304 from the bottom, the top edge of the tabs
-    assert.equal(values["--azd-rail-bottom"], "304px");
-    assert.equal(computeLayout(desktop, { missionCollapsed: true }).values["--azd-rail-bottom"], "127px");
+test("framed: the squad column runs down to the story point bar in the corner", () => {
+    // The bar (destiny rect) tops out at 978; the player list above it is hidden in practice.
+    const { values } = computeLayout({ ...desktop, players: null });
+    assert.equal(values["--azd-rail-bottom"], "110px");
+    // Nothing docked bottom-left: hotbar inset 84 + mission panels 220 = 304, the top of the tabs.
+    assert.equal(computeLayout({ ...desktop, players: null, destiny: null }).values["--azd-rail-bottom"], "304px");
+    assert.equal(computeLayout({ ...desktop, players: null, destiny: null }, { missionCollapsed: true }).values["--azd-rail-bottom"], "118px");
 });
 
 const near = (actual, expected) => actual.forEach((v, i) => assert.ok(Math.abs(v - expected[i]) < 0.5, `${actual} vs ${expected}`));

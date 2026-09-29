@@ -100,8 +100,11 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     let missionHeight = height >= 1300 ? 260 : height >= 1000 ? 220 : 180;
     if (missionCollapsed) missionHeight = 34;
 
-    // Framed: the squad column ends where the mission tabs begin, so both edges line up.
-    const railEnd = framed ? Math.max(railBottom, bottom + missionHeight) : railBottom;
+    // Framed: the squad column runs down to the story point bar in the bottom-left corner (or, with
+    // nothing docked there, to where the mission tabs begin).
+    const railEnd = framed
+        ? (destiny && destiny.top >= height * 0.6 ? railBottom : Math.max(railBottom, bottom + missionHeight))
+        : railBottom;
 
     // The mission bar: one strip split into three resizable tabs.
     const barLeft = left + railWidth + GAP + (framed ? GAP : 0);
@@ -141,10 +144,11 @@ export function measureUI() {
         navExpand: visibleRect("#scene-navigation-expand"),
         // Only the always-visible part of the player list: expanding it (the inactive players above)
         // floats over the rail instead of pushing the frame up.
-        players: visibleRect("#players-active") ?? visibleRect("#players"),
-        // The system's destiny tracker, when the addon's story point bar is off. The story point bar
-        // sits beside the player list, inside the space reserved for it.
-        destiny: visibleRect("#destiny-tracker"),
+        // With the story point bar on, the player list is only a pop-up over the rail: ignore it.
+        players: document.body.classList.contains("azsp-active") ? null : visibleRect("#players-active") ?? visibleRect("#players"),
+        // The addon's story point bar (bottom-left, where the player list was), or the system's
+        // destiny tracker when the bar is off.
+        destiny: visibleRect("#azecraft-story-points") ?? visibleRect("#destiny-tracker"),
         hotbar: visibleRect("#hotbar"),
         sidebar: visibleRect("#sidebar")
     };

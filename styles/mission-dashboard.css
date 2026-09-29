@@ -882,12 +882,16 @@
     min-width: 22px;
 }
 
+/* Compact cards: the portrait takes a third of the card and the full height of the details beside
+ * it; stats and wounds fit in the other two thirds. */
 #azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-card-main {
-    grid-template-columns: minmax(0, 1fr) 52px;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: stretch;
 }
 
 #azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-card-art {
-    height: 64px;
+    height: auto;
+    min-height: 96px;
 }
 
 #azecraft-mission-dashboard.azd--compact .azd-card:not(.azd-card--expanded) .azd-crits ul,

@@ -1,6 +1,8 @@
 <div class="azsp-panel" aria-label="Story points">
     <div class="azsp-head">
         <span class="azsp-title"><i class="fa-solid fa-scale-balanced" inert></i> Story points</span>
+        <button type="button" class="azsp-icon azsp-players {{#if playersOpen}}azsp-icon--on{{/if}}" data-action="togglePlayers" aria-pressed="{{playersOpen}}"
+            data-tooltip="{{#if playersOpen}}Hide{{else}}Show{{/if}} the player list" aria-label="Player list: {{playersOnline}} online"><i class="fa-solid fa-users" inert></i> {{playersOnline}}</button>
         {{#if menu.length}}
         <span class="azsp-menu">
             {{#each menu as |item|}}

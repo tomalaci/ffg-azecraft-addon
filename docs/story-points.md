@@ -10,9 +10,10 @@ in the dashboard's style. The rules are the same as before (Genesys story points
 
 Both names can be changed (see Settings below).
 
-It sits right of the player list, in the corner under the mission dashboard's squad column, and
-fills the space there. When that corner is too narrow (small or narrow screens), the bar turns
-vertical: Doom on top, Destiny at the bottom, and the controls beside it.
+It sits in the bottom-left corner, where Foundry's player list used to be, and stretches to where
+the mission dashboard's tabs begin; the dashboard's squad column runs down to it. The player list
+is hidden: the **players** button in the bar's header (with the number of people online) shows it
+floating above the bar, and hides it again.
 
 The bar is a tug of war. Each segment is one point: Destiny fills from the left in blue, Doom
 fills from the right in red. As the players spend Destiny, the blue shrinks and the red grows.

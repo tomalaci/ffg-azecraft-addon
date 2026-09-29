@@ -1,39 +1,24 @@
 /**
- * Where the story point bar goes (pure, unit-tested): right of the player list, bottom-aligned with
- * it, in the corner left under the dashboard's squad rail (or up to the hotbar without a rail).
- * When that corner is too narrow for the horizontal bar, the bar turns vertical.
+ * Where the story point bar goes (pure, unit-tested): the bottom-left corner, where Foundry's player
+ * list used to be, stretched right to where the dashboard's mission tabs begin (or up to the
+ * hotbar when there is no dashboard). The bar is always horizontal.
  */
 
 const GAP = 10;
-export const HORIZONTAL_WIDTH = 330;
-export const MIN_HORIZONTAL_WIDTH = 270;
-export const VERTICAL_WIDTH = 150;
+export const DEFAULT_WIDTH = 330;
+export const MIN_WIDTH = 260;
 
 /**
- * @param {{width: number, height: number, players?: DOMRect, controls?: DOMRect, hotbar?: DOMRect, rail?: DOMRect}} ui
- * @returns {{left: number, bottom: number, width: number, maxHeight: number, vertical: boolean}}
+ * @param {{width: number, height: number, controls?: DOMRect, hotbar?: DOMRect, barLeft?: number}} ui
+ *        barLeft: left edge of the dashboard's mission tabs, when the dashboard is shown
+ * @returns {{left: number, bottom: number, width: number}}
  */
-export function storyPointsBox({ width, height, players, controls, hotbar, rail }) {
-    const left = Math.round(players ? players.right + GAP : (controls?.left ?? 16));
-    const bottom = Math.round(players ? Math.max(GAP, height - players.bottom) : 16);
-
-    // The corner ends at the rail's right edge (dashboard shown) and before the hotbar.
-    const limits = [left + HORIZONTAL_WIDTH];
-    if (rail) limits.push(rail.right);
-    if (hotbar && hotbar.left > left) limits.push(hotbar.left - GAP);
-    const room = Math.max(0, Math.min(...limits) - left);
-
-    // Up to the rail's bottom edge when the rail ends above the bar's bottom line.
-    const floor = height - bottom;
-    const ceiling = rail && rail.bottom < floor ? rail.bottom + GAP : Math.max(0, floor - 320);
-    const maxHeight = Math.round(Math.max(0, floor - ceiling));
-
-    const vertical = room < MIN_HORIZONTAL_WIDTH && width > 0;
-    return {
-        left,
-        bottom,
-        width: vertical ? Math.min(VERTICAL_WIDTH, Math.max(room, 120)) : Math.round(room),
-        maxHeight,
-        vertical
-    };
+export function storyPointsBox({ height, controls, hotbar, barLeft }) {
+    const left = Math.round(controls?.left ?? 16);
+    // Bottom-aligned with the hotbar, like the player list it replaces.
+    const bottom = Math.round(hotbar ? Math.max(GAP, height - hotbar.bottom) : 16);
+    let right = left + DEFAULT_WIDTH;
+    if (Number.isFinite(barLeft) && barLeft > left) right = barLeft - GAP;
+    else if (hotbar && hotbar.left > left) right = Math.min(right, hotbar.left - GAP);
+    return { left, bottom, width: Math.max(MIN_WIDTH, Math.round(right - left)) };
 }
