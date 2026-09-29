@@ -48,9 +48,15 @@ Management. The system changed both, so total and available moved together. It a
 
 ## Planned (0.6.0)
 
-Buying talents, characteristics and skills with XP from the addon's own screens instead of the
-system's drag-and-drop. Until then, XP Management reads the XP log as the system writes
-it.
+Talent, characteristic and item management in the addon's own screens instead of the system's
+drag-and-drop, with XP handled by specific actions instead of free amounts:
+
+- spending XP on skills, talents and characteristics / ability points (characteristics only at
+  character creation), and refunding those purchases;
+- *Adjust XP* restricted to those actions, so every XP log entry says what it was for and spent
+  XP no longer has to be read from free-form adjustments.
+
+Until then, XP Management reads the XP log as the system writes it.
 
 ## How it works (developers)
 
