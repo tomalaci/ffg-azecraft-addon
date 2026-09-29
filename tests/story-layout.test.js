@@ -11,6 +11,10 @@ test("with the dashboard: under the squad rail, from its left edge to the missio
     assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 434 });
 });
 
+test("with the dashboard on a narrow screen: clear of a hotbar that starts before the mission tabs", () => {
+    assert.deepEqual(storyPointsBox({ width: 1600, height: 900, controls, hotbar: rect(418, 824, 764, 60), barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 308 });
+});
+
 test("without the dashboard: default width, clear of the hotbar", () => {
     assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar }), { left: 16, bottom: 16, width: 330 });
     assert.equal(storyPointsBox({ width: 1920, height: 1080, controls, hotbar: rect(300, 1004, 600, 60) }).width, 274);

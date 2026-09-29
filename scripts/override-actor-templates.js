@@ -99,9 +99,7 @@ export function patchOverrideActorTemplates() {
     Hooks.once("setup", async () => {
         console.log("Azecraft | Patching actor sheet templates");
 
-        if (typeof loadTemplates === "function") {
-            await loadTemplates(Object.values(TEMPLATE_OVERRIDES));
-        }
+        await foundry.applications.handlebars.loadTemplates(Object.values(TEMPLATE_OVERRIDES));
 
         const sheetClasses = Object.values(CONFIG.Actor?.sheetClasses ?? {}).flatMap(group => Object.values(group));
         const baseSheet = sheetClasses.find(entry => entry.id === "ffg.ActorSheetFFG")?.cls;

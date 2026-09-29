@@ -286,7 +286,7 @@ export function environment() {
         browser: navigator.userAgent,
         cpuThreads: navigator.hardwareConcurrency,
         deviceMemoryGB: navigator.deviceMemory ?? null,
-        screen: `${screen.width}×${screen.height} @${window.devicePixelRatio}x, window ${window.innerWidth}×${window.innerHeight}`,
+        screen: `${screen.width}×${screen.height} @${Math.round(window.devicePixelRatio * 100) / 100}x, window ${window.innerWidth}×${window.innerHeight}`,
         gpu: gpuName(),
         foundry: game.release?.version ?? game.version,
         system: `${game.system.id} ${game.system.version}`,

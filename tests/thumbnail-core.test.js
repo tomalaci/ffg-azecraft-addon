@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { copyPath, copySize, hash, isCandidatePath, lookup, normalizeSrc, worthCopying } from "../scripts/thumbnails/thumbnail-core.js";
+import { copyPath, copySize, hash, isCandidatePath, lookup, normalizeSrc, originalOf, worthCopying } from "../scripts/thumbnails/thumbnail-core.js";
 
 test("normalizeSrc makes encoded, absolute and plain paths match", () => {
     const plain = "worlds/test/Mass Effect/Party/Moyra_New.png";
@@ -53,4 +53,12 @@ test("lookup finds a copy by any form of the source path", () => {
     assert.equal(lookup(registry, "worlds/test/Mass%20Effect/a.png"), "worlds/test/azecraft-thumbs/1-a.webp");
     assert.equal(lookup(registry, "worlds/test/other.png"), null);
     assert.equal(lookup(null, "x"), null);
+});
+
+test("originalOf maps a copy back to its original (form data must never save a copy)", () => {
+    const registry = { "worlds/x/Mass Effect/a.png": { thumb: "worlds/x/Mass%20Effect/a.thumb.webp" } };
+    assert.equal(originalOf(registry, "worlds/x/Mass Effect/a.thumb.webp"), "worlds/x/Mass Effect/a.png");
+    assert.equal(originalOf(registry, "http://host/worlds/x/Mass%20Effect/a.thumb.webp", "http://host/"), "worlds/x/Mass Effect/a.png");
+    assert.equal(originalOf(registry, "worlds/x/Mass Effect/a.png"), null);
+    assert.equal(originalOf(registry, ""), null);
 });

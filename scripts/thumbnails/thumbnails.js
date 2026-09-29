@@ -9,7 +9,7 @@
  *   and nothing in the actors' data changes.
  */
 
-import { MAX_SIDE, QUALITY, copyPath, copySize, isCandidatePath, lookup, normalizeSrc, worthCopying } from "./thumbnail-core.js";
+import { MAX_SIDE, QUALITY, copyPath, copySize, isCandidatePath, lookup, normalizeSrc, originalOf, worthCopying } from "./thumbnail-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SETTINGS = { registry: "imageCopies", enabled: "useImageCopies" };
@@ -59,6 +59,19 @@ function swapWithin(node) {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     if (node.tagName === "IMG") swap(node);
     else for (const img of node.getElementsByTagName("img")) swap(img);
+}
+
+/**
+ * Sheets save the `src` of their `<img data-edit>` (the portrait) with every form submit, which would
+ * write a swapped-in copy into the document. Form data always gets the original back.
+ */
+function keepOriginalsInForms() {
+    const FormDataExtended = foundry.applications.ux.FormDataExtended;
+    const set = FormDataExtended.prototype.set;
+    FormDataExtended.prototype.set = function (name, value) {
+        const original = typeof value === "string" && value ? originalOf(registry, value, origin()) : null;
+        return set.call(this, name, original ?? value);
+    };
 }
 
 function watchDocument() {
@@ -252,7 +265,10 @@ export function initThumbnails() {
     });
 
     Hooks.once("ready", () => {
-        if (enabled()) watchDocument();
+        if (enabled()) {
+            keepOriginalsInForms();
+            watchDocument();
+        }
         if (isCopyMaker()) {
             // Give the world a moment to settle before decoding large images.
             setTimeout(() => makeCopies(), 5000);

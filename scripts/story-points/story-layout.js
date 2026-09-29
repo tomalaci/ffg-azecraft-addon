@@ -19,6 +19,7 @@ export function storyPointsBox({ height, controls, hotbar, barLeft, railLeft }) 
     const bottom = Math.round(hotbar ? Math.max(GAP, height - hotbar.bottom) : 16);
     let right = left + DEFAULT_WIDTH;
     if (Number.isFinite(barLeft) && barLeft > left) right = barLeft - GAP;
-    else if (hotbar && hotbar.left > left) right = Math.min(right, hotbar.left - GAP);
+    // On narrow screens the centred hotbar can start before the mission tabs: stay clear of it.
+    if (hotbar && hotbar.left > left) right = Math.min(right, hotbar.left - GAP);
     return { left, bottom, width: Math.max(MIN_WIDTH, Math.round(right - left)) };
 }

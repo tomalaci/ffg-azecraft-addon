@@ -90,3 +90,13 @@ export function lookup(registry, src, origin = "") {
     const entry = registry?.[normalizeSrc(src, origin)];
     return entry?.thumb ?? null;
 }
+
+/** The original image of a lightweight copy (the reverse of lookup), or null. */
+export function originalOf(registry, src, origin = "") {
+    const path = normalizeSrc(src, origin);
+    if (!path) return null;
+    for (const [original, entry] of Object.entries(registry ?? {})) {
+        if (entry?.thumb && normalizeSrc(entry.thumb) === path) return original;
+    }
+    return null;
+}

@@ -324,9 +324,7 @@ export function patchRollPowerModifiers() {
             return;
         }
 
-        if (typeof loadTemplates === "function") {
-            await loadTemplates([ROLL_OPTIONS_TEMPLATE]);
-        }
+        await foundry.applications.handlebars.loadTemplates([ROLL_OPTIONS_TEMPLATE]);
 
         const patched = [
             patchDefaultOptions(RollBuilderFFG),
