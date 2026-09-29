@@ -229,20 +229,20 @@ export class AdminPanelApp extends SceneSpaceApp {
         }
         const sources = [...new Set([...actors.values()].flatMap(a => [a.img, a.getFlag(MODULE_ID, "dashboard")?.fullArt]).filter(Boolean).map(decodePath))];
         if (!sources.length) return ui.notifications.info("No squad portraits found.");
-        const ok = await confirm("Optimize squad portraits",
-            `<p>Remake the lightweight WebP copies of <strong>${sources.length}</strong> portrait(s) of ${actors.size} squad member(s) and People of Note. The originals are not changed; small images are skipped.</p>`,
-            "Remake copies");
+        const ok = await confirm("Update squad portraits",
+            `<p>Check the lightweight WebP copies of <strong>${sources.length}</strong> portrait(s) of ${actors.size} squad member(s) and People of Note, and make the ones that are missing or whose original changed. The originals are not changed; small images need no copy.</p>`,
+            "Update copies");
         if (!ok) return;
-        await this.#run("Making copies…", async () => {
-            const counts = await makeCopies(sources, { force: true });
-            ui.notifications.info(`Squad portraits: ${counts.made} copies made, ${counts.skipped} not needed, ${counts.failed} failed.`);
+        await this.#run("Checking copies…", async () => {
+            const counts = await makeCopies(sources, { refresh: true });
+            ui.notifications.info(`Squad portraits: ${counts.made} copies made, ${counts.current} already up to date, ${counts.skipped} not needed (small), ${counts.failed} failed.`);
         });
     }
 
     static async #onOptimizeAll() {
         await this.#run("Making copies…", async () => {
             const counts = await makeCopies(candidateSources());
-            ui.notifications.info(`Actor images: ${counts.made} copies made, ${counts.skipped} not needed or done, ${counts.failed} failed.`);
+            ui.notifications.info(`Actor images: ${counts.made} copies made, ${counts.current} already up to date, ${counts.skipped} not needed (small), ${counts.failed} failed.`);
         });
     }
 

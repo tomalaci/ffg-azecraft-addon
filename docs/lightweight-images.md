@@ -19,7 +19,7 @@ full image, and the actors' data keeps pointing at the originals.
 - **Settings** (Configure Settings → FFG Azecraft Addon):
   - *Use lightweight images* (per player): turn off to always see the originals.
   - *Lightweight images* (GM): lists the copies and the space saved; *Check now* makes missing
-    copies, *Remake all* replaces them (e.g. after editing an image file in place).
+    copies and remakes those whose original changed, *Remake all* replaces every copy (e.g. after editing an image file in place).
 
 The first GM login after installing this makes the copies once (about 10 seconds for the current
 party art); nothing is needed afterwards.

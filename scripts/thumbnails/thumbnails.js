@@ -147,9 +147,20 @@ async function makeCopy(src, taken) {
         const file = new File([blob], name, { type: "image/webp" });
         const result = await foundry.applications.apps.FilePicker.implementation.upload("data", directory, file, {}, { notify: false });
         if (!result?.path) return null;
-        return { thumb: result.path, width: bitmap.width, height: bitmap.height, bytes: bytes || blob.size, thumbBytes: blob.size };
+        // Upload results are URL-encoded ("Mass%20Effect"); the registry keeps plain paths.
+        return { thumb: normalizeSrc(result.path), width: bitmap.width, height: bitmap.height, bytes: bytes || blob.size, thumbBytes: blob.size };
     } finally {
         bitmap.close();
+    }
+}
+
+/** Whether a copy is still good: the copy file exists and the original has not changed size since. */
+async function isCurrent(src, entry) {
+    try {
+        const [original, copy] = await Promise.all([src, entry.thumb].map(path => fetch(encodeURI(normalizeSrc(path)), { method: "HEAD" })));
+        return original.ok && copy.ok && Number(original.headers.get("content-length")) === entry.bytes;
+    } catch {
+        return false;
     }
 }
 
@@ -159,14 +170,22 @@ const checked = new Set();
 /**
  * Make copies of the given images (or all actor images) that do not have one yet. Runs one image at
  * a time, so a GM client never decodes several huge images at once.
- * @returns {Promise<{made: number, skipped: number, failed: number}>}
+ * @param {{refresh?: boolean, force?: boolean}} options
+ *        refresh: also remake copies that are missing on disk or whose original changed;
+ *        force: remake every copy
+ * @returns {Promise<{made: number, current: number, skipped: number, failed: number}>}
+ *          current: copies already up to date; skipped: images too small to need one
  */
-export function makeCopies(sources = candidateSources(), { force = false } = {}) {
+export function makeCopies(sources = candidateSources(), { refresh = false, force = false } = {}) {
     const run = async () => {
-        const counts = { made: 0, skipped: 0, failed: 0 };
+        const counts = { made: 0, current: 0, skipped: 0, failed: 0 };
         const added = {};
         for (const src of sources) {
-            if (!force && (registry[src] || checked.has(src))) continue;
+            if (!force && registry[src] && (!refresh || await isCurrent(src, registry[src]))) {
+                counts.current++;
+                continue;
+            }
+            if (!force && !refresh && checked.has(src)) continue;
             checked.add(src);
             try {
                 const others = Object.entries({ ...registry, ...added }).filter(([original]) => original !== src);
@@ -222,8 +241,8 @@ async function openSettings() {
     if (choice !== "scan" && choice !== "remake") return;
     ui.notifications.info("Making lightweight image copies… this can take a moment for very large images.");
     checked.clear();
-    const counts = await makeCopies(candidateSources(), { force: choice === "remake" });
-    ui.notifications.info(`Lightweight images: ${counts.made} made, ${counts.skipped} not needed, ${counts.failed} failed.`);
+    const counts = await makeCopies(candidateSources(), { refresh: true, force: choice === "remake" });
+    ui.notifications.info(`Lightweight images: ${counts.made} made, ${counts.current} already up to date, ${counts.skipped} not needed (small), ${counts.failed} failed.`);
 }
 
 /* -------------------------------------------- */

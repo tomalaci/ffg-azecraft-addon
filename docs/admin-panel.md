@@ -9,8 +9,9 @@ touch first and waits for confirmation.
 - **Replace Star Wars placeholder art:** actors and placed tokens still showing the system's Star
   Wars placeholders or the generic silhouette get the addon's default art (see
   [default-art.md](default-art.md)). Shows the count per type first.
-- **Lightweight portraits:** remake the WebP copies of every squad member's and Person of Note's
-  portrait, or make missing copies for all actors (see [lightweight-images.md](lightweight-images.md)).
+- **Lightweight portraits:** *Update squad portraits* makes the WebP copies of squad members' and
+  People of Note's portraits that are missing or whose original changed (the rest are reported as up
+  to date), or make missing copies for all actors (see [lightweight-images.md](lightweight-images.md)).
 - **Conversion settings:** the WebP quality used by *Convert* (default 0.9: generous, keeps
   battlemaps crisp).
 
