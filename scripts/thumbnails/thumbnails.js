@@ -121,8 +121,11 @@ async function fileSize(src) {
     }
 }
 
-/** Make and upload the copy of one image. Returns its registry entry, or null if not worth it. */
-async function makeCopy(src) {
+/**
+ * Make and upload the copy of one image. Returns its registry entry, or null if not worth it.
+ * @param {Set<string>} taken  copy paths other originals use (so no copy overwrites another)
+ */
+async function makeCopy(src, taken) {
     const bytes = await fileSize(src);
     if (bytes && !worthCopying({ bytes })) return null;
 
@@ -139,7 +142,7 @@ async function makeCopy(src) {
         const blob = await canvas.convertToBlob({ type: "image/webp", quality: QUALITY });
         if (bytes && blob.size >= bytes) return null;
 
-        const { directory, name } = copyPath(game.world.id, src);
+        const { directory, name } = copyPath(game.world.id, src, taken);
         await ensureDirectory(directory);
         const file = new File([blob], name, { type: "image/webp" });
         const result = await foundry.applications.apps.FilePicker.implementation.upload("data", directory, file, {}, { notify: false });
@@ -166,7 +169,8 @@ export function makeCopies(sources = candidateSources(), { force = false } = {})
             if (!force && (registry[src] || checked.has(src))) continue;
             checked.add(src);
             try {
-                const entry = await makeCopy(src);
+                const others = Object.entries({ ...registry, ...added }).filter(([original]) => original !== src);
+                const entry = await makeCopy(src, new Set(others.map(([, e]) => normalizeSrc(e.thumb))));
                 if (entry) {
                     added[src] = entry;
                     counts.made++;

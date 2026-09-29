@@ -71,13 +71,18 @@ export function hash(text) {
 /**
  * Where the copy of an image is stored: next to the original as "Name.thumb.webp" (so folders stay
  * tidy), or in the world's azecraft-thumbs folder for originals inside Foundry's or a package's
- * folders.
+ * folders. `taken`: copy paths other originals already use.
  */
-export function copyPath(worldId, src) {
+export function copyPath(worldId, src, taken = new Set()) {
     const path = normalizeSrc(src);
     const slash = path.lastIndexOf("/");
     const file = path.slice(slash + 1).replace(/\.[^.]+$/, "") || "image";
-    if (slash > 0 && !PACKAGE_ROOTS.test(path)) return { directory: path.slice(0, slash), name: `${file}.thumb.webp` };
+    if (slash > 0 && !PACKAGE_ROOTS.test(path)) {
+        const directory = path.slice(0, slash);
+        // "Name.png" and "Name.jpg" side by side: the second keeps its extension in the copy's name.
+        const name = taken.has(`${directory}/${file}.thumb.webp`) ? `${path.slice(slash + 1)}.thumb.webp` : `${file}.thumb.webp`;
+        return { directory, name };
+    }
     const base = file.replace(/[^a-z0-9_-]+/gi, "-").slice(0, 40) || "image";
     return { directory: `worlds/${worldId}/azecraft-thumbs`, name: `${hash(path)}-${base}.webp` };
 }

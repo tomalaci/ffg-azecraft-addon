@@ -62,3 +62,9 @@ test("originalOf maps a copy back to its original (form data must never save a c
     assert.equal(originalOf(registry, "worlds/x/Mass Effect/a.png"), null);
     assert.equal(originalOf(registry, ""), null);
 });
+
+test("copyPath keeps the extension when another original already has the plain copy name", () => {
+    const taken = new Set(["worlds/x/art/portrait.thumb.webp"]);
+    assert.deepEqual(copyPath("x", "worlds/x/art/portrait.jpg", taken), { directory: "worlds/x/art", name: "portrait.jpg.thumb.webp" });
+    assert.deepEqual(copyPath("x", "worlds/x/art/portrait.png"), { directory: "worlds/x/art", name: "portrait.thumb.webp" });
+});

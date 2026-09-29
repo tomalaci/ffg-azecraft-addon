@@ -12,7 +12,7 @@
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
 import { formatBytes } from "../perf/perf-core.js";
-import { decodePath, extension, isConvertible, isImage } from "./asset-core.js";
+import { decodePath, extension, isConvertible, isImage, isUnusedCandidate } from "./asset-core.js";
 import { browse, convertToWebp, copyTo, fileSize, findReferences, listFiles, referenceIndex, registerAssetSettings, relink } from "./asset-ops.js";
 import { replacePlaceholderArt } from "../default-art/default-art.js";
 import { candidateSources, makeCopies } from "../thumbnails/thumbnails.js";
@@ -366,7 +366,7 @@ export class AdminPanelApp extends SceneSpaceApp {
         const root = this.unusedRoot;
         await this.#run(`Looking for unused files in ${root}…`, async () => {
             const [{ files, folders }, refs] = await Promise.all([listFiles(root), referenceIndex()]);
-            this.unused = files.filter(file => !refs.get(file));
+            this.unused = files.filter(file => isUnusedCandidate(file) && !refs.get(file));
             await withConcurrency(this.unused.filter(file => !this.sizes.has(file)), 8, async file => this.sizes.set(file, await fileSize(file)));
             this.unused.sort((a, b) => (this.sizes.get(b) ?? 0) - (this.sizes.get(a) ?? 0));
             ui.notifications.info(`Scanned ${files.length} file(s) in ${folders} folder(s): ${this.unused.length} unused.`);

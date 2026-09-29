@@ -39,11 +39,12 @@ files for those). Tick files to convert them in one go.
 
 ## Unused files
 
-Scan a folder (sub-folders included) for files that no world document (actors, items, Scenes,
+Scan a folder (sub-folders included) for image, video and audio files that no world document (actors, items, Scenes,
 journals, playlists, chat…), no world setting (any module's) and no world compendium uses, largest
 first, with their total size. **Copy paths** copies the list, to delete the files on the server by
 hand (Foundry's API cannot delete files). Originals left behind by a conversion or move show up
-here. Check before deleting: files used only by other modules' compendiums, or by macros that build
+here. A world's database (`world.json`, `data/`) and compendium `packs/` are never listed. Performance
+reports in chat are not relinked, so they keep naming the files that were measured. Check before deleting: files used only by other modules' compendiums, or by macros that build
 paths in code, are not detected.
 
 ## How it works (developers)

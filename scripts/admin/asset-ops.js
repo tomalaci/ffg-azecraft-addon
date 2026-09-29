@@ -8,7 +8,7 @@
  * Compendium packs are not changed.
  */
 
-import { decodePath, mentionsPath, optimizedPath, replacePathDeep, replacePathInString } from "./asset-core.js";
+import { collectAssetPaths, decodePath, mentionsPath, optimizedPath, replacePathDeep, replacePathInString } from "./asset-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 
@@ -44,6 +44,19 @@ function ownSource(doc) {
     return source;
 }
 
+/**
+ * The data a relink may change: a document's own data minus records of the past (performance
+ * reports list the files a player measured; renaming them there would falsify the report).
+ */
+function relinkableSource(doc) {
+    const source = ownSource(doc);
+    if (source.flags?.[MODULE_ID]?.perfReport) {
+        source.flags = { ...source.flags, [MODULE_ID]: { ...source.flags[MODULE_ID] } };
+        delete source.flags[MODULE_ID].perfReport;
+    }
+    return source;
+}
+
 function describe(doc) {
     const parent = doc.parent ? `${doc.parent.name ?? doc.parent.documentName} › ` : "";
     return `${doc.documentName}: ${parent}${doc.name ?? doc.id}`;
@@ -58,7 +71,7 @@ export function findReferences(paths) {
     const wanted = paths.map(decodePath);
     const result = new Map(wanted.map(path => [path, []]));
     for (const doc of allDocuments()) {
-        const source = ownSource(doc);
+        const source = relinkableSource(doc);
         const text = JSON.stringify(source);
         for (const path of wanted) {
             if (!mentionsPath(text, path)) continue;
@@ -73,20 +86,8 @@ export function findReferences(paths) {
     return result;
 }
 
-const ASSET_PATTERN = /"([^"]+\.(?:png|jpe?g|webp|gif|avif|svg|bmp|webm|mp4|m4v|ogg|oga|mp3|wav|flac|m4a|opus))"/gi;
-const HTML_SRC_PATTERN = /(?:src|href)=\\"([^"\\]+)\\"/g;
-
 function countPaths(counts, source) {
-    const text = JSON.stringify(source);
-    const seen = new Set();
-    for (const pattern of [ASSET_PATTERN, HTML_SRC_PATTERN]) {
-        for (const match of text.matchAll(pattern)) {
-            const path = decodePath(match[1]).split(/[?#]/)[0].replace(/^\/+/, "");
-            if (seen.has(path)) continue;
-            seen.add(path);
-            counts.set(path, (counts.get(path) ?? 0) + 1);
-        }
-    }
+    for (const path of collectAssetPaths(source)) counts.set(path, (counts.get(path) ?? 0) + 1);
 }
 
 /**
@@ -169,7 +170,7 @@ export async function relink(oldPath, newPath) {
     for (const { doc } of refs) {
         if (!doc) continue;
         try {
-            const source = ownSource(doc);
+            const source = relinkableSource(doc);
             const { data } = replacePathDeep(source, oldPath, newPath);
             const diff = foundry.utils.diffObject(source, data);
             if (!Object.keys(diff).length) continue;
@@ -261,7 +262,10 @@ export async function convertToWebp(path, { quality = 0.9, maxSide = 0 } = {}) {
         if (webp.type !== "image/webp") throw new Error("This browser cannot encode WebP; use Chrome, Edge or a recent Firefox.");
         // Files cannot be deleted afterwards, so do not upload a copy that saves nothing.
         if (webp.size >= blob.size * 0.95) return { path: null, skipped: true, before: blob.size, after: webp.size, width, height };
-        const target = optimizedPath(path);
+        // "Name.png" and "Name.jpg" in one folder would share "Name.optimized.webp": uploads overwrite.
+        let target = optimizedPath(path);
+        if (await exists(target.path)) target = optimizedPath(path, { withExtension: true });
+        if (await exists(target.path)) throw new Error(`${target.path} already exists`);
         const saved = await upload(target.directory, target.name, webp, "image/webp");
         return { path: saved, skipped: false, before: blob.size, after: webp.size, width, height };
     } finally {
