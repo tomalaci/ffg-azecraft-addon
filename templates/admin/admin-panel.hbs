@@ -1,0 +1,109 @@
+<div class="azap">
+    <nav class="azap-tabs">
+        <button type="button" data-action="switchTab" data-tab="actions" class="{{#if (eq tab "actions")}}azap-tab--on{{/if}}"><i class="fa-solid fa-bolt" inert></i> Quick actions</button>
+        <button type="button" data-action="switchTab" data-tab="assets" class="{{#if (eq tab "assets")}}azap-tab--on{{/if}}"><i class="fa-solid fa-folder-tree" inert></i> Assets</button>
+        <button type="button" data-action="switchTab" data-tab="large" class="{{#if (eq tab "large")}}azap-tab--on{{/if}}"><i class="fa-solid fa-weight-hanging" inert></i> Large files</button>
+        <button type="button" data-action="switchTab" data-tab="archive" class="{{#if (eq tab "archive")}}azap-tab--on{{/if}}"><i class="fa-solid fa-box-archive" inert></i> Archive{{#if archiveCount}} ({{archiveCount}}){{/if}}</button>
+        {{#if busy}}<span class="azap-busy"><i class="fa-solid fa-spinner fa-spin" inert></i> {{busy}}</span>{{/if}}
+    </nav>
+
+    <div class="azap-scroll">
+    {{#if (eq tab "actions")}}
+        <section class="azap-card">
+            <h3><i class="fa-solid fa-user-astronaut" inert></i> Replace Star Wars placeholder art</h3>
+            <p>Actors and placed tokens still showing the system's Star Wars placeholders (stormtrooper, Vader…) or the generic silhouette get the addon's default art. You see how many first and confirm; art someone chose is never changed.</p>
+            <button type="button" data-action="replaceArt"><i class="fa-solid fa-wand-magic-sparkles" inert></i> Check and replace…</button>
+        </section>
+        <section class="azap-card">
+            <h3><i class="fa-solid fa-images" inert></i> Lightweight portraits</h3>
+            <p>Large actor images are shown as lightweight WebP copies (the originals stay). {{copyCount}} image(s) have a copy.</p>
+            <button type="button" data-action="optimizeSquads"><i class="fa-solid fa-people-group" inert></i> Remake squad portraits…</button>
+            <button type="button" data-action="optimizeAll"><i class="fa-solid fa-magnifying-glass" inert></i> Make missing copies for all actors</button>
+        </section>
+        <section class="azap-card">
+            <h3><i class="fa-solid fa-sliders" inert></i> Conversion settings</h3>
+            <div class="form-group"><label>WebP quality</label><div class="form-fields"><input type="number" min="0.5" max="1" step="0.01" value="{{quality}}" data-azap-setting="assetWebpQuality"></div>
+                <p class="hint">Used by Assets → Convert. 0.9 (default) keeps battlemaps crisp; lower saves more space.</p></div>
+        </section>
+    {{/if}}
+
+    {{#if (eq tab "assets")}}
+        <div class="azap-pathbar">
+            <button type="button" data-action="up" {{disabled (not canUp)}} data-tooltip="Up one folder"><i class="fa-solid fa-arrow-up" inert></i></button>
+            <span class="azap-crumbs">{{#each crumbs as |c|}}<a data-action="open" data-path="{{c.path}}">{{c.name}}</a>{{#unless @last}} / {{/unless}}{{/each}}</span>
+            <input type="text" value="{{path}}" data-azap-path aria-label="Folder path">
+        </div>
+        <div class="azap-bulk">
+            <span><span data-azap-selected>{{selectedCount}}</span> selected</span>
+            <button type="button" data-action="convert"><i class="fa-solid fa-file-image" inert></i> Convert selected to WebP…</button>
+            <button type="button" data-action="move"><i class="fa-solid fa-folder-open" inert></i> Move selected…</button>
+        </div>
+        <ul class="azap-list">
+            {{#each dirs as |d|}}
+            <li class="azap-dir"><a data-action="open" data-path="{{d.path}}"><i class="fa-solid fa-folder" inert></i> {{d.name}}</a></li>
+            {{/each}}
+            {{#each files as |f|}}
+            <li class="azap-file {{#if f.heavy}}azap-heavy{{/if}}">
+                <input type="checkbox" data-action="select" data-path="{{f.path}}" {{checked f.selected}} aria-label="Select {{f.name}}">
+                <span class="azap-name" data-tooltip="{{f.path}}">{{f.name}}</span>
+                <span class="azap-used" data-tooltip="Documents using this file">{{#if f.used}}used ×{{f.used}}{{else}}unused{{/if}}</span>
+                <span class="azap-size">{{f.size}}</span>
+                <span class="azap-tools">
+                    {{#if f.convertible}}<button type="button" data-action="convert" data-path="{{f.path}}" data-tooltip="Convert to WebP"><i class="fa-solid fa-file-image" inert></i></button>{{/if}}
+                    <button type="button" data-action="move" data-path="{{f.path}}" data-tooltip="Move to another folder"><i class="fa-solid fa-folder-open" inert></i></button>
+                </span>
+            </li>
+            {{/each}}
+            {{#unless (or dirs.length files.length)}}<li class="azap-muted">Empty folder.</li>{{/unless}}
+        </ul>
+    {{/if}}
+
+    {{#if (eq tab "large")}}
+        <div class="azap-pathbar">
+            <label>Folder <input type="text" value="{{largeRoot}}" data-azap-large-root></label>
+            <label>Over <input type="number" min="0.1" step="0.5" value="{{largeMB}}" data-azap-setting="assetLargeMB" class="azap-num"> MB</label>
+            <label><input type="checkbox" {{checked skipWebp}} data-azap-setting="assetSkipWebp"> Skip .webp</label>
+            <button type="button" data-action="scanLarge"><i class="fa-solid fa-magnifying-glass" inert></i> Scan</button>
+        </div>
+        {{#if large}}
+        <div class="azap-bulk">
+            <span><span data-azap-selected>{{selectedCount}}</span> selected</span>
+            <button type="button" data-action="convert"><i class="fa-solid fa-file-image" inert></i> Convert selected to WebP…</button>
+        </div>
+        <ul class="azap-list">
+            {{#each large as |f|}}
+            <li class="azap-file azap-heavy">
+                <input type="checkbox" data-action="select" data-path="{{f.path}}" {{checked f.selected}} aria-label="Select {{f.name}}">
+                <span class="azap-name" data-tooltip="{{f.path}}"><a data-action="open" data-path="{{f.path}}">{{f.path}}</a></span>
+                <span class="azap-used">{{#if f.used}}used ×{{f.used}}{{else}}unused{{/if}}</span>
+                <span class="azap-size">{{f.size}}</span>
+                <span class="azap-tools">{{#if f.convertible}}<button type="button" data-action="convert" data-path="{{f.path}}" data-tooltip="Convert to WebP"><i class="fa-solid fa-file-image" inert></i></button>{{/if}}</span>
+            </li>
+            {{else}}
+            <li class="azap-muted">No files over this size.</li>
+            {{/each}}
+        </ul>
+        {{else}}
+        <p class="azap-muted">Scan a folder to list every file over the size, largest first (sub-folders included).</p>
+        {{/if}}
+    {{/if}}
+
+    {{#if (eq tab "archive")}}
+        <p>Files replaced by a conversion or move. Nothing uses them any more; Foundry cannot delete files, so delete them on the server by hand (for example in the file browser), then remove them from this list.</p>
+        {{#if archive.length}}
+        <button type="button" data-action="copyArchive"><i class="fa-solid fa-copy" inert></i> Copy paths</button>
+        <ul class="azap-list">
+            {{#each archive as |a|}}
+            <li class="azap-file">
+                <span class="azap-name" data-tooltip="{{a.path}}">{{a.path}}</span>
+                <span class="azap-used">{{a.reason}} {{a.when}}</span>
+                <span class="azap-tools"><button type="button" data-action="unarchive" data-path="{{a.path}}" data-tooltip="Remove from the list (after deleting it)"><i class="fa-solid fa-check" inert></i></button></span>
+            </li>
+            {{/each}}
+        </ul>
+        {{else}}
+        <p class="azap-muted">Nothing archived.</p>
+        {{/if}}
+    {{/if}}
+    </div>
+</div>

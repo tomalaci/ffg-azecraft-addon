@@ -1,0 +1,122 @@
+/* Admin Panel (scripts/admin/admin-panel.js). */
+
+#azecraft-admin-panel .window-content {
+    padding: 0;
+    overflow: hidden;
+}
+
+.azap {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.azap-tabs {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(116, 200, 255, 0.25);
+}
+
+.azap-tabs button {
+    flex: none;
+    width: auto;
+}
+
+.azap-tab--on {
+    border-color: #ff9d42 !important;
+    color: #ff9d42 !important;
+}
+
+.azap-busy {
+    margin-left: auto;
+    color: #ff9d42;
+}
+
+.azap-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.azap-card {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border: 1px solid rgba(116, 200, 255, 0.25);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.azap-card h3 {
+    margin: 0 0 4px;
+    border: 0;
+    font-size: 15px;
+}
+
+.azap-card button, .azap-bulk button, .azap-pathbar button {
+    width: auto;
+}
+
+.azap-pathbar, .azap-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.azap-pathbar input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+}
+
+.azap-num { width: 5em; }
+
+.azap-crumbs a { cursor: pointer; }
+.azap-crumbs a:hover { text-decoration: underline; }
+
+.azap-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.azap-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+    padding: 1px 4px;
+    border-bottom: 1px solid rgba(116, 200, 255, 0.1);
+}
+
+.azap-list li:hover { background: rgba(114, 212, 255, 0.06); }
+
+.azap-dir a { cursor: pointer; }
+.azap-dir i { color: #ff9d42; }
+
+.azap-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.azap-name a { cursor: pointer; }
+.azap-used { flex: none; font-size: 11px; opacity: 0.7; }
+.azap-size { flex: none; width: 6em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.azap-heavy .azap-size { color: #ff9d42; }
+.azap-tools { display: flex; flex: none; gap: 3px; }
+.azap-tools button { width: 26px; height: 24px; padding: 0; }
+.azap-muted { opacity: 0.7; }
+
+.azap-preflight {
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+.azap-preflight ul { margin: 2px 0 4px; }

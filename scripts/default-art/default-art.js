@@ -92,6 +92,11 @@ async function offerReplacement(config, previous = null, { quietWhenNone = false
     return true;
 }
 
+/** Admin Panel: count and (after confirmation) replace Star Wars placeholders with the configured art. */
+export function replacePlaceholderArt() {
+    return offerReplacement(readConfig());
+}
+
 export class DefaultArtConfig extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "azecraft-default-art",

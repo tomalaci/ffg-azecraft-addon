@@ -76,7 +76,7 @@ function watchDocument() {
 /* -------------------------------------------- */
 
 /** Actor images worth checking: portraits and dashboard full-body art. */
-function candidateSources() {
+export function candidateSources() {
     const sources = new Set();
     for (const actor of game.actors) {
         for (const src of [actor.img, actor.getFlag(MODULE_ID, "dashboard")?.fullArt]) {

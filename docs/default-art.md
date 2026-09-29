@@ -32,6 +32,8 @@ Configure Settings → FFG Azecraft Addon → **Default actor art** → *Configu
 
 ## Replacing placeholders on existing actors (GM)
 
+Also available in the toolbar's **Admin Panel → Quick actions**.
+
 **Replace placeholders on existing actors** (in the same window) looks for actors whose portrait
 or prototype token is still a placeholder, and for placed tokens on any Scene that are. A
 placeholder is the system's Star Wars art, Foundry's generic silhouette, or this addon's art. The

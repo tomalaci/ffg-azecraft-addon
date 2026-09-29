@@ -13,6 +13,7 @@ import { initToolbar, refreshToolbar, registerToolbarButton } from "./scripts/to
 import { initPerfCollector } from "./scripts/perf/perf-collector.js";
 import { initPerfWindow, UIPerformanceApp } from "./scripts/perf/perf-window.js";
 import { initVisualEffects } from "./scripts/perf/visual-effects.js";
+import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -41,6 +42,21 @@ Hooks.once("init", () => {
         isActive: () => Boolean(foundry.applications.instances.get("azecraft-ui-performance")),
         onClick: async () => {
             await UIPerformanceApp.toggle();
+            refreshToolbar();
+        }
+    });
+    initAdminPanel();
+    registerToolbarButton({
+        id: "admin-panel",
+        order: 40,
+        gmOnly: true,
+        label: "Admin Panel",
+        icon: "fa-solid fa-screwdriver-wrench",
+        tooltip: "GM tools: fix placeholder art, optimize portraits, manage and convert assets",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-admin-panel")),
+        onClick: async () => {
+            if (!game.user.isGM) return;
+            await AdminPanelApp.toggle();
             refreshToolbar();
         }
     });
