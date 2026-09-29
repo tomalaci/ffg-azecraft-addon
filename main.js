@@ -7,11 +7,15 @@ import { initDefaultArt } from "./scripts/default-art/default-art.js";
 import { initPowerTabs } from "./scripts/powers/power-tabs.js";
 import { initAmmo } from "./scripts/ammo/ammo.js";
 import { initApplyDamage } from "./scripts/combat/apply-damage.js";
-import { initSheetSize } from "./scripts/sheet-size.js";
+import { initSheetPatches } from "./scripts/sheet-patches.js";
 import { initThumbnails } from "./scripts/thumbnails/thumbnails.js";
+import { initPerfMonitor } from "./scripts/perf/perf-monitor.js";
+import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
+    initPerfMonitor();
+    initVisualEffects();
 
     patchOverrideActorTemplates();
     patchRollPowerModifiers();
@@ -22,6 +26,6 @@ Hooks.once("init", () => {
     initPowerTabs();
     initAmmo();
     initApplyDamage();
-    initSheetSize();
+    initSheetPatches();
     initThumbnails();
 });

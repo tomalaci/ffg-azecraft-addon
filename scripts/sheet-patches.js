@@ -1,5 +1,7 @@
 /**
- * Keep an actor sheet's size across re-renders.
+ * Fixes for starwarsffg actor sheets (all actor types).
+ *
+ * 1. Keep an actor sheet's size across re-renders.
  *
  * starwarsffg's actor sheets set their size in getData from a size they remember only when their
  * own form submits or item hooks fire. Updates made by addon buttons (power loadouts,
@@ -8,9 +10,14 @@
  *
  * (Not done with pre*Item hooks: the system only registers its own item hooks, including drop
  * validation, when no other module has registered those hooks yet.)
+ *
+ * 2. Compute the sheet's data once, not once per skill. The system's activateListeners draws each
+ *    skill's dice pool by calling `this.getData({})` for every skill row (35+ full sheet data
+ *    builds per render), which made opening and re-rendering sheets slow. The calls all start
+ *    synchronously inside activateListeners, so they now share one result for that render.
  */
 
-const PATCHED = Symbol("azecraftSheetSize");
+const PATCHED = Symbol("azecraftSheetPatches");
 
 function patchSheets() {
     const classes = new Set(Object.values(CONFIG.Actor.sheetClasses ?? {})
@@ -32,9 +39,33 @@ function patchSheets() {
         wrapped[PATCHED] = true;
         proto.getData = wrapped;
     }
+
+    for (const cls of classes) {
+        const proto = cls.prototype;
+        if (!Object.hasOwn(proto, "activateListeners") || proto.activateListeners[PATCHED]) continue;
+        const original = proto.activateListeners;
+        const wrapped = function (html) {
+            // Share one getData() among the per-skill calls made while listeners are set up.
+            const ownGetData = Object.hasOwn(this, "getData") ? this.getData : undefined;
+            const getData = this.getData;
+            let shared = null;
+            this.getData = function (...args) {
+                shared ??= getData.apply(this, args);
+                return shared;
+            };
+            try {
+                return original.call(this, html);
+            } finally {
+                if (ownGetData) this.getData = ownGetData;
+                else delete this.getData;
+            }
+        };
+        wrapped[PATCHED] = true;
+        proto.activateListeners = wrapped;
+    }
 }
 
-export function initSheetSize() {
+export function initSheetPatches() {
     // The system registers its sheets during its own (async) init; patch once they exist.
     Hooks.once("setup", patchSheets);
     Hooks.once("ready", patchSheets);
