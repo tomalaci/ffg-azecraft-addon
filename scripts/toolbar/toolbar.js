@@ -5,16 +5,19 @@
  * - Players: Foundry's player list, hidden otherwise, drops down under the button.
  * - Other features add their own buttons with registerToolbarButton() (UI Performance, Admin Panel).
  *
- * It is independent of the dashboard, so it stays when the dashboard is hidden or not on a Scene.
- * With the framed dashboard shown, it sits inside the dashboard's top rail, right of the squad
- * column (the rail is sized from the --aztb-top / --aztb-bottom variables set here).
+ * The toolbar sits in a top rail across the screen (always there, also with the dashboard hidden or
+ * not on a Scene), right of where the dashboard's squad column ends, so it never moves when the
+ * dashboard is turned on or off.
  */
 
 const MODULE_ID = "ffg-azecraft-addon";
 const GAP = 12;
 
+const EDGE_KEY = "azecraft.toolbarEdge";
+
 const buttons = [];
 let element = null;
+let rail = null;
 
 /**
  * Add a button to the toolbar.
@@ -43,16 +46,36 @@ function visibleRect(selector) {
 }
 
 /**
- * Put the toolbar right of the scene list, level with the scene controls; with the framed dashboard
- * shown, in its top rail right of the squad column's edge.
+ * Where the dashboard's squad column ends (its layout is kept while the dashboard is hidden). Without
+ * a dashboard on the Scene, the last known edge on this computer.
  */
+function columnEdge() {
+    const dashboard = document.getElementById("azecraft-mission-dashboard");
+    const left = parseFloat(dashboard?.style.getPropertyValue("--azd-left"));
+    const width = parseFloat(dashboard?.style.getPropertyValue("--azd-rail-width"));
+    if (Number.isFinite(left) && Number.isFinite(width)) {
+        const edge = Math.round(left + width + 12);
+        try {
+            localStorage.setItem(EDGE_KEY, String(edge));
+        } catch {
+            // Storage unavailable: fine, only a fallback.
+        }
+        return edge;
+    }
+    try {
+        return Number(localStorage.getItem(EDGE_KEY)) || 0;
+    } catch {
+        return 0;
+    }
+}
+
+/** Put the toolbar in the top rail, right of the scene list and the dashboard's squad column. */
 function position() {
     if (!element) return;
     const controls = visibleRect("#scene-controls");
     const edges = ["#scene-navigation-active", "#scene-navigation-expand", "#scene-navigation"].map(visibleRect).filter(Boolean);
-    const column = visibleRect("#azecraft-mission-dashboard.azd--framed:not(.azd--hidden) .azd-frame-left");
-    if (column) edges.push(column);
-    const left = Math.round(Math.max(controls?.right ?? 0, ...edges.map(rect => rect.right)) + GAP);
+    const edge = columnEdge();
+    const left = Math.round(Math.max(controls?.right ?? 0, edge, ...edges.map(rect => rect.right)) + GAP);
     const top = Math.round(controls?.top ?? edges[0]?.top ?? GAP);
     element.style.left = `${left}px`;
     element.style.top = `${top}px`;
@@ -60,13 +83,15 @@ function position() {
     element.classList.remove("aztb--compact");
     const sidebar = visibleRect("#sidebar");
     if (sidebar && element.getBoundingClientRect().right > sidebar.left - GAP) element.classList.add("aztb--compact");
-    // The dashboard's top rail is sized around the toolbar (same margin above and below it).
+    // The top rail: as tall as the toolbar plus the same margin above and below, up to the sidebar.
     const rect = element.getBoundingClientRect();
     const root = document.documentElement.style;
     if (rect.height) {
         root.setProperty("--aztb-top", `${Math.round(rect.top)}px`);
         root.setProperty("--aztb-bottom", `${Math.round(rect.bottom)}px`);
     }
+    root.setProperty("--aztb-rail-right", `${Math.max(0, Math.round(window.innerWidth - (sidebar?.left ?? window.innerWidth)))}px`);
+    root.setProperty("--aztb-edge", `${Math.max(0, left - GAP)}px`);
     placePlayers();
 }
 
@@ -101,7 +126,15 @@ function mount() {
     element = document.createElement("nav");
     element.id = "azecraft-toolbar";
     element.setAttribute("aria-label", "Azecraft");
-    document.getElementById("interface")?.append(element) ?? document.body.append(element);
+    // In <body>, above Foundry's interface layers (its drop-down must cover them).
+    document.body.append(element);
+    // The rail goes under everything in the interface: first child, below the dashboard and core UI.
+    rail = document.createElement("div");
+    rail.id = "azecraft-toprail";
+    rail.setAttribute("aria-hidden", "true");
+    const ui = document.getElementById("interface");
+    if (ui) ui.prepend(rail);
+    else document.body.prepend(rail);
     element.addEventListener("click", event => {
         const id = event.target.closest("[data-aztb]")?.dataset.aztb;
         buttons.find(button => button.id === id)?.onClick();
@@ -110,7 +143,7 @@ function mount() {
     refreshToolbar();
     position();
     const observer = new ResizeObserver(() => position());
-    for (const selector of ["#scene-navigation", "#scene-controls"]) {
+    for (const selector of ["#scene-navigation", "#scene-controls", "#sidebar"]) {
         const node = document.querySelector(selector);
         if (node) observer.observe(node);
     }

@@ -22,7 +22,7 @@ body.azsp-active #destiny-tracker {
     position: fixed;
     left: var(--azsp-left, 16px);
     bottom: var(--azsp-bottom, 120px);
-    z-index: 2;
+    z-index: 3;
     width: var(--azsp-width, 330px);
     margin: 0;
     padding: 0;
