@@ -32,7 +32,9 @@ The module:
   [docs/lightweight-images.md](docs/lightweight-images.md).
 - A **toolbar** next to the Scene list: Dashboard on/off, Players, **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, the **Admin
-  Panel**; plus a *Reduce visual effects* option. See [docs/performance.md](docs/performance.md).
+  Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink documents, large
+  files); plus a *Reduce visual effects* option. See [docs/performance.md](docs/performance.md) and
+  [docs/admin-panel.md](docs/admin-panel.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).
@@ -86,6 +88,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 
 `scripts/thumbnails/`
 : Lightweight copies of large images.
+
+`scripts/toolbar/`, `scripts/perf/`, `scripts/admin/`, `scripts/ui/`
+: Toolbar, UI Performance window, Admin Panel, and the scene-space window base.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.
