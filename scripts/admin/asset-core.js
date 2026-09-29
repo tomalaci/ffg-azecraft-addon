@@ -3,6 +3,8 @@
  * replacing one path with another everywhere it is used, and naming optimized copies.
  */
 
+import { plainPath, urlPath, withoutQuery } from "../paths.js";
+
 export const ASSET_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "gif", "avif", "svg", "bmp", "webm", "mp4", "m4v", "ogg", "oga", "mp3", "wav", "flac", "m4a", "opus"];
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp", "gif", "avif", "bmp"]);
 /** Formats worth converting to WebP (not SVG/GIF/WebP itself). */
@@ -17,7 +19,7 @@ const QUOTED_PATH = new RegExp(`(["'])([^"'<>\\n\\\\]*?${EXT})(?:[?#][^"'<>\\s]*
 const BARE_PATH = new RegExp(`[^"'\\s<>()=,\\\\]+?${EXT}(?=["'\\s<>),?#\\\\]|$)`, "gi");
 
 export function extension(path) {
-    return String(path ?? "").split(/[?#]/)[0].split(".").pop()?.toLowerCase() ?? "";
+    return withoutQuery(path).split(".").pop()?.toLowerCase() ?? "";
 }
 
 export function isImage(path) {
@@ -43,16 +45,12 @@ export function isUnusedCandidate(path) {
 
 /** Decode a path for comparison ("Mass%20Effect" -> "Mass Effect"); invalid escapes stay as written. */
 export function decodePath(path) {
-    try {
-        return decodeURIComponent(String(path ?? ""));
-    } catch {
-        return String(path ?? "");
-    }
+    return plainPath(path);
 }
 
 /** Normalized form of a found path: decoded, without origin, query, hash or leading slash. */
 function cleanPath(path) {
-    return decodePath(path.trim().split(/[?#]/)[0]).replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "").replace(/^\/+/, "");
+    return decodePath(withoutQuery(path.trim())).replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]+/i, "").replace(/^\/+/, "");
 }
 
 /** Asset-like paths (by extension) found in a string, e.g. an HTML description or a src field. */
@@ -99,10 +97,13 @@ export function collectAssetPaths(data) {
     return found;
 }
 
-/** Every form a path may be written in: as is, URI-encoded, and with a leading slash. */
+/**
+ * Every form a path may be written in: plain, Foundry's URL form, the lighter encodeURI form (typed
+ * or pasted URLs), each with and without a leading slash.
+ */
 function pathForms(path) {
     const plain = decodePath(path).replace(/^\/+/, "");
-    const forms = new Set([plain, encodeURI(plain)]);
+    const forms = new Set([plain, urlPath(plain), encodeURI(plain)]);
     return [...forms].flatMap(form => [`/${form}`, form]);
 }
 
@@ -118,7 +119,7 @@ export function replacePathInString(value, oldPath, newPath) {
         if (!result.includes(form)) continue;
         const encoded = form !== decodePath(form);
         const slash = form.startsWith("/") ? "/" : "";
-        const target = slash + (encoded ? encodeURI(plainNew) : plainNew);
+        const target = slash + (encoded ? urlPath(plainNew) : plainNew);
         // Only whole paths: not followed by more path characters (so "a.png" does not hit "a.png.bak"
         // or a folder named "a.png").
         const escaped = form.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

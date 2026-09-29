@@ -94,3 +94,11 @@ test("isUnusedCandidate never offers world data or packs for deleting", () => {
     assert.equal(isUnusedCandidate("worlds/test/packs/npcs/000005.ldb"), false);
     assert.equal(isUnusedCandidate("modules/x/packs/art/a.png"), false);
 });
+
+test("relink finds and writes Foundry's URL form of names with apostrophes, &, # and spaces", () => {
+    const old = "worlds/w/Tali's A&B #1.png";
+    const stored = "worlds/w/Tali%27s%20A%26B%20%231.png";
+    assert.equal(mentionsPath(`<img src="${stored}">`, old), true);
+    assert.equal(replacePathInString(stored, old, "worlds/w/Tali's A&B #1.optimized.webp"), "worlds/w/Tali%27s%20A%26B%20%231.optimized.webp");
+    assert.equal(replacePathInString("worlds/w/Tali's A&B #1.png", old, "worlds/w/new one.webp"), "worlds/w/new one.webp");
+});

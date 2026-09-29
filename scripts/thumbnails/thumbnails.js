@@ -9,6 +9,7 @@
  *   and nothing in the actors' data changes.
  */
 
+import { urlPath } from "../paths.js";
 import { MAX_SIDE, QUALITY, copyPath, copySize, isCandidatePath, lookup, normalizeSrc, originalOf, worthCopying } from "./thumbnail-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -27,10 +28,11 @@ function enabled() {
 /** The lightweight copy to show for an image, or null. */
 export function imageCopyFor(src) {
     if (!enabled()) return null;
-    return lookup(registry, src, origin());
+    const copy = lookup(registry, src, origin());
+    return copy ? urlPath(copy) : null;
 }
 
-/** An image to display: its copy when one exists, otherwise the image itself. */
+/** An image to display: its copy (as a URL) when one exists, otherwise the image itself. */
 export function displaySrc(src) {
     return imageCopyFor(src) ?? src;
 }
@@ -114,7 +116,7 @@ async function ensureDirectory(directory) {
 
 async function fileSize(src) {
     try {
-        const response = await fetch(encodeURI(src), { method: "HEAD" });
+        const response = await fetch(urlPath(src), { method: "HEAD" });
         return Number(response.headers.get("content-length")) || 0;
     } catch {
         return 0;
@@ -129,7 +131,7 @@ async function makeCopy(src, taken) {
     const bytes = await fileSize(src);
     if (bytes && !worthCopying({ bytes })) return null;
 
-    const response = await fetch(encodeURI(src));
+    const response = await fetch(urlPath(src));
     if (!response.ok) return null;
     const bitmap = await createImageBitmap(await response.blob());
     try {
@@ -157,7 +159,7 @@ async function makeCopy(src, taken) {
 /** Whether a copy is still good: the copy file exists and the original has not changed size since. */
 async function isCurrent(src, entry) {
     try {
-        const [original, copy] = await Promise.all([src, entry.thumb].map(path => fetch(encodeURI(normalizeSrc(path)), { method: "HEAD" })));
+        const [original, copy] = await Promise.all([src, entry.thumb].map(path => fetch(urlPath(path), { method: "HEAD" })));
         return original.ok && copy.ok && Number(original.headers.get("content-length")) === entry.bytes;
     } catch {
         return false;

@@ -56,3 +56,8 @@ every world document and its embedded documents (`metadata.embedded`), finds ref
 with `diffObject` updates, converts with `createImageBitmap` → `OffscreenCanvas` → WebP, copies with
 `FilePicker.upload`, and builds the reference index (world documents, settings, world compendiums).
 `scripts/admin/admin-panel.js` is the window.
+
+Paths: Foundry stores and returns them URL-encoded (`Mass%20Effect`, `foundry.utils.encodeURL`), people
+type them plain. `scripts/paths.js` holds the only conversions: compare in plain form (`plainPath`),
+build URLs only with `urlPath` (identical to Foundry's encoding, so never encoded twice), and strip a
+query with `withoutQuery` (keeps a `#` or `?` inside a file name, so it is safe to apply twice).

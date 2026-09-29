@@ -12,6 +12,7 @@
  * snapshot every few seconds.
  */
 
+import { urlPath } from "../paths.js";
 import { FrameStats, SLOW_FRAME_MS, TimingTable, assetKind, formatBytes, largest, round, scriptOwner } from "./perf-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -251,7 +252,8 @@ export async function scanAssets({ fillSizes = true } = {}) {
         const missing = [...resources.values()].filter(r => !r.size && ["image", "video", "audio"].includes(r.kind));
         for (let i = 0; i < missing.length; i += 6) {
             await Promise.all(missing.slice(i, i + 6).map(async row => {
-                row.size = await headSize(encodeURI(row.name).replace(/%25/g, "%"));
+                // Other sites' URLs as they are; this server's paths in URL form (encoded once).
+                row.size = await headSize(/^[a-z]+:\/\//i.test(row.name) ? row.name : urlPath(row.name));
             }));
         }
     }

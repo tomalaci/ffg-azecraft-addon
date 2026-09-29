@@ -8,6 +8,7 @@
  * Compendium packs are not changed.
  */
 
+import { urlPath } from "../paths.js";
 import { collectAssetPaths, decodePath, mentionsPath, optimizedPath, replacePathDeep, replacePathInString } from "./asset-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -191,7 +192,7 @@ export async function relink(oldPath, newPath) {
 
 export async function fileSize(path) {
     try {
-        const response = await fetch(encodeURI(decodePath(path)), { method: "HEAD" });
+        const response = await fetch(urlPath(path), { method: "HEAD" });
         return response.ok ? Number(response.headers.get("content-length")) || 0 : -1;
     } catch {
         return 0;
@@ -235,7 +236,7 @@ async function upload(directory, name, blob, type) {
 }
 
 async function download(path) {
-    const response = await fetch(encodeURI(decodePath(path)));
+    const response = await fetch(urlPath(path));
     if (!response.ok) throw new Error(`Could not read ${path} (${response.status})`);
     return response.blob();
 }

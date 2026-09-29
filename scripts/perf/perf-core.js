@@ -1,6 +1,8 @@
 /**
- * Performance monitor statistics (pure, unit-tested). The browser side is perf-monitor.js.
+ * Performance monitor statistics (pure, unit-tested). The browser side is perf-collector.js.
  */
+
+import { withoutQuery } from "../paths.js";
 
 /** Frames longer than this (ms) count as slow (under 30 fps); longer than FREEZE_MS as a freeze. */
 export const SLOW_FRAME_MS = 34;
@@ -140,7 +142,7 @@ export function chartPath(values, width, height, max = null) {
 
 /** What kind of asset a URL is, by extension. */
 export function assetKind(url) {
-    const path = String(url ?? "").split(/[?#]/)[0].toLowerCase();
+    const path = withoutQuery(url).toLowerCase();
     if (/\.(png|jpe?g|webp|gif|avif|svg|bmp)$/.test(path)) return "image";
     if (/\.(webm|mp4|m4v|ogv)$/.test(path)) return "video";
     if (/\.(ogg|mp3|wav|flac|m4a|opus)$/.test(path)) return "audio";

@@ -16,6 +16,8 @@ export const MIN_SIDE = 2000;
 export const MAX_SIDE = 1400;
 export const QUALITY = 0.85;
 
+import { plainPath, withoutQuery } from "../paths.js";
+
 const SKIP_EXTENSIONS = /\.(svg|gif|webm|mp4)$/i;
 
 /**
@@ -27,13 +29,7 @@ export function normalizeSrc(src, origin = "") {
     if (!path || path.startsWith("data:") || path.startsWith("blob:")) return "";
     if (origin && path.startsWith(origin)) path = path.slice(origin.length);
     if (/^[a-z]+:\/\//i.test(path)) return "";
-    path = path.split(/[?#]/)[0].replace(/^\/+/, "");
-    try {
-        path = decodeURIComponent(path);
-    } catch {
-        // Keep the path as written.
-    }
-    return path;
+    return plainPath(withoutQuery(path).replace(/^\/+/, ""));
 }
 
 /** Whether an image could get a lightweight copy at all (by its path). */

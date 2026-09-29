@@ -68,3 +68,10 @@ test("copyPath keeps the extension when another original already has the plain c
     assert.deepEqual(copyPath("x", "worlds/x/art/portrait.jpg", taken), { directory: "worlds/x/art", name: "portrait.jpg.thumb.webp" });
     assert.deepEqual(copyPath("x", "worlds/x/art/portrait.png"), { directory: "worlds/x/art", name: "portrait.thumb.webp" });
 });
+
+test("normalizeSrc is safe to apply twice (a # in a file name is kept)", () => {
+    const once = normalizeSrc("worlds/x/Tali%27s%20A%26B%20%231.png?v=2");
+    assert.equal(once, "worlds/x/Tali's A&B #1.png");
+    assert.equal(normalizeSrc(once), once);
+    assert.deepEqual(copyPath("x", once), { directory: "worlds/x", name: "Tali's A&B #1.thumb.webp" });
+});
