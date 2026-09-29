@@ -1,12 +1,9 @@
 /**
  * The character sheet's "Adjust XP" (eraser icon on the XP log tab), replaced. Players record
- * spending there with a negative amount, but the system lowered the total XP along with the
- * available XP, so the total no longer showed all XP ever given. Now:
- *
- * - a positive amount adds to total and available (as before);
- * - a negative amount is spent XP: available goes down, the total stays.
- *
- * Either way it is logged like before: an "adjusted" entry with the reason.
+ * spending there, but the system changed the total XP along with the available XP, so the total no
+ * longer showed all XP ever given. Now it changes available XP only (negative: XP spent; positive:
+ * spent XP given back); the total is XP given, set by GMs in XP Management. It is logged like
+ * before: an "adjusted" entry with the reason.
  */
 
 import { logDate, xpStatus, xpSummary } from "./xp-core.js";
@@ -22,7 +19,7 @@ async function adjustXp(actor) {
                 <div class="form-fields"><input type="number" name="amount" value="0" step="1" autofocus></div></div>
             <div class="form-group"><label>${esc(game.i18n.localize("SWFFG.XP.Adjust.Window.Reason"))}</label>
                 <div class="form-fields"><input type="text" name="reason" value="${esc(game.i18n.localize("SWFFG.XP.Adjust.Window.Default"))}"></div></div>
-            <p class="hint">Positive: XP gained (total and available go up). Negative: XP spent (available goes down, the total XP given stays).</p>`,
+            <p class="hint">Changes available XP only. Negative: XP spent. Positive: spent XP given back. Total XP (all XP given) is set by GMs in XP Management.</p>`,
         ok: {
             label: game.i18n.localize("SWFFG.XP.Adjust.Confirm"),
             icon: "fa-solid fa-check",
@@ -40,14 +37,13 @@ async function adjustXp(actor) {
     const entry = {
         action: "adjusted",
         id: undefined,
-        xp: { cost: amount, available: before.available + amount, total: before.total + Math.max(0, amount) },
+        xp: { cost: amount, available: before.available + amount, total: before.total },
         date: logDate(),
         description: reason
     };
+    // The total (all XP given) is left to GMs.
     await actor.update({
         "system.experience.available": stored.available + amount,
-        // Spending keeps the total: it is all XP ever given.
-        ...(amount > 0 ? { "system.experience.total": stored.total + amount } : {}),
         "flags.starwarsffg.xpLog": [entry, ...entries]
     });
 }

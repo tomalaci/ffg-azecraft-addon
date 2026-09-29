@@ -79,3 +79,7 @@ test("xpStatus: correct data needs no repair", () => {
 test("spentFromLog ignores grants, positive adjustments and GM corrections", () => {
     assert.equal(spentFromLog([entry("granted", -5), entry("adjusted", 10), entry("granted", 50)]), 0);
 });
+
+test("spentFromLog: a positive Adjust XP gives spent XP back", () => {
+    assert.equal(spentFromLog([entry("adjusted", 10, "overspent, undo"), entry("adjusted", -30), entry("granted", 100)]), 20);
+});

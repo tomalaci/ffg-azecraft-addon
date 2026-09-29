@@ -24,16 +24,16 @@ export function xpSummary(experience) {
 }
 
 /**
- * XP spent according to the XP log: purchases, plus negative "adjusted" entries (the sheet's Adjust
- * XP dialog, which players use to record spending), minus refunds. GM corrections are "granted"
- * entries (negative for reductions) and do not count.
+ * XP spent according to the XP log: purchases and "adjusted" entries (the sheet's Adjust XP, which
+ * players use to record spending: negative spends, positive gives spent XP back), minus refunds.
+ * XP given is "granted" (by GMs, negative for corrections) and does not count.
  */
 export function spentFromLog(log) {
     let spent = 0;
     for (const entry of Array.isArray(log) ? log : []) {
         const cost = int(entry?.xp?.cost);
         if (entry?.action === "purchased") spent += Math.abs(cost);
-        else if (entry?.action === "adjusted" && cost < 0) spent += -cost;
+        else if (entry?.action === "adjusted") spent -= cost;
         else if (entry?.action === "refunded") spent -= Math.abs(cost);
     }
     return Math.max(0, spent);

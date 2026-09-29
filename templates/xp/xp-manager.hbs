@@ -16,12 +16,12 @@
     <div class="azxp-scroll">
         <table class="azxp-roster">
             <thead>
-                <tr><th></th><th colspan="2">Character</th><th>Total</th><th>Available</th><th>Spent</th><th>Last entry</th><th></th></tr>
+                <tr><th class="azxp-check"></th><th colspan="2">Character</th><th class="azxp-num">Total</th><th class="azxp-num">Available</th><th class="azxp-num">Spent</th><th class="azxp-last">Last entry</th><th class="azxp-tools"></th></tr>
             </thead>
             <tbody>
             {{#each rows as |row|}}
                 <tr class="azxp-row {{#if row.expanded}}azxp-row--open{{/if}}">
-                    <td><input type="checkbox" data-action="select" data-actor="{{row.id}}" {{checked row.selected}} aria-label="Select {{row.name}}"></td>
+                    <td class="azxp-check"><input type="checkbox" data-action="select" data-actor="{{row.id}}" {{checked row.selected}} aria-label="Select {{row.name}}"></td>
                     <td class="azxp-portrait">{{#if row.img}}<img src="{{row.img}}" alt="" loading="lazy">{{/if}}</td>
                     <td class="azxp-name"><a data-action="toggleLog" data-actor="{{row.id}}" data-tooltip="Show or hide the XP log"><i class="fa-solid {{#if row.expanded}}fa-caret-down{{else}}fa-caret-right{{/if}}" inert></i> {{row.name}}</a>
                         {{#if row.player}}<span class="azxp-muted">{{row.player}}</span>{{/if}}</td>
@@ -79,10 +79,10 @@
             <h3><i class="fa-solid fa-book" inert></i> XP Ledger
                 {{#if hasLedger}}<button type="button" data-action="openLedger"><i class="fa-solid fa-up-right-from-square" inert></i> Open journal</button>{{/if}}</h3>
             <table>
-                <thead><tr><th>When</th><th>Character</th><th>Change</th><th>XP</th><th>Total</th><th>Reason</th><th>GM</th></tr></thead>
+                <thead><tr><th class="azxp-fit">When</th><th class="azxp-fit">Character</th><th class="azxp-fit">Change</th><th class="azxp-num">XP</th><th class="azxp-num azxp-wide">Total</th><th>Reason</th><th class="azxp-fit">GM</th></tr></thead>
                 <tbody>
                 {{#each ledger as |r|}}
-                    <tr><td>{{r.when}}</td><td>{{r.actorName}}</td><td>{{r.change}}</td><td class="azxp-num">{{r.delta}}</td><td class="azxp-num">{{r.before}} → {{r.after}}</td><td>{{r.reason}}</td><td>{{r.gm}}</td></tr>
+                    <tr><td class="azxp-fit">{{r.when}}</td><td class="azxp-fit">{{r.actorName}}</td><td class="azxp-fit">{{r.change}}</td><td class="azxp-num">{{r.delta}}</td><td class="azxp-num azxp-wide">{{r.before}} → {{r.after}}</td><td>{{r.reason}}</td><td class="azxp-fit">{{r.gm}}</td></tr>
                 {{else}}
                     <tr><td colspan="7" class="azxp-muted">No changes recorded yet.</td></tr>
                 {{/each}}

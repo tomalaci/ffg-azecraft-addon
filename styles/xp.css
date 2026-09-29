@@ -59,16 +59,23 @@
     vertical-align: middle;
 }
 
+/* Checkbox, portrait, name and tools fit their content; Last entry takes the remaining width. */
+.azxp-check { width: 1%; padding-right: 2px !important; }
+.azxp .azxp-num { width: 5.5em; text-align: right; }
+.azxp .azxp-wide { width: 7em; }
+.azxp .azxp-fit { width: 1%; white-space: nowrap; padding-right: 16px; }
+
 .azxp-roster > tbody > .azxp-row:hover { background: rgba(114, 212, 255, 0.06); }
 .azxp-row--open { background: rgba(114, 212, 255, 0.08); }
-.azxp-portrait { width: 40px; }
-.azxp-portrait img { display: block; width: 34px; height: 34px; border: 1px solid rgba(116, 200, 255, 0.35); object-fit: cover; object-position: top; }
+.azxp-portrait { width: 40px; min-width: 40px; padding-right: 2px !important; }
+.azxp-portrait img { display: block; width: 34px; min-width: 34px; max-width: none; height: 34px; border: 1px solid rgba(116, 200, 255, 0.35); object-fit: cover; object-position: top; }
+.azxp-name { width: 1%; padding-right: 24px !important; white-space: nowrap; }
 .azxp-name a { cursor: pointer; font-weight: 700; }
 .azxp-name .azxp-muted { display: block; font-size: 11px; }
-.azxp-num { width: 5.5em; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+td.azxp-num { font-variant-numeric: tabular-nums; font-weight: 700; }
 .azxp-available { color: #72d4ff; }
 .azxp-negative { color: #ff6b5a; }
-.azxp-last { max-width: 30ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.azxp-roster .azxp-last { width: 100%; max-width: 0; padding-left: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .azxp-tools { width: 1%; white-space: nowrap; text-align: right; }
 .azxp-tools button { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 24px; padding: 0; vertical-align: middle; }
 .azxp-muted { opacity: 0.7; }
