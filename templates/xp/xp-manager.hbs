@@ -1,0 +1,93 @@
+<div class="azxp">
+    <div class="azxp-bar">
+        <label class="azxp-all"><input type="checkbox" data-azxp-all {{checked allSelected}} {{disabled (not rows.length)}} aria-label="Select all characters"> All</label>
+        <select data-azxp-field="mode" aria-label="Change">
+            <option value="add" {{#if (eq draft.mode "add")}}selected{{/if}}>Add</option>
+            <option value="reduce" {{#if (eq draft.mode "reduce")}}selected{{/if}}>Reduce</option>
+            <option value="set" {{#if (eq draft.mode "set")}}selected{{/if}}>Set total to</option>
+        </select>
+        <input type="number" class="azxp-amount" min="0" step="1" value="{{draft.amount}}" data-azxp-field="amount" aria-label="XP">
+        <input type="text" class="azxp-reason" value="{{draft.reason}}" placeholder="Reason (logged), e.g. Session 12" data-azxp-field="reason" aria-label="Reason">
+        <button type="button" data-action="apply" {{disabled (not selectedCount)}}><i class="fa-solid fa-check" inert></i> Apply to {{selectedCount}} selected</button>
+        {{#if busy}}<span class="azxp-busy"><i class="fa-solid fa-spinner fa-spin" inert></i> {{busy}}</span>{{/if}}
+    </div>
+
+    <div class="azxp-scroll">
+        <table class="azxp-roster">
+            <thead>
+                <tr><th></th><th colspan="2">Character</th><th>Total</th><th>Available</th><th>Spent</th><th>Last entry</th><th></th></tr>
+            </thead>
+            <tbody>
+            {{#each rows as |row|}}
+                <tr class="azxp-row {{#if row.expanded}}azxp-row--open{{/if}}">
+                    <td><input type="checkbox" data-action="select" data-actor="{{row.id}}" {{checked row.selected}} aria-label="Select {{row.name}}"></td>
+                    <td class="azxp-portrait">{{#if row.img}}<img src="{{row.img}}" alt="" loading="lazy">{{/if}}</td>
+                    <td class="azxp-name"><a data-action="toggleLog" data-actor="{{row.id}}" data-tooltip="Show or hide the XP log"><i class="fa-solid {{#if row.expanded}}fa-caret-down{{else}}fa-caret-right{{/if}}" inert></i> {{row.name}}</a>
+                        {{#if row.player}}<span class="azxp-muted">{{row.player}}</span>{{/if}}</td>
+                    <td class="azxp-num">{{row.total}}</td>
+                    <td class="azxp-num azxp-available {{#if row.negative}}azxp-negative{{/if}}">{{row.available}}</td>
+                    <td class="azxp-num">{{row.spent}}</td>
+                    <td class="azxp-last">{{#if row.last}}<span class="azxp-muted">{{row.last.date}}</span> {{row.last.description}} <span class="azxp-muted">({{row.last.cost}})</span>{{/if}}</td>
+                    <td class="azxp-tools">
+                        <button type="button" data-action="openSheet" data-actor="{{row.id}}" data-tooltip="Open the character sheet"><i class="fa-solid fa-id-card" inert></i></button>
+                        <button type="button" data-action="remove" data-actor="{{row.id}}" data-tooltip="Remove from XP Management (the character's XP and log stay)"><i class="fa-solid fa-xmark" inert></i></button>
+                    </td>
+                </tr>
+                {{#if row.expanded}}
+                <tr class="azxp-logrow">
+                    <td colspan="8">
+                        <table class="azxp-log">
+                            <thead><tr><th>Date</th><th>Action</th><th>Description</th><th>XP</th><th>Available</th><th>Total</th><th></th></tr></thead>
+                            <tbody>
+                            {{#each row.log as |entry|}}
+                                <tr data-actor="{{row.id}}" data-index="{{entry.index}}">
+                                    <td><input type="text" value="{{entry.date}}" data-azxp-log="date" aria-label="Date"></td>
+                                    <td><select data-azxp-log="action" aria-label="Action">{{#each @root.actions as |action|}}<option value="{{action}}" {{#if (eq action entry.action)}}selected{{/if}}>{{action}}</option>{{/each}}</select></td>
+                                    <td><input type="text" value="{{entry.description}}" data-azxp-log="description" aria-label="Description"></td>
+                                    <td><input type="number" step="1" value="{{entry.cost}}" data-azxp-log="cost" aria-label="XP"></td>
+                                    <td><input type="number" step="1" value="{{entry.available}}" data-azxp-log="available" aria-label="Available after"></td>
+                                    <td><input type="number" step="1" value="{{entry.total}}" data-azxp-log="total" aria-label="Total after"></td>
+                                    <td class="azxp-tools">
+                                        {{#if entry.purchase}}<i class="fa-solid fa-link azxp-muted" data-tooltip="Linked to a purchase: the sheet can refund it" inert></i>{{/if}}
+                                        <button type="button" data-action="deleteEntry" data-actor="{{row.id}}" data-index="{{entry.index}}" data-tooltip="Delete this log entry (XP is not changed)"><i class="fa-solid fa-trash" inert></i></button>
+                                    </td>
+                                </tr>
+                            {{else}}
+                                <tr><td colspan="7" class="azxp-muted">No XP log entries yet.</td></tr>
+                            {{/each}}
+                            </tbody>
+                        </table>
+                        <p class="azxp-hint">Edits save when you leave a field and show on the character sheet's XP log. Editing the log does not change the character's XP; use the bar above for that.</p>
+                    </td>
+                </tr>
+                {{/if}}
+            {{else}}
+                <tr><td colspan="8" class="azxp-empty">No characters yet. Add player characters below; every GM sees the same list.</td></tr>
+            {{/each}}
+            </tbody>
+        </table>
+
+        <div class="azxp-add">
+            <select data-azxp-field="addActor" aria-label="Character to add" {{disabled (not addable.length)}}>
+                {{#each addable as |a|}}<option value="{{a.id}}">{{a.name}}{{#unless a.owned}} (no player){{/unless}}</option>{{else}}<option value="">No more characters</option>{{/each}}
+            </select>
+            <button type="button" data-action="add" {{disabled (not addable.length)}}><i class="fa-solid fa-user-plus" inert></i> Add character</button>
+        </div>
+
+        <section class="azxp-ledger">
+            <h3><i class="fa-solid fa-book" inert></i> XP Ledger
+                {{#if hasLedger}}<button type="button" data-action="openLedger"><i class="fa-solid fa-up-right-from-square" inert></i> Open journal</button>{{/if}}</h3>
+            <table>
+                <thead><tr><th>When</th><th>Character</th><th>Change</th><th>XP</th><th>Total</th><th>Reason</th><th>GM</th></tr></thead>
+                <tbody>
+                {{#each ledger as |r|}}
+                    <tr><td>{{r.when}}</td><td>{{r.actorName}}</td><td>{{r.change}}</td><td class="azxp-num">{{r.delta}}</td><td class="azxp-num">{{r.before}} → {{r.after}}</td><td>{{r.reason}}</td><td>{{r.gm}}</td></tr>
+                {{else}}
+                    <tr><td colspan="7" class="azxp-muted">No changes recorded yet.</td></tr>
+                {{/each}}
+                </tbody>
+            </table>
+            {{#if moreLedger}}<p class="azxp-hint">Showing the latest {{ledger.length}} of {{ledgerCount}}; the journal has them all.</p>{{/if}}
+        </section>
+    </div>
+</div>

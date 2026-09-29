@@ -30,8 +30,6 @@ fills from the right in red. As the players spend Destiny, the blue shrinks and 
     at the start of a session). A new
     point goes to the side with fewer points (Destiny on a tie), and a removed point comes from the
     side with more (Doom on a tie), so the balance stays as it was.
-  - The two buttons at the top open the system's **Group Manager** and **Request story point
-    roll** (the system's destiny roll).
 - Every spend posts a short chat card, e.g. "Destiny story point used, it passes to Doom.
   Destiny 2 · Doom 4".
 
@@ -40,15 +38,16 @@ fills from the right in red. As the players spend Destiny, the blue shrinks and 
 - **Mass Effect story points:** on by default. Turn it off to get the original tracker back.
 - **Story points: players' side name** (default *Destiny*) and **GM's side name** (default
   *Doom*).
-  These names also replace "Light"/"Dark" in the system's own screens, such as the Group Manager.
+  These names also replace "Light"/"Dark" in the system's own screens and chat cards.
 
 ## How it works (developers)
 
 - The pool is still the system's world settings `starwarsffg.dPoolLight` and `dPoolDark`.
   Nothing new is stored.
-- The system's `DestinyTracker` keeps running, hidden with CSS. The widget relies on it for two
-  things: player spends (`game.socket.emit("system.starwarsffg", { pool })` is applied by the
-  active GM's tracker, because players cannot write world settings), and its GM menu callbacks.
+- The system's `DestinyTracker` keeps running, hidden with CSS; its Star Wars GM menu (Group
+  Manager, the Force-die destiny roll) is not offered. Player spends go over the module socket
+  (`module.ffg-azecraft-addon`) to the active GM, who applies them one at a time, because players
+  cannot write world settings.
 - The widget (`scripts/story-points/`) is a frameless ApplicationV2 in `#interface`, placed in
   the bottom-left corner (`story-layout.js`). It re-renders on `updateSetting` for the two pool settings. The pool maths is
   pure (`story-pool.js`, unit-tested).

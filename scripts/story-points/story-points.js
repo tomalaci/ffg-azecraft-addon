@@ -6,8 +6,8 @@
  *
  * The pool is the system's dPoolLight / dPoolDark world settings. Players cannot write world
  * settings, so a player's spend goes over the module socket to the active GM, who applies spends one
- * at a time and posts the chat card. The system's own tracker keeps running hidden: it owns the
- * Group Manager / Request Destiny Roll actions shown in the bar's menu.
+ * at a time and posts the chat card. The system's own tracker keeps running hidden (its Star Wars
+ * GM menu, Group Manager and the Force-die destiny roll, is not offered).
  */
 
 import { storyPointsBox } from "./story-layout.js";
@@ -84,11 +84,6 @@ function applyUse(side, userId) {
     return useQueue;
 }
 
-/** The system's (hidden) destiny tracker, which processes player flips and owns the GM menu. */
-function systemTracker() {
-    return Object.values(ui.windows).find(app => app.id === "destiny-tracker") ?? null;
-}
-
 export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "azecraft-story-points",
@@ -99,7 +94,6 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
             use: StoryPointsApp.#onUse,
             adjust: StoryPointsApp.#onAdjust,
             resize: StoryPointsApp.#onResizePool,
-            systemMenu: StoryPointsApp.#onSystemMenu
         }
     };
 
@@ -135,8 +129,7 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
             capacity: poolCapacity(pool),
             squadPercent: Math.round(squadShare(pool) * 100),
             canUseSquad: pool.squad > 0,
-            canUseThreat: isGM && pool.threat > 0,
-            menu: isGM ? (systemTracker()?.menu ?? []).map((item, index) => ({ index, name: item.name, icon: item.icon })) : []
+            canUseThreat: isGM && pool.threat > 0
         };
     }
 
@@ -221,11 +214,6 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #onResizePool(event, target) {
         if (!game.user.isGM) return;
         await writePool(resizePool(readPool(), Number(target.dataset.delta)));
-    }
-
-    static #onSystemMenu(event, target) {
-        if (!game.user.isGM) return;
-        systemTracker()?.menu?.[Number(target.dataset.index)]?.callback();
     }
 
 }

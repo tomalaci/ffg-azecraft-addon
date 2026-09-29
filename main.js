@@ -14,6 +14,7 @@ import { initPerfCollector } from "./scripts/perf/perf-collector.js";
 import { initPerfWindow, UIPerformanceApp } from "./scripts/perf/perf-window.js";
 import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
+import { XPManagerApp, initXpManager } from "./scripts/xp/xp-manager.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -42,6 +43,21 @@ Hooks.once("init", () => {
         isActive: () => Boolean(foundry.applications.instances.get("azecraft-ui-performance")),
         onClick: async () => {
             await UIPerformanceApp.toggle();
+            refreshToolbar();
+        }
+    });
+    initXpManager();
+    registerToolbarButton({
+        id: "xp-management",
+        order: 35,
+        gmOnly: true,
+        label: "XP Management",
+        icon: "fa-solid fa-star",
+        tooltip: "Player characters' XP: add, reduce or set it with a logged reason, and edit their XP logs",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-xp-management")),
+        onClick: async () => {
+            if (!game.user.isGM) return;
+            await XPManagerApp.toggle();
             refreshToolbar();
         }
     });

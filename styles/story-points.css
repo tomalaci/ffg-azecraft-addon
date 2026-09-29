@@ -58,12 +58,6 @@ body.azsp-active #destiny-tracker {
     text-transform: uppercase;
 }
 
-#azecraft-story-points .azsp-menu {
-    display: flex;
-    gap: 3px;
-    margin-left: auto;
-}
-
 #azecraft-story-points .azsp-head {
     justify-content: flex-start;
     gap: 8px;

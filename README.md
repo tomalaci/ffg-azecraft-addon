@@ -31,9 +31,11 @@ The module:
   the dashboard, the Actors tab and sheets; the originals stay untouched. See
   [docs/lightweight-images.md](docs/lightweight-images.md).
 - A **toolbar** next to the Scene list: Dashboard on/off, Players, **UI Performance** (frame rate,
-  slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, the **Admin
-  Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink documents, large
-  files); plus a *Reduce visual effects* option. See [docs/performance.md](docs/performance.md) and
+  slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
+  Management** (add, reduce or set player characters' XP with a logged reason, edit their XP logs)
+  and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
+  documents, large and unused files); plus a *Reduce visual effects* option. See
+  [docs/performance.md](docs/performance.md), [docs/xp-management.md](docs/xp-management.md) and
   [docs/admin-panel.md](docs/admin-panel.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
@@ -89,8 +91,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 `scripts/thumbnails/`
 : Lightweight copies of large images.
 
-`scripts/toolbar/`, `scripts/perf/`, `scripts/admin/`, `scripts/ui/`
-: Toolbar, UI Performance window, Admin Panel, and the scene-space window base.
+`scripts/toolbar/`, `scripts/perf/`, `scripts/xp/`, `scripts/admin/`, `scripts/ui/`, `scripts/paths.js`
+: Toolbar, UI Performance window, XP Management, Admin Panel, the scene-space window base, and
+  file path forms.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.
