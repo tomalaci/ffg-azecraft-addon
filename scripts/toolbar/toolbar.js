@@ -5,9 +5,8 @@
  * - Players: Foundry's player list, hidden otherwise, drops down under the button.
  * - Other features add their own buttons with registerToolbarButton() (UI Performance, Admin Panel).
  *
- * The toolbar sits in a top rail across the screen (always there, also with the dashboard hidden or
- * not on a Scene), right of where the dashboard's squad column ends, so it never moves when the
- * dashboard is turned on or off.
+ * The toolbar sits right of where the dashboard's squad column ends (also with the dashboard hidden
+ * or not on a Scene), so it never moves when the dashboard is turned on or off.
  */
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -17,7 +16,6 @@ const EDGE_KEY = "azecraft.toolbarEdge";
 
 const buttons = [];
 let element = null;
-let rail = null;
 
 /**
  * Add a button to the toolbar.
@@ -69,7 +67,7 @@ function columnEdge() {
     }
 }
 
-/** Put the toolbar in the top rail, right of the scene list and the dashboard's squad column. */
+/** Put the toolbar right of the scene list and the dashboard's squad column. */
 function position() {
     if (!element) return;
     const controls = visibleRect("#scene-controls");
@@ -83,15 +81,6 @@ function position() {
     element.classList.remove("aztb--compact");
     const sidebar = visibleRect("#sidebar");
     if (sidebar && element.getBoundingClientRect().right > sidebar.left - GAP) element.classList.add("aztb--compact");
-    // The top rail: as tall as the toolbar plus the same margin above and below, up to the sidebar.
-    const rect = element.getBoundingClientRect();
-    const root = document.documentElement.style;
-    if (rect.height) {
-        root.setProperty("--aztb-top", `${Math.round(rect.top)}px`);
-        root.setProperty("--aztb-bottom", `${Math.round(rect.bottom)}px`);
-    }
-    root.setProperty("--aztb-rail-right", `${Math.max(0, Math.round(window.innerWidth - (sidebar?.left ?? window.innerWidth)))}px`);
-    root.setProperty("--aztb-edge", `${Math.max(0, left - GAP)}px`);
     placePlayers();
 }
 
@@ -128,13 +117,6 @@ function mount() {
     element.setAttribute("aria-label", "Azecraft");
     // In <body>, above Foundry's interface layers (its drop-down must cover them).
     document.body.append(element);
-    // The rail goes under everything in the interface: first child, below the dashboard and core UI.
-    rail = document.createElement("div");
-    rail.id = "azecraft-toprail";
-    rail.setAttribute("aria-hidden", "true");
-    const ui = document.getElementById("interface");
-    if (ui) ui.prepend(rail);
-    else document.body.prepend(rail);
     element.addEventListener("click", event => {
         const id = event.target.closest("[data-aztb]")?.dataset.aztb;
         buttons.find(button => button.id === id)?.onClick();

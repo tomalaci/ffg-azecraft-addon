@@ -22,8 +22,7 @@ export function sceneSpaceRect() {
     const hotbar = visibleRect("#hotbar");
 
     let left = (controls?.right ?? 0) + GAP;
-    const topRail = visibleRect("#azecraft-toprail");
-    let top = Math.max(toolbar?.bottom ?? controls?.top ?? 0, topRail?.bottom ?? 0) + GAP;
+    let top = (toolbar?.bottom ?? controls?.top ?? 0) + GAP;
     let right = (sidebar?.left ?? window.innerWidth) - GAP;
     let bottom = (hotbar?.top ?? window.innerHeight) - GAP;
 

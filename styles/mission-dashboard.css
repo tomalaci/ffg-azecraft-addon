@@ -28,7 +28,7 @@
 #azecraft-mission-dashboard {
     position: fixed;
     inset: 0;
-    /* Above the toolbar's top rail (1), below the story points (3) and core UI (30). */
+    /* Below the story points (3) and core UI (30). */
     z-index: 2;
     width: auto;
     height: auto;
@@ -271,9 +271,8 @@
 /*  Frame                                       */
 /* -------------------------------------------- */
 
-/* Framed style: the squad column and the mission bar are one solid frame around the map window
- * (with the toolbar's top rail, styles/toolbar.css), instead of panels floating over it. Core
- * controls still sit on top of the frame. */
+/* Framed style: the squad column and the mission bar are one solid L-shaped frame around the map
+ * window, instead of panels floating over it. Core controls still sit on top of the frame. */
 #azecraft-mission-dashboard .azd-frame {
     display: none;
 }
@@ -290,7 +289,7 @@
     background:
         repeating-linear-gradient(0deg, rgba(114, 212, 255, 0.025) 0 1px, transparent 1px 4px),
         linear-gradient(135deg, #0b1422 0%, #070c15 60%, #0a1220 100%);
-    /* One background for all frame pieces (and the top rail), so there is no seam where they meet. */
+    /* One background for both frame pieces, so there is no seam where they meet. */
     background-attachment: fixed;
 }
 

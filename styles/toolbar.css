@@ -1,39 +1,4 @@
-/* Azecraft toolbar in the top rail (scripts/toolbar/toolbar.js). */
-
-/* Top rail across the screen up to the sidebar, always shown: as tall as the toolbar plus the same
- * margin above and below. Under the dashboard (z-index 2) and core UI; same background as the dashboard frame
- * (fixed attachment), so it joins the squad column without a seam. */
-#azecraft-toprail {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: var(--aztb-rail-right, 0px);
-    z-index: 1;
-    height: calc(var(--aztb-bottom, 46px) + var(--aztb-top, 12px));
-    pointer-events: auto;
-    background:
-        linear-gradient(0deg, rgba(114, 212, 255, 0.16), transparent 7px),
-        repeating-linear-gradient(0deg, rgba(114, 212, 255, 0.025) 0 1px, transparent 1px 4px),
-        linear-gradient(135deg, #0b1422 0%, #070c15 60%, #0a1220 100%);
-    background-attachment: scroll, fixed, fixed;
-    box-shadow: inset 0 -1px 0 rgba(116, 200, 255, 0.6), 0 4px 14px rgba(0, 0, 0, 0.6);
-    clip-path: inset(0 0 -24px 0);
-}
-
-/* Orange accents at the rail's lower corners over the map: at the squad column's edge and at the
- * sidebar. */
-#azecraft-toprail::before,
-#azecraft-toprail::after {
-    content: "";
-    position: absolute;
-    bottom: -1px;
-    width: 34px;
-    height: 3px;
-    background: #ff9d42;
-}
-
-#azecraft-toprail::before { left: var(--aztb-edge, 0px); }
-#azecraft-toprail::after { right: 0; }
+/* Azecraft toolbar right of the scene list and the squad column (scripts/toolbar/toolbar.js). */
 
 #azecraft-toolbar {
     position: fixed;
