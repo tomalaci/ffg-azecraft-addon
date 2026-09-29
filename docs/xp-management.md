@@ -13,7 +13,9 @@ remembers, per GM, which rows are selected or open.
 - Each row shows the character's **total** XP (all XP ever given), **available** XP and **spent**
   XP, plus the newest XP log entry. The card icon opens the sheet. Spent comes from the XP log:
   purchases and *Adjust XP* entries (negative spends, positive gives back), minus refunds; total
-  is available + spent. Only GMs change the total, here.
+  is available + spent. Only GMs change the total, here. Older positive *Adjust XP* entries that
+  raised the logged total by their amount (the system's dialog, used to give XP, e.g. "DM gave me
+  15 xp") count as XP given.
 - **Repair totals** (shown when needed): the sheet's *Adjust XP* used to lower the stored total
   along with available when a player recorded spending with a negative amount, so the sheet showed
   e.g. total 5 for a character given 95 who spent 90. A warning icon marks those characters; the

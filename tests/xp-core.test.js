@@ -83,3 +83,20 @@ test("spentFromLog ignores grants, positive adjustments and GM corrections", () 
 test("spentFromLog: a positive Adjust XP gives spent XP back", () => {
     assert.equal(spentFromLog([entry("adjusted", 10, "overspent, undo"), entry("adjusted", -30), entry("granted", 100)]), 20);
 });
+
+const logged = (action, cost, total, description = "") => ({ action, xp: { cost, total }, description });
+
+test("spentFromLog: old Adjust XP entries that gave XP (total rose by the amount) are not spending", () => {
+    // Given 80, spent 80 with the old dialog (total 0), then "DM gave me 25" with it (total 25).
+    const log = [logged("adjusted", 25, 25, "DM gave me 25 xp"), logged("adjusted", -80, 0, "spent"), logged("granted", 80, 80, "species")].map(e => ({ ...e }));
+    assert.equal(spentFromLog(log), 80);
+    assert.deepEqual(xpStatus({ total: 25, available: 25 }, log), { total: 105, available: 25, spent: 80, storedTotal: 25, needsRepair: true });
+    // The very first entry giving XP (no earlier total).
+    assert.equal(spentFromLog([logged("adjusted", 95, 95, "Character")]), 0);
+});
+
+test("spentFromLog: a give-back keeps the total, so it still reduces spending", () => {
+    // Addon's Adjust XP: total unchanged (95) while available goes back up by 10.
+    const log = [logged("adjusted", 10, 95, "undo"), logged("adjusted", -90, 5, "spent (old dialog)"), logged("granted", 95, 95)];
+    assert.equal(spentFromLog(log), 80);
+});

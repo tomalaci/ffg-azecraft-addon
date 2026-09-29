@@ -27,14 +27,26 @@ export function xpSummary(experience) {
  * XP spent according to the XP log: purchases and "adjusted" entries (the sheet's Adjust XP, which
  * players use to record spending: negative spends, positive gives spent XP back), minus refunds.
  * XP given is "granted" (by GMs, negative for corrections) and does not count.
+ *
+ * Before the addon replaced it, the sheet's Adjust XP also changed the total, and was used both to
+ * record spending and to give XP ("DM gave me 15 xp"). Each entry records the total after it, so a
+ * positive adjustment that raised the recorded total by exactly its amount was XP given, not spent
+ * XP given back.
  */
 export function spentFromLog(log) {
     let spent = 0;
-    for (const entry of Array.isArray(log) ? log : []) {
+    let previousTotal = 0;
+    // The log is newest first; walk it oldest first to know the total before each entry.
+    for (const entry of [...(Array.isArray(log) ? log : [])].reverse()) {
         const cost = int(entry?.xp?.cost);
+        const total = Number(entry?.xp?.total);
         if (entry?.action === "purchased") spent += Math.abs(cost);
-        else if (entry?.action === "adjusted") spent -= cost;
         else if (entry?.action === "refunded") spent -= Math.abs(cost);
+        else if (entry?.action === "adjusted") {
+            const given = cost > 0 && Number.isFinite(total) && total - previousTotal === cost;
+            if (!given) spent -= cost;
+        }
+        if (Number.isFinite(total)) previousTotal = total;
     }
     return Math.max(0, spent);
 }
