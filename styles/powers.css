@@ -41,3 +41,9 @@
 .azecraft-power-preset .azpp-preview {
     margin: 0;
 }
+
+.azecraft-power-preset .azpp-ranks {
+    flex: 0 0 3.2em;
+    width: 3.2em;
+    text-align: center;
+}

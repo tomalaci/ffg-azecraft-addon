@@ -16,6 +16,7 @@ import {
     findModifier,
     findPower,
     findSubtype,
+    modifierCounts,
     normalizeConcentration,
     normalizeLoadout,
     normalizePresets,
@@ -84,7 +85,12 @@ function context(actor, discipline) {
                 powerLabel: power.label,
                 subtypeLabel: subtype?.label ?? "",
                 followsLoadout: !preset.subtype && power.loadout,
-                modifierLabels: preset.modifiers.map(key => findModifier(key)?.option.label).filter(Boolean),
+                modifierLabels: [...modifierCounts(preset.modifiers)]
+                    .map(([key, count]) => {
+                        const label = findModifier(key)?.option.label;
+                        return label && (count > 1 ? `${label} ×${count}` : label);
+                    })
+                    .filter(Boolean),
                 ...diceView(presetDifficulty(power.id, subtypeId, preset.modifiers))
             };
         });

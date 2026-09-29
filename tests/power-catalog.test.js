@@ -8,6 +8,7 @@ import {
     difficultyLabel,
     disciplineForSkill,
     findPower,
+    modifierCounts,
     modifierGroups,
     normalizeConcentration,
     normalizeLoadout,
@@ -109,4 +110,13 @@ test("concentration keeps only known concentration powers, toggling on and off",
     assert.deepEqual(toggleConcentration([], "tech-augment"), ["tech-augment"]);
     assert.deepEqual(toggleConcentration(["tech-augment", "biotic-barrier"], "tech-augment"), ["biotic-barrier"]);
     assert.deepEqual(toggleConcentration([], "biotic-attack"), [], "not a concentration power");
+});
+
+test("per-rank modifiers keep their count in presets, up to the maximum", () => {
+    const preset = normalizePreset({ id: "r", power: "biotic-attack", modifiers: ["biotic-attack:range", "biotic-attack:range", "biotic-attack:blast", "biotic-attack:blast"] });
+    assert.deepEqual(preset.modifiers, ["biotic-attack:range", "biotic-attack:range", "biotic-attack:blast"]);
+    assert.deepEqual(presetDifficulty("biotic-attack", null, preset.modifiers), { difficulty: 4, setback: 0, upgrades: 0 });
+    const many = normalizePreset({ id: "m", power: "biotic-attack", modifiers: Array(9).fill("biotic-attack:range") });
+    assert.equal(many.modifiers.length, 5);
+    assert.deepEqual([...modifierCounts(["a", "b", "a"])], [["a", 2], ["b", 1]]);
 });

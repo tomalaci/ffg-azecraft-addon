@@ -1,4 +1,4 @@
-import { baseDifficulty, difficultyLabel, disciplineForSkill, findModifier, findPower, findSubtype, modifierGroups } from "./powers/power-catalog.js";
+import { MAX_RANKS, baseDifficulty, difficultyLabel, disciplineForSkill, findModifier, findPower, findSubtype, modifierCounts, modifierGroups } from "./powers/power-catalog.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const ROLL_OPTIONS_TEMPLATE = `modules/${MODULE_ID}/templates/dice/roll-options-ffg.html`;
@@ -65,16 +65,16 @@ function applyPowerRoll(rollBuilder, pending) {
     rollBuilder.roll.flavor = [powerTitle(pending), effect, rollBuilder.roll.flavor].filter(Boolean).join(" | ");
 
     rollBuilder._azecraftPowerModifiers ??= new Map();
-    for (const key of pending.modifiers ?? []) {
+    for (const [key, count] of modifierCounts(pending.modifiers)) {
         const found = findModifier(key);
         if (!found || rollBuilder._azecraftPowerModifiers.has(found.key)) continue;
-        rollBuilder._azecraftPowerModifiers.set(found.key, {
+        setModifierCount(rollBuilder, found.key, {
             id: found.option.id,
             label: found.option.label,
             categorySummary: found.category.label,
             modifierText: found.option.modifierText,
-            appliedChanges: applyModifier(pool, found.option)
-        });
+            modifier: found.option
+        }, found.option.perRank ? Math.min(count, MAX_RANKS) : 1);
     }
 }
 
@@ -94,11 +94,10 @@ function getModifierGroups(rollBuilder) {
                     ? `Base (${pending.subtype.label}): ${difficultyLabel(pending.subtype.base)}`
                     : `Base: ${difficultyLabel(category.base)}${category.baseNote ? `; ${category.baseNote}` : ""}`,
             summaryLabel: category.label,
-            options: category.options.map(option => ({
-                ...option,
-                key: `${category.id}:${option.id}`,
-                checked: rollBuilder._azecraftPowerModifiers?.has(`${category.id}:${option.id}`) ?? false
-            }))
+            options: category.options.map(option => {
+                const count = rollBuilder._azecraftPowerModifiers?.get(`${category.id}:${option.id}`)?.applied.length ?? 0;
+                return { ...option, key: `${category.id}:${option.id}`, count, checked: count > 0, maxRanks: MAX_RANKS };
+            })
         }));
 }
 
@@ -116,7 +115,8 @@ function getSelectedModifierSummary(rollBuilder) {
             grouped.set(option.categorySummary, []);
         }
 
-        grouped.get(option.categorySummary).push(`${option.label} (${option.modifierText})`);
+        const times = option.applied?.length > 1 ? ` ×${option.applied.length}` : "";
+        grouped.get(option.categorySummary).push(`${option.label}${times} (${option.modifierText})`);
     }
 
     return `Power modifiers: ${Array.from(grouped.entries()).map(([category, options]) => `${category} - ${options.join(", ")}`).join("; ")}`;
@@ -161,6 +161,19 @@ function applyModifier(dicePool, modifier) {
         challenge: Number(dicePool.challenge ?? 0) - before.challenge,
         setback: Number(dicePool.setback ?? 0) - before.setback
     };
+}
+
+/**
+ * Apply or remove ranks of a modifier until it is applied `count` times. Each rank's dice changes
+ * are kept separately, so removing a rank undoes exactly that rank.
+ */
+function setModifierCount(rollBuilder, key, meta, count) {
+    const map = rollBuilder._azecraftPowerModifiers;
+    const entry = map.get(key) ?? { ...meta, applied: [] };
+    while (entry.applied.length < count) entry.applied.push(applyModifier(rollBuilder.dicePool, meta.modifier));
+    while (entry.applied.length > count) removeModifier(rollBuilder.dicePool, entry.applied.pop());
+    if (entry.applied.length) map.set(key, entry);
+    else map.delete(key);
 }
 
 /**
@@ -275,29 +288,21 @@ function patchActivateListeners(RollBuilderFFG) {
 
         html.find(".azecraft-power-modifier").on("change", event => {
             const input = event.currentTarget;
-            const key = input.dataset.modifierKey;
-            const previous = this._azecraftPowerModifiers.get(key);
-
-            if (input.checked) {
-                if (!previous) {
-                    const modifier = {
-                        difficulty: Number.parseInt(input.dataset.difficulty, 10) || 0,
-                        setback: Number.parseInt(input.dataset.setback, 10) || 0,
-                        upgradeDifficulty: Number.parseInt(input.dataset.upgradeDifficulty, 10) || 0
-                    };
-
-                    this._azecraftPowerModifiers.set(key, {
-                        id: input.dataset.modifierId,
-                        label: input.dataset.modifierLabel,
-                        categorySummary: input.dataset.categorySummary,
-                        modifierText: input.dataset.modifierText,
-                        appliedChanges: applyModifier(this.dicePool, modifier)
-                    });
+            const count = input.type === "number"
+                ? Math.max(0, Math.min(MAX_RANKS, Number.parseInt(input.value, 10) || 0))
+                : (input.checked ? 1 : 0);
+            if (input.type === "number") input.value = String(count);
+            setModifierCount(this, input.dataset.modifierKey, {
+                id: input.dataset.modifierId,
+                label: input.dataset.modifierLabel,
+                categorySummary: input.dataset.categorySummary,
+                modifierText: input.dataset.modifierText,
+                modifier: {
+                    difficulty: Number.parseInt(input.dataset.difficulty, 10) || 0,
+                    setback: Number.parseInt(input.dataset.setback, 10) || 0,
+                    upgradeDifficulty: Number.parseInt(input.dataset.upgradeDifficulty, 10) || 0
                 }
-            } else if (previous) {
-                removeModifier(this.dicePool, previous.appliedChanges);
-                this._azecraftPowerModifiers.delete(key);
-            }
+            }, count);
 
             this._initializeInputs(html);
         });

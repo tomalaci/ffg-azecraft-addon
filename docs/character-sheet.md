@@ -24,7 +24,9 @@ Tech Attack, Construct, ...), showing its base difficulty and whether it needs c
 Clicking one opens the usual dice dialog for the Biotics or Tech skill, already set to the power's
 base difficulty (e.g. Easy for Biotic Attack instead of the default Average). Only that power's
 optional effects and the general modifiers are listed. Tick the effects you use and roll as normal;
-the chat message names the power and the chosen effects. Rolling Biotics or Tech from the skills
+the chat message names the power and the chosen effects. Effects that can be taken more than once
+(e.g. Range, Silhouette: "+1 Difficulty die per rank") have a number box instead of a tick box;
+set how many ranks you use (up to 5). Rolling Biotics or Tech from the skills
 list still shows every power's modifiers.
 
 **Concentration.** Powers that need concentration have a **Conc.** toggle. Click it when the
@@ -40,7 +42,7 @@ modifiers that do not apply (Anti-Synthetic is Overload only; Anti-Organic is no
 
 **Presets.** Under the buttons, **Add** saves a power roll you use often: a name, the power, an
 optional subtype and the modifiers to tick in advance (e.g. "Frost wave": Tech Attack, Cryo Blast,
-Blast + Range). The row shows the resulting difficulty; clicking it opens the dice dialog with those
+Blast + Range). Presets remember how many ranks of Range and similar effects they use. The row shows the resulting difficulty; clicking it opens the dice dialog with those
 modifiers already ticked (untick or add more as usual). Tech presets can follow the loaded
 element or name their own, and Construct / Sabotage presets name the construct or sabotage type;
 VI Hacking starts at Daunting. Use the pencil to edit and the bin to delete.

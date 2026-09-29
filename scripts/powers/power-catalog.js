@@ -14,6 +14,7 @@ function difficultyModifier(id, label, difficulty, { perRank = false } = {}) {
         id,
         label,
         difficulty,
+        perRank,
         modifierText: `${sign}${amount} Difficulty ${amount === 1 ? "die" : "dice"}${perRank ? " per rank" : ""}`
     };
 }
@@ -328,6 +329,15 @@ export function toggleConcentration(raw, powerId) {
 }
 
 export const PRESET_NAME_MAX_LENGTH = 60;
+/** Most ranks of a per-rank modifier (e.g. Range) a roll or preset can take. */
+export const MAX_RANKS = 5;
+
+/** How many times each modifier key appears: presets list a per-rank modifier once per rank. */
+export function modifierCounts(keys) {
+    const counts = new Map();
+    for (const key of keys ?? []) counts.set(key, (counts.get(key) ?? 0) + 1);
+    return counts;
+}
 
 /**
  * Clean a stored preset: a known power, a subtype of that power (or none), and only modifiers the
@@ -338,7 +348,13 @@ export function normalizePreset(raw) {
     if (!power || typeof raw?.id !== "string" || !raw.id) return null;
     const subtype = findSubtype(power, raw.subtype)?.id ?? null;
     const allowed = allowedModifierKeys(power, subtype);
-    const modifiers = [...new Set(Array.isArray(raw.modifiers) ? raw.modifiers : [])].filter(key => allowed.has(key));
+    // Per-rank modifiers keep their repeats (up to MAX_RANKS); others count once.
+    const modifiers = [];
+    for (const [key, count] of modifierCounts(Array.isArray(raw.modifiers) ? raw.modifiers : [])) {
+        if (!allowed.has(key)) continue;
+        const ranks = findModifier(key)?.option.perRank ? Math.min(count, MAX_RANKS) : 1;
+        for (let i = 0; i < ranks; i++) modifiers.push(key);
+    }
     const name = String(raw.name ?? "").trim().slice(0, PRESET_NAME_MAX_LENGTH) || power.label;
     return { id: raw.id, name, power: power.id, subtype, modifiers };
 }

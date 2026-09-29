@@ -4,12 +4,14 @@
  */
 
 import {
+    MAX_RANKS,
     POWER_MODIFIER_CATALOG,
     PRESET_NAME_MAX_LENGTH,
     allowedModifierKeys,
     difficultyLabel,
     findPower,
     findSubtype,
+    modifierCounts,
     modifierGroups,
     normalizePreset,
     normalizePresets,
@@ -65,7 +67,7 @@ export class PowerPresetEditor extends HandlebarsApplicationMixin(ApplicationV2)
     async _prepareContext() {
         const power = findPower(this.draft.power);
         const discipline = power.discipline;
-        const chosen = new Set(this.draft.modifiers);
+        const chosen = modifierCounts(this.draft.modifiers);
         const subtype = findSubtype(power, this.draft.subtype);
         const loaded = power.loadout ? findSubtype(power, this.actor.getFlag(MODULE_ID, "techLoadout")?.[power.id]) ?? power.subtypes[0] : null;
         const preview = presetDifficulty(power.id, subtype?.id ?? loaded?.id, this.draft.modifiers);
@@ -85,7 +87,8 @@ export class PowerPresetEditor extends HandlebarsApplicationMixin(ApplicationV2)
                     label: group.label,
                     options: group.options.map(option => {
                         const key = `${group.id}:${option.id}`;
-                        return { key, label: option.label, modifierText: option.modifierText, checked: chosen.has(key) };
+                        const count = chosen.get(key) ?? 0;
+                        return { key, label: option.label, modifierText: option.modifierText, perRank: option.perRank, count, checked: count > 0, maxRanks: MAX_RANKS };
                     })
                 })),
             preview: difficultyLabel(preview.difficulty)
@@ -101,9 +104,13 @@ export class PowerPresetEditor extends HandlebarsApplicationMixin(ApplicationV2)
         const power = findPower(data.power) ?? findPower(this.draft.power);
         const subtype = findSubtype(power, data.subtype)?.id ?? null;
         const allowed = allowedModifierKeys(power, subtype);
-        const modifiers = [...this.element.querySelectorAll("input[data-modifier]:checked")]
-            .map(input => input.dataset.modifier)
-            .filter(key => allowed.has(key));
+        const modifiers = [];
+        for (const input of this.element.querySelectorAll("input[data-modifier]")) {
+            const key = input.dataset.modifier;
+            if (!allowed.has(key)) continue;
+            const count = input.type === "number" ? Math.max(0, Math.min(MAX_RANKS, Number.parseInt(input.value, 10) || 0)) : (input.checked ? 1 : 0);
+            for (let i = 0; i < count; i++) modifiers.push(key);
+        }
         return { ...this.draft, name: String(data.name ?? ""), power: power.id, subtype, modifiers };
     }
 

@@ -132,8 +132,9 @@
           <tr class="flex-group-center">
             <td>
               <input
-                type="checkbox"
-                class="azecraft-power-modifier"
+                {{#if modifier.perRank}}type="number" min="0" max="{{modifier.maxRanks}}" step="1" value="{{modifier.count}}" data-tooltip="Ranks"{{else}}type="checkbox"{{/if}}
+                class="azecraft-power-modifier{{#if modifier.perRank}} azecraft-power-modifier--ranks{{/if}}"
+                {{#if modifier.perRank}}style="width: 3.2em; text-align: center"{{/if}}
                 id="azecraft-{{category.id}}-{{modifier.id}}"
                 data-modifier-key="{{modifier.key}}"
                 data-modifier-id="{{modifier.id}}"
@@ -143,7 +144,7 @@
                 data-setback="{{modifier.setback}}"
                 data-upgrade-difficulty="{{modifier.upgradeDifficulty}}"
                 data-modifier-text="{{modifier.modifierText}}"
-                {{checked modifier.checked}}
+                {{#unless modifier.perRank}}{{checked modifier.checked}}{{/unless}}
               />
             </td>
             <td class="pool-text">

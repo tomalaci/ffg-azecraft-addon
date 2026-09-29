@@ -29,7 +29,11 @@
             <legend>{{group.label}}</legend>
             {{#each group.options as |option|}}
             <label class="azpp-mod">
+                {{#if option.perRank}}
+                <input type="number" data-modifier="{{option.key}}" value="{{option.count}}" min="0" max="{{option.maxRanks}}" step="1" class="azpp-ranks" data-tooltip="Ranks">
+                {{else}}
                 <input type="checkbox" data-modifier="{{option.key}}" {{checked option.checked}}>
+                {{/if}}
                 <span>{{option.label}}</span>
                 <span class="azpp-mod-text">{{option.modifierText}}</span>
             </label>
