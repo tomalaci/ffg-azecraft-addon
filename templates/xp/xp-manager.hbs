@@ -9,6 +9,7 @@
         <input type="number" class="azxp-amount" min="0" step="1" value="{{draft.amount}}" data-azxp-field="amount" aria-label="XP">
         <input type="text" class="azxp-reason" value="{{draft.reason}}" placeholder="Reason (logged), e.g. Session 12" data-azxp-field="reason" aria-label="Reason">
         <button type="button" data-action="apply" {{disabled (not selectedCount)}}><i class="fa-solid fa-check" inert></i> Apply to {{selectedCount}} selected</button>
+        {{#if repairCount}}<button type="button" class="azxp-repair" data-action="repair" data-tooltip="The stored total XP of {{repairCount}} character(s) is lower than all XP given (spending recorded with the sheet's Adjust XP lowered it too)"><i class="fa-solid fa-screwdriver-wrench" inert></i> Repair totals ({{repairCount}})</button>{{/if}}
         {{#if busy}}<span class="azxp-busy"><i class="fa-solid fa-spinner fa-spin" inert></i> {{busy}}</span>{{/if}}
     </div>
 
@@ -24,7 +25,7 @@
                     <td class="azxp-portrait">{{#if row.img}}<img src="{{row.img}}" alt="" loading="lazy">{{/if}}</td>
                     <td class="azxp-name"><a data-action="toggleLog" data-actor="{{row.id}}" data-tooltip="Show or hide the XP log"><i class="fa-solid {{#if row.expanded}}fa-caret-down{{else}}fa-caret-right{{/if}}" inert></i> {{row.name}}</a>
                         {{#if row.player}}<span class="azxp-muted">{{row.player}}</span>{{/if}}</td>
-                    <td class="azxp-num">{{row.total}}</td>
+                    <td class="azxp-num">{{#if row.needsRepair}}<i class="fa-solid fa-triangle-exclamation azxp-warn" data-tooltip="Stored total is {{row.storedTotal}}; all XP given is {{row.total}} (Repair totals fixes it)"></i> {{/if}}{{row.total}}</td>
                     <td class="azxp-num azxp-available {{#if row.negative}}azxp-negative{{/if}}">{{row.available}}</td>
                     <td class="azxp-num">{{row.spent}}</td>
                     <td class="azxp-last">{{#if row.last}}<span class="azxp-muted">{{row.last.date}}</span> {{row.last.description}} <span class="azxp-muted">({{row.last.cost}})</span>{{/if}}</td>

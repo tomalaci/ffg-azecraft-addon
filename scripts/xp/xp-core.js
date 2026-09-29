@@ -24,6 +24,35 @@ export function xpSummary(experience) {
 }
 
 /**
+ * XP spent according to the XP log: purchases, plus negative "adjusted" entries (the sheet's Adjust
+ * XP dialog, which players use to record spending), minus refunds. GM corrections are "granted"
+ * entries (negative for reductions) and do not count.
+ */
+export function spentFromLog(log) {
+    let spent = 0;
+    for (const entry of Array.isArray(log) ? log : []) {
+        const cost = int(entry?.xp?.cost);
+        if (entry?.action === "purchased") spent += Math.abs(cost);
+        else if (entry?.action === "adjusted" && cost < 0) spent += -cost;
+        else if (entry?.action === "refunded") spent -= Math.abs(cost);
+    }
+    return Math.max(0, spent);
+}
+
+/**
+ * A character's XP: available as the system has it; spent from the log (or total − available when
+ * that is more); total = available + spent, i.e. all XP ever given. The system's Adjust XP dialog
+ * used to lower the stored total along with available when XP was spent, so the stored total can
+ * be too low: `storedTotal` shows what is stored, `needsRepair` whether it differs.
+ */
+export function xpStatus(experience, log) {
+    const stored = xpSummary(experience);
+    const spent = Math.max(spentFromLog(log), stored.spent);
+    const total = stored.available + spent;
+    return { total, available: stored.available, spent, storedTotal: stored.total, needsRepair: total !== stored.total };
+}
+
+/**
  * The effect of a change on a character.
  * @param {{total: number, available: number}} current  total and (effective) available XP
  * @param {"add"|"reduce"|"set"} mode  set: the new total (available moves by the same amount)
@@ -46,10 +75,13 @@ export function logDate(now = new Date()) {
     return now.toISOString().slice(0, 10);
 }
 
-/** The XP log entry for a GM change (the system's format: "granted" for gains, "adjusted" for losses). */
+/**
+ * The XP log entry for a GM change: "granted", negative for reductions (a correction, not spending;
+ * "adjusted" with a negative amount means spent XP, see spentFromLog).
+ */
 export function changeLogEntry({ delta, total, available }, reason, now = new Date()) {
     return {
-        action: delta >= 0 ? "granted" : "adjusted",
+        action: "granted",
         id: undefined,
         xp: { cost: delta, available, total },
         date: logDate(now),
@@ -107,5 +139,6 @@ export function signed(value) {
 /** One line describing a change ("Add 5", "Set total to 120"). */
 export function changeLabel(mode, amount) {
     if (mode === "set") return `Set total to ${int(amount)}`;
+    if (mode === "repair") return "Repair stored total";
     return `${mode === "reduce" ? "Reduce" : "Add"} ${int(amount)}`;
 }

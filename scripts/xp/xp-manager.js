@@ -8,8 +8,8 @@
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
 import { displaySrc } from "../thumbnails/thumbnails.js";
-import { CHANGE_MODES, LOG_ACTIONS, changeLabel, signed, xpSummary } from "./xp-core.js";
-import { addToRoster, addableCharacters, changeXp, findLedger, ledgerRows, readRoster, registerXpSettings, removeFromRoster, rosterActors, updateLogEntry, xpLog } from "./xp-ops.js";
+import { CHANGE_MODES, LOG_ACTIONS, changeLabel, signed } from "./xp-core.js";
+import { actorXp, addToRoster, addableCharacters, changeXp, findLedger, ledgerRows, readRoster, registerXpSettings, removeFromRoster, repairTotals, rosterActors, updateLogEntry, xpLog } from "./xp-ops.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const TEMPLATE = `modules/${MODULE_ID}/templates/xp/xp-manager.hbs`;
@@ -35,6 +35,7 @@ export class XPManagerApp extends SceneSpaceApp {
             remove: XPManagerApp.#onRemove,
             add: XPManagerApp.#onAdd,
             deleteEntry: XPManagerApp.#onDeleteEntry,
+            repair: XPManagerApp.#onRepair,
             openLedger: XPManagerApp.#onOpenLedger
         }
     };
@@ -58,7 +59,7 @@ export class XPManagerApp extends SceneSpaceApp {
         this.#shownLog.clear();
 
         const rows = actors.map(actor => {
-            const xp = xpSummary(actor.system.experience);
+            const xp = actorXp(actor);
             const log = xpLog(actor);
             const last = log[0];
             const expanded = this.expanded.has(actor.id);
@@ -109,7 +110,8 @@ export class XPManagerApp extends SceneSpaceApp {
             ledger,
             ledgerCount: allLedger.length,
             moreLedger: allLedger.length > LEDGER_SHOWN,
-            hasLedger: Boolean(findLedger())
+            hasLedger: Boolean(findLedger()),
+            repairCount: rows.filter(row => row.needsRepair).length
         };
     }
 
@@ -176,7 +178,7 @@ export class XPManagerApp extends SceneSpaceApp {
         if (mode !== "set" && !amount) return ui.notifications.warn("Enter an amount of XP.");
         const actors = [...this.selected].map(id => game.actors.get(id)).filter(Boolean);
         const lines = actors.map(actor => {
-            const xp = xpSummary(actor.system.experience);
+            const xp = actorXp(actor);
             return `<li>${esc(actor.name)}: total ${xp.total}, available ${xp.available}</li>`;
         }).join("");
         const ok = await DialogV2.confirm({
@@ -192,6 +194,27 @@ export class XPManagerApp extends SceneSpaceApp {
             if (changed.length) ui.notifications.info(`XP: ${changed.join(", ")}.`);
             for (const message of failed) ui.notifications.warn(message);
             this.draft = { ...this.draft, amount: 0, reason: "" };
+        });
+    }
+
+    static async #onRepair() {
+        const actors = rosterActors().filter(actor => actorXp(actor).needsRepair);
+        if (!actors.length) return;
+        const lines = actors.map(actor => {
+            const xp = actorXp(actor);
+            return `<li>${esc(actor.name)}: stored total ${xp.storedTotal} → <strong>${xp.total}</strong> (available ${xp.available} + spent ${xp.spent})</li>`;
+        }).join("");
+        const ok = await DialogV2.confirm({
+            window: { title: "Repair stored totals", icon: "fa-solid fa-screwdriver-wrench" },
+            content: `<p>Spending recorded with the sheet's <em>Adjust XP</em> used to lower the stored total XP as well. Set it back to all XP given (available + spent from the XP log)? Available XP and the XP logs are not changed; the XP Ledger records it.</p><ul>${lines}</ul>`,
+            yes: { label: "Repair", icon: "fa-solid fa-check" },
+            no: { label: "Cancel" },
+            rejectClose: false
+        });
+        if (!ok) return;
+        await this.#run("Repairing totals…", async () => {
+            const repaired = await repairTotals(actors.map(actor => actor.id));
+            if (repaired.length) ui.notifications.info(`Repaired: ${repaired.join(", ")}.`);
         });
     }
 

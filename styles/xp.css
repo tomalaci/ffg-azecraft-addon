@@ -72,6 +72,8 @@
 .azxp-tools { width: 1%; white-space: nowrap; text-align: right; }
 .azxp-tools button { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 24px; padding: 0; vertical-align: middle; }
 .azxp-muted { opacity: 0.7; }
+.azxp-warn { color: #ff9d42; font-size: 11px; pointer-events: auto; }
+.azxp-repair { border-color: #ff9d42 !important; color: #ff9d42 !important; }
 .azxp-empty { padding: 18px 6px !important; opacity: 0.75; text-align: center; }
 
 .azxp-logrow > td { padding: 4px 6px 10px 46px; background: rgba(0, 0, 0, 0.22); }

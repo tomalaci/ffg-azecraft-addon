@@ -15,6 +15,7 @@ import { initPerfWindow, UIPerformanceApp } from "./scripts/perf/perf-window.js"
 import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
 import { XPManagerApp, initXpManager } from "./scripts/xp/xp-manager.js";
+import { initXpAdjust } from "./scripts/xp/xp-adjust.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -47,6 +48,7 @@ Hooks.once("init", () => {
         }
     });
     initXpManager();
+    initXpAdjust();
     registerToolbarButton({
         id: "xp-management",
         order: 35,

@@ -8,7 +8,7 @@
  *   rewritten from them after every change, so it reads as a table.
  */
 
-import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, xpSummary } from "./xp-core.js";
+import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, xpStatus, xpSummary } from "./xp-core.js";
 
 export const MODULE_ID = "ffg-azecraft-addon";
 export const ROSTER_SETTING = "xpRoster";
@@ -65,6 +65,11 @@ export function xpLog(actor) {
     return Array.isArray(log) ? log : [];
 }
 
+/** Total (all XP ever given), available and spent XP, from the actor and its XP log. */
+export function actorXp(actor) {
+    return xpStatus(actor.system.experience, xpLog(actor));
+}
+
 /**
  * Add, reduce or set XP for characters, with the reason logged on each character and in the ledger.
  * Writes the actor's stored values (not the ones after Active Effects), so purchases stay intact.
@@ -78,7 +83,7 @@ export async function changeXp(actorIds, mode, amount, reason) {
     for (const id of actorIds) {
         const actor = game.actors.get(id);
         if (!actor) continue;
-        const before = xpSummary(actor.system.experience);
+        const before = actorXp(actor);
         const result = applyXpChange(before, mode, amount);
         if (result.error) {
             failed.push(`${actor.name}: ${result.error}`);
@@ -96,6 +101,34 @@ export async function changeXp(actorIds, mode, amount, reason) {
     }
     if (rows.length) await appendLedger(rows);
     return { changed, failed };
+}
+
+/**
+ * Set the stored total XP of characters to all XP ever given (available + spent). Spending recorded
+ * with the system's Adjust XP dialog used to lower the stored total too. Logged in the ledger only
+ * (the character's XP log is about XP given and spent, and neither changes).
+ * @returns {Promise<string[]>} "Name: 5 → 95" per repaired character
+ */
+export async function repairTotals(actorIds) {
+    assertGM();
+    const rows = [];
+    const repaired = [];
+    for (const id of actorIds) {
+        const actor = game.actors.get(id);
+        if (!actor) continue;
+        const xp = actorXp(actor);
+        if (!xp.needsRepair) continue;
+        const stored = xpSummary(actor._source.system?.experience);
+        await actor.update({ "system.experience.total": stored.total + (xp.total - xp.storedTotal) });
+        rows.push(ledgerRow({
+            actorId: actor.id, actorName: actor.name, gm: game.user.name, mode: "repair", amount: xp.total,
+            before: { total: xp.storedTotal, available: xp.available }, after: { total: xp.total, available: xp.available },
+            reason: `Stored total set to available + spent (${xp.available} + ${xp.spent})`
+        }));
+        repaired.push(`${actor.name}: ${xp.storedTotal} → ${xp.total}`);
+    }
+    if (rows.length) await appendLedger(rows);
+    return repaired;
 }
 
 /**

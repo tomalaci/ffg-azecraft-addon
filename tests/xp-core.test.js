@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, xpSummary } from "../scripts/xp/xp-core.js";
+import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, spentFromLog, xpStatus, xpSummary } from "../scripts/xp/xp-core.js";
 
 const now = new Date("2026-09-29T18:30:00Z");
 
@@ -27,7 +27,8 @@ test("changeLogEntry writes the system's XP log format", () => {
     assert.deepEqual(changeLogEntry({ delta: 5, total: 105, available: 20 }, " Session 12 ", now), {
         action: "granted", id: undefined, xp: { cost: 5, available: 20, total: 105 }, date: "2026-09-29", description: "Session 12"
     });
-    assert.equal(changeLogEntry({ delta: -3, total: 97, available: 12 }, "Correction", now).action, "adjusted");
+    // A GM reduction is a (negative) grant, not spending.
+    assert.equal(changeLogEntry({ delta: -3, total: 97, available: 12 }, "Correction", now).action, "granted");
 });
 
 test("editLogEntry changes only the edited fields and keeps the purchase link", () => {
@@ -52,4 +53,29 @@ test("labels", () => {
     assert.equal(signed(-3), "−3");
     assert.equal(changeLabel("set", 120), "Set total to 120");
     assert.equal(changeLabel("reduce", 4), "Reduce 4");
+});
+
+const entry = (action, cost, description = "") => ({ action, xp: { cost }, description });
+
+test("xpStatus: spending recorded with the sheet's Adjust XP (it lowered the stored total too)", () => {
+    // Veylan Thar: species grant 95, "Character Creation" −90; stored total and available 5.
+    const veylan = [entry("adjusted", -90, "Character Creation"), entry("granted", 95, "received species Drell")];
+    assert.deepEqual(xpStatus({ total: 5, available: 5 }, veylan), { total: 95, available: 5, spent: 90, storedTotal: 5, needsRepair: true });
+    // Moyra Zoreaux: species grant 80, spent all of it; stored total and available 0.
+    const moyra = [entry("adjusted", -80, "Intellect 2->3 (30), ..."), entry("granted", 80, "received species Asari")];
+    assert.deepEqual(xpStatus({ total: 0, available: 0 }, moyra), { total: 80, available: 0, spent: 80, storedTotal: 0, needsRepair: true });
+});
+
+test("xpStatus: correct data needs no repair", () => {
+    assert.deepEqual(xpStatus({ total: 100, available: 100 }, [entry("granted", 100)]), { total: 100, available: 100, spent: 0, storedTotal: 100, needsRepair: false });
+    // System purchases (Active Effects lower available, total intact) and a refund.
+    const log = [entry("refunded", 10), entry("purchased", 10), entry("purchased", 25), entry("granted", 100)];
+    assert.equal(spentFromLog(log), 25);
+    assert.deepEqual(xpStatus({ total: 100, available: 75 }, log), { total: 100, available: 75, spent: 25, storedTotal: 100, needsRepair: false });
+    // Spending that was never logged still shows as total − available.
+    assert.equal(xpStatus({ total: 100, available: 60 }, []).spent, 40);
+});
+
+test("spentFromLog ignores grants, positive adjustments and GM corrections", () => {
+    assert.equal(spentFromLog([entry("granted", -5), entry("adjusted", 10), entry("granted", 50)]), 0);
 });
