@@ -18,19 +18,6 @@ body.azsp-active #destiny-tracker {
     display: none !important;
 }
 
-/* Foundry's player list is hidden; the bar's players button shows it floating just above the bar. */
-body.azsp-active:not(.azsp-players-open) #players {
-    display: none !important;
-}
-
-body.azsp-active.azsp-players-open #players {
-    position: fixed;
-    left: var(--azsp-players-left, 16px);
-    bottom: var(--azsp-players-bottom, 140px);
-    z-index: 3;
-    margin: 0;
-}
-
 #azecraft-story-points {
     position: fixed;
     left: var(--azsp-left, 16px);
@@ -80,16 +67,6 @@ body.azsp-active.azsp-players-open #players {
 #azecraft-story-points .azsp-head {
     justify-content: flex-start;
     gap: 8px;
-}
-
-#azecraft-story-points .azsp-players {
-    gap: 4px;
-    font-size: 10px;
-}
-
-#azecraft-story-points .azsp-icon--on {
-    border-color: #ff9d42;
-    color: #ff9d42;
 }
 
 #azecraft-story-points .azsp-icon {

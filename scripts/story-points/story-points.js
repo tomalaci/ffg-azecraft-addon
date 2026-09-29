@@ -99,8 +99,7 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
             use: StoryPointsApp.#onUse,
             adjust: StoryPointsApp.#onAdjust,
             resize: StoryPointsApp.#onResizePool,
-            systemMenu: StoryPointsApp.#onSystemMenu,
-            togglePlayers: StoryPointsApp.#onTogglePlayers
+            systemMenu: StoryPointsApp.#onSystemMenu
         }
     };
 
@@ -125,8 +124,6 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
         return {
             isGM,
-            playersOpen: document.body.classList.contains("azsp-players-open"),
-            playersOnline: game.users.filter(user => user.active).length,
             pool,
             label,
             segments: poolSegments(pool).map((side, index, all) => ({
@@ -170,23 +167,22 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     #position() {
         const element = this.element;
         if (!element) return;
-        // The dashboard's mission tabs start at --azd-bar-left (when the dashboard is shown).
+        // With the dashboard shown, the bar runs from the squad rail's left edge (--azd-left) to where
+        // the mission tabs start (--azd-bar-left).
         const dashboard = document.querySelector("#azecraft-mission-dashboard:not(.azd--hidden)");
         const barLeft = dashboard ? parseFloat(dashboard.style.getPropertyValue("--azd-bar-left")) : NaN;
+        const railLeft = dashboard ? parseFloat(dashboard.style.getPropertyValue("--azd-left")) : NaN;
         const box = storyPointsBox({
             width: window.innerWidth,
             height: window.innerHeight,
             controls: visibleRect("#scene-controls"),
             hotbar: visibleRect("#hotbar"),
-            barLeft
+            barLeft,
+            railLeft
         });
         element.style.setProperty("--azsp-left", `${box.left}px`);
         element.style.setProperty("--azsp-bottom", `${box.bottom}px`);
         element.style.setProperty("--azsp-width", `${box.width}px`);
-        // The player list, when opened from the bar, floats just above it.
-        const height = element.getBoundingClientRect().height;
-        document.body.style.setProperty("--azsp-players-left", `${box.left}px`);
-        document.body.style.setProperty("--azsp-players-bottom", `${Math.round(box.bottom + height + 6)}px`);
     }
 
     /* -------------------------------------------- */
@@ -225,12 +221,6 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #onResizePool(event, target) {
         if (!game.user.isGM) return;
         await writePool(resizePool(readPool(), Number(target.dataset.delta)));
-    }
-
-    /** Show or hide Foundry's player list, which floats above the bar while open. */
-    static #onTogglePlayers() {
-        document.body.classList.toggle("azsp-players-open");
-        this.render();
     }
 
     static #onSystemMenu(event, target) {
@@ -308,9 +298,6 @@ export function initStoryPoints() {
     });
 
     // Any change to the pool (from this widget, the system, the Group Manager or another client).
-    // The online count on the players button.
-    Hooks.on("userConnected", () => app?.render());
-
     Hooks.on("updateSetting", setting => {
         if (setting.key === `${SYSTEM_ID}.dPoolLight` || setting.key === `${SYSTEM_ID}.dPoolDark`) app?.render();
     });

@@ -26,12 +26,15 @@ function registerSettings() {
     // Client scope: stored per browser, so one person's choice never affects anyone else.
     game.settings.register(MODULE_ID, SETTINGS.hidden, {
         name: "Hide mission dashboard",
-        hint: "Hide the mission dashboard on this computer. A small button stays available to show it again.",
+        hint: "Hide the mission dashboard on this computer. The Dashboard button next to the Scene list shows it again.",
         scope: "client",
         config: true,
         type: Boolean,
         default: false,
-        onChange: () => controller?.app?.applyPreferences()
+        onChange: () => {
+            controller?.app?.applyPreferences();
+            Hooks.callAll("azecraftDashboardChanged");
+        }
     });
 
     game.settings.register(MODULE_ID, SETTINGS.compact, {

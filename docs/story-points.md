@@ -10,10 +10,9 @@ in the dashboard's style. The rules are the same as before (Genesys story points
 
 Both names can be changed (see Settings below).
 
-It sits in the bottom-left corner, where Foundry's player list used to be, and stretches to where
-the mission dashboard's tabs begin; the dashboard's squad column runs down to it. The player list
-is hidden: the **players** button in the bar's header (with the number of people online) shows it
-floating above the bar, and hides it again.
+It sits in the bottom-left corner under the dashboard's squad column, from the column's left edge
+to where the mission tabs begin; the squad column runs down to it. Foundry's player list is hidden:
+the **Players** button in the toolbar next to the Scene list shows it.
 
 The bar is a tug of war. Each segment is one point: Destiny fills from the left in blue, Doom
 fills from the right in red. As the players spend Destiny, the blue shrinks and the red grows.
@@ -50,8 +49,8 @@ fills from the right in red. As the players spend Destiny, the blue shrinks and 
 - The system's `DestinyTracker` keeps running, hidden with CSS. The widget relies on it for two
   things: player spends (`game.socket.emit("system.starwarsffg", { pool })` is applied by the
   active GM's tracker, because players cannot write world settings), and its GM menu callbacks.
-- The widget (`scripts/story-points/`) is a frameless ApplicationV2 in `#interface`, placed above
-  the player list. It re-renders on `updateSetting` for the two pool settings. The pool maths is
+- The widget (`scripts/story-points/`) is a frameless ApplicationV2 in `#interface`, placed in
+  the bottom-left corner (`story-layout.js`). It re-renders on `updateSetting` for the two pool settings. The pool maths is
   pure (`story-pool.js`, unit-tested).
 - The system's remaining Star Wars wording (`SWFFG.Lightside`, `SWFFG.Darkside`,
   `SWFFG.DestinyPool`…) is overridden in `game.i18n.translations` at `setup`.

@@ -144,8 +144,8 @@ export function measureUI() {
         navExpand: visibleRect("#scene-navigation-expand"),
         // Only the always-visible part of the player list: expanding it (the inactive players above)
         // floats over the rail instead of pushing the frame up.
-        // With the story point bar on, the player list is only a pop-up over the rail: ignore it.
-        players: document.body.classList.contains("azsp-active") ? null : visibleRect("#players-active") ?? visibleRect("#players"),
+        // The player list is a drop-down from the toolbar's Players button: it takes no room.
+        players: document.body.classList.contains("aztb-players-managed") ? null : visibleRect("#players-active") ?? visibleRect("#players"),
         // The addon's story point bar (bottom-left, where the player list was), or the system's
         // destiny tracker when the bar is off.
         destiny: visibleRect("#azecraft-story-points") ?? visibleRect("#destiny-tracker"),

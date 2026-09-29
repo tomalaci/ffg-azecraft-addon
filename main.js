@@ -9,6 +9,7 @@ import { initAmmo } from "./scripts/ammo/ammo.js";
 import { initApplyDamage } from "./scripts/combat/apply-damage.js";
 import { initSheetPatches } from "./scripts/sheet-patches.js";
 import { initThumbnails } from "./scripts/thumbnails/thumbnails.js";
+import { initToolbar } from "./scripts/toolbar/toolbar.js";
 import { initPerfMonitor } from "./scripts/perf/perf-monitor.js";
 import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 
@@ -28,4 +29,5 @@ Hooks.once("init", () => {
     initApplyDamage();
     initSheetPatches();
     initThumbnails();
+    initToolbar();
 });

@@ -1,7 +1,7 @@
 /**
- * Where the story point bar goes (pure, unit-tested): the bottom-left corner, where Foundry's player
- * list used to be, stretched right to where the dashboard's mission tabs begin (or up to the
- * hotbar when there is no dashboard). The bar is always horizontal.
+ * Where the story point bar goes (pure, unit-tested): the bottom-left corner, under the dashboard's
+ * squad rail (from its left edge to where the mission tabs begin), or, without the dashboard, next
+ * to the scene controls up to the hotbar. The bar is always horizontal.
  */
 
 const GAP = 10;
@@ -9,12 +9,12 @@ export const DEFAULT_WIDTH = 330;
 export const MIN_WIDTH = 260;
 
 /**
- * @param {{width: number, height: number, controls?: DOMRect, hotbar?: DOMRect, barLeft?: number}} ui
- *        barLeft: left edge of the dashboard's mission tabs, when the dashboard is shown
+ * @param {{width: number, height: number, controls?: DOMRect, hotbar?: DOMRect, barLeft?: number, railLeft?: number}} ui
+ *        barLeft / railLeft: the dashboard's mission tabs' and squad rail's left edges, when shown
  * @returns {{left: number, bottom: number, width: number}}
  */
-export function storyPointsBox({ height, controls, hotbar, barLeft }) {
-    const left = Math.round(controls?.left ?? 16);
+export function storyPointsBox({ height, controls, hotbar, barLeft, railLeft }) {
+    const left = Math.round(Number.isFinite(railLeft) ? railLeft : (controls?.left ?? 16));
     // Bottom-aligned with the hotbar, like the player list it replaces.
     const bottom = Math.round(hotbar ? Math.max(GAP, height - hotbar.bottom) : 16);
     let right = left + DEFAULT_WIDTH;

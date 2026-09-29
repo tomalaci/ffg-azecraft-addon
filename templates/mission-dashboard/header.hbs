@@ -14,8 +14,8 @@
     </div>
     <div class="azd-header-controls">
         {{#if standing.reputation.ready}}
-        <button type="button" class="azd-chip" data-action="openTracker" data-kind="reputation" data-tooltip="Reputation: Fame and faction standing" aria-label="Reputation">
-            <i class="fa-solid fa-ranking-star" inert></i> Fame {{standing.reputation.value}}
+        <button type="button" class="azd-chip" data-action="openTracker" data-kind="reputation" data-tooltip="Reputation: Fame {{standing.reputation.value}} and faction standing" aria-label="Reputation: Fame {{standing.reputation.value}}">
+            <i class="fa-solid fa-ranking-star" inert></i><span class="azd-chip-label"> Fame {{standing.reputation.value}}</span>
         </button>
         {{else if isGM}}
         <button type="button" class="azd-icon-button" data-action="openTracker" data-kind="reputation" data-tooltip="Reputation (not set up yet)" aria-label="Reputation">
@@ -23,8 +23,8 @@
         </button>
         {{/if}}
         {{#if standing.resources.ready}}
-        <button type="button" class="azd-chip" data-action="openTracker" data-kind="resources" data-tooltip="Resources: Credits and materials" aria-label="Resources">
-            <i class="fa-solid fa-coins" inert></i> {{standing.resources.value}} cr
+        <button type="button" class="azd-chip" data-action="openTracker" data-kind="resources" data-tooltip="Resources: {{standing.resources.value}} cr and materials" aria-label="Resources: {{standing.resources.value}} credits">
+            <i class="fa-solid fa-coins" inert></i><span class="azd-chip-label"> {{standing.resources.value}} cr</span>
         </button>
         {{else if isGM}}
         <button type="button" class="azd-icon-button" data-action="openTracker" data-kind="resources" data-tooltip="Resources (not set up yet)" aria-label="Resources">
@@ -48,10 +48,5 @@
             <i class="fa-solid fa-gear" inert></i>
         </button>
         {{/if}}
-        <button type="button" class="azd-icon-button azd-hide-toggle" data-action="toggleHidden" data-tooltip="{{#if prefs.hidden}}Show dashboard{{else}}Focus map: hide dashboard on this computer{{/if}}" aria-label="{{#if prefs.hidden}}Show dashboard{{else}}Hide dashboard{{/if}}">
-            <i class="fa-solid fa-eye-slash azd-when-shown" inert></i>
-            <i class="fa-solid fa-satellite-dish azd-when-hidden" inert></i>
-            <span class="azd-when-hidden">Dashboard</span>
-        </button>
     </div>
 </header>

@@ -177,13 +177,14 @@ These buttons in the dashboard header only affect **your** screen:
   GMs can tick *Fit into the frame when opened* in a Scene's dashboard configuration (good for art
   and landing Scenes) so this happens once whenever someone opens that Scene.
 
-- **Eye** (Focus map): hides the dashboard. A small **Dashboard** button stays at the top of the
-  screen, just right of the Scene list, to bring it back. You can also bind a key to *Toggle mission dashboard* in Configure Controls.
+- **Dashboard** (in the toolbar just right of the Scene list, with an ON/OFF indicator): shows or
+  hides the dashboard. You can also bind a key to *Toggle mission dashboard* in Configure Controls.
+  **Players** next to it shows Foundry's player list, which is otherwise hidden.
 - **List**: compact cards. The button cycles between Auto, On and Off. *Auto* turns compact mode on
   for small screens or when the sidebar leaves little room. In compact mode, the expand button on a
   card shows its details.
   Compact cards give the portrait a third of the card's width and its full height, with the
-  stats beside it.
+  stats beside it. Fame and Credits become icon buttons (their values are in the tooltips).
 - **Chevron**: collapses the mission panels to one bar that still shows the current objective.
 
 The same options are in **Game Settings → Configure Settings → FFG Azecraft Addon**.

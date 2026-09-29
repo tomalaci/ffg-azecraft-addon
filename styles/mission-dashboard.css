@@ -256,33 +256,14 @@
     display: none;
 }
 
-/* Hidden ("focus map"): only a small restore button remains. */
-#azecraft-mission-dashboard.azd--hidden .azd-rail,
-#azecraft-mission-dashboard.azd--hidden .azd-mission,
-#azecraft-mission-dashboard.azd--hidden .azd-intel,
-#azecraft-mission-dashboard.azd--hidden .azd-header-title,
-#azecraft-mission-dashboard.azd--hidden .azd-header-controls > :not(.azd-hide-toggle),
-#azecraft-mission-dashboard.azd--hidden .azd-when-shown {
+/* Hidden ("focus map"): the whole dashboard is hidden; the toolbar's Dashboard button brings it back. */
+#azecraft-mission-dashboard.azd--hidden {
     display: none;
 }
 
-#azecraft-mission-dashboard.azd--hidden .azd-when-hidden {
-    display: inline;
-}
-
-#azecraft-mission-dashboard.azd--hidden .azd-header {
-    left: var(--azd-toggle-left, 316px);
-    top: var(--azd-toggle-top, 16px);
-    width: auto;
-    height: 34px;
-    padding: 0 6px;
-}
-
-#azecraft-mission-dashboard.azd--hidden .azd-hide-toggle {
-    font-family: var(--azd-font-heading);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+/* Compact: Fame and Credits shrink to icon buttons (the values are in their tooltips). */
+#azecraft-mission-dashboard.azd--compact .azd-chip-label {
+    display: none;
 }
 
 /* -------------------------------------------- */

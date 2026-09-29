@@ -1,0 +1,72 @@
+/* Azecraft toolbar next to the scene list (scripts/toolbar/toolbar.js). */
+
+#azecraft-toolbar {
+    position: fixed;
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+#azecraft-toolbar .aztb-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    height: 34px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid rgba(116, 200, 255, 0.35);
+    border-radius: 0;
+    background: rgba(9, 15, 26, 0.9);
+    color: #e7eef7;
+    font-family: "Roboto Condensed", "Arial Narrow", "Signika", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+#azecraft-toolbar .aztb-button:hover {
+    border-color: #ff9d42;
+    color: #ff9d42;
+}
+
+#azecraft-toolbar .aztb-button--on {
+    border-color: rgba(116, 200, 255, 0.8);
+    background: rgba(114, 212, 255, 0.16);
+}
+
+#azecraft-toolbar .aztb-button i {
+    color: #72d4ff;
+}
+
+/* On/off indicator (Dashboard) and counts (Players). */
+#azecraft-toolbar .aztb-state {
+    padding: 0 4px;
+    border: 1px solid currentColor;
+    font-size: 9px;
+    line-height: 13px;
+    opacity: 0.85;
+}
+
+#azecraft-toolbar .aztb-state--on { color: #7fe0a0; }
+#azecraft-toolbar .aztb-state--off,
+#azecraft-toolbar .aztb-state--n\/a { color: #95a6ba; }
+
+/* Foundry's player list: hidden, dropped down under the Players button while open. */
+body.aztb-players-managed:not(.aztb-players-open) #players {
+    display: none !important;
+}
+
+body.aztb-players-managed.aztb-players-open #players {
+    position: fixed;
+    left: var(--aztb-players-left, 320px);
+    top: var(--aztb-players-top, 56px);
+    bottom: auto;
+    z-index: 6;
+    margin: 0;
+}

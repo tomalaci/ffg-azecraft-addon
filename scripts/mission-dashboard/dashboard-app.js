@@ -105,7 +105,6 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             toggleCard: MissionDashboardApp.#onToggleCard,
             editPage: MissionDashboardApp.#onEditPage,
             configure: MissionDashboardApp.#onConfigure,
-            toggleHidden: MissionDashboardApp.#onToggleHidden,
             cycleCompact: MissionDashboardApp.#onCycleCompact,
             toggleMission: MissionDashboardApp.#onToggleMission,
             openTracker: MissionDashboardApp.#onOpenTracker,
@@ -718,10 +717,6 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     static #onConfigure() {
         if (!game.user.isGM) return;
         this.controller.openConfig();
-    }
-
-    static async #onToggleHidden() {
-        await game.settings.set(MODULE_ID, SETTINGS.hidden, !this.controller.preferences().hidden);
     }
 
     static async #onCycleCompact() {

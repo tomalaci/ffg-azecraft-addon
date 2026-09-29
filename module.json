@@ -33,7 +33,8 @@
         "styles/powers.css",
         "styles/ammo.css",
         "styles/combat.css",
-        "styles/perf.css"
+        "styles/perf.css",
+        "styles/toolbar.css"
     ],
     "url": "https://github.com/tomalaci/ffg-azecraft-addon",
     "manifest": "https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json",
