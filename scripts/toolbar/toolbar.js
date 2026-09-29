@@ -6,6 +6,8 @@
  * - Other features add their own buttons with registerToolbarButton() (UI Performance, Admin Panel).
  *
  * It is independent of the dashboard, so it stays when the dashboard is hidden or not on a Scene.
+ * With the framed dashboard shown, it sits inside the dashboard's top rail (sized from the
+ * --aztb-top / --aztb-bottom variables set here).
  */
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -49,6 +51,13 @@ function position() {
     const top = Math.round(controls?.top ?? edges[0]?.top ?? GAP);
     element.style.left = `${left}px`;
     element.style.top = `${top}px`;
+    // The dashboard's top rail is sized around the toolbar (same margin above and below it).
+    const rect = element.getBoundingClientRect();
+    const root = document.documentElement.style;
+    if (rect.height) {
+        root.setProperty("--aztb-top", `${Math.round(rect.top)}px`);
+        root.setProperty("--aztb-bottom", `${Math.round(rect.bottom)}px`);
+    }
     placePlayers();
 }
 

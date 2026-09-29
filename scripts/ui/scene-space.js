@@ -31,6 +31,8 @@ export function sceneSpaceRect() {
         const rail = visibleRect("#azecraft-mission-dashboard .azd-rail");
         const panels = ["#azecraft-mission-dashboard .azd-mission", "#azecraft-mission-dashboard .azd-intel"].map(visibleRect).filter(Boolean);
         if (rail) left = Math.max(left, rail.right + 12 + GAP);
+        const topRail = visibleRect("#azecraft-mission-dashboard .azd-frame-top");
+        if (topRail) top = Math.max(top, topRail.bottom + GAP);
         if (panels.length) bottom = Math.min(bottom, Math.min(...panels.map(panel => panel.top)) - 12 - GAP);
     }
     return {

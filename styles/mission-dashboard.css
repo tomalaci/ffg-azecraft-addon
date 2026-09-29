@@ -270,8 +270,9 @@
 /*  Frame                                       */
 /* -------------------------------------------- */
 
-/* Framed style: the squad column and the mission bar are one solid L-shaped frame around the map
- * window, instead of panels floating over it. Core controls still sit on top of the frame. */
+/* Framed style: the squad column, the top rail (holding the toolbar tabs) and the mission bar are
+ * one solid frame around the map window, instead of panels floating over it. Core controls and
+ * the toolbar still sit on top of the frame. */
 #azecraft-mission-dashboard .azd-frame {
     display: none;
 }
@@ -281,6 +282,7 @@
 }
 
 #azecraft-mission-dashboard .azd-frame-left,
+#azecraft-mission-dashboard .azd-frame-top,
 #azecraft-mission-dashboard .azd-frame-bottom {
     position: absolute;
     /* The frame is solid: clicks on it never reach tokens hidden behind it. */
@@ -306,9 +308,20 @@
     box-shadow: inset 0 1px 0 var(--azd-line), inset 0 6px 12px -6px rgba(114, 212, 255, 0.35), 0 -4px 14px rgba(0, 0, 0, 0.6);
 }
 
+/* Top rail across the map window, as tall as the toolbar plus the same margin above and below. */
+#azecraft-mission-dashboard .azd-frame-top {
+    top: 0;
+    left: var(--azd-panels-left);
+    right: max(0px, calc(var(--azd-right, 360px) - 12px));
+    height: calc(var(--aztb-bottom, 46px) + var(--aztb-top, 12px));
+    box-shadow: inset 0 -1px 0 var(--azd-line), inset 0 -6px 12px -6px rgba(114, 212, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
 /* Inner corner accents where the map window meets the frame. */
 #azecraft-mission-dashboard .azd-frame-bottom::before,
-#azecraft-mission-dashboard .azd-frame-bottom::after {
+#azecraft-mission-dashboard .azd-frame-bottom::after,
+#azecraft-mission-dashboard .azd-frame-top::before,
+#azecraft-mission-dashboard .azd-frame-top::after {
     content: "";
     position: absolute;
     top: -1px;
@@ -317,8 +330,16 @@
     background: var(--azd-orange);
 }
 
-#azecraft-mission-dashboard .azd-frame-bottom::before { left: 0; }
-#azecraft-mission-dashboard .azd-frame-bottom::after { right: 0; }
+#azecraft-mission-dashboard .azd-frame-top::before,
+#azecraft-mission-dashboard .azd-frame-top::after {
+    top: auto;
+    bottom: -1px;
+}
+
+#azecraft-mission-dashboard .azd-frame-bottom::before,
+#azecraft-mission-dashboard .azd-frame-top::before { left: 0; }
+#azecraft-mission-dashboard .azd-frame-bottom::after,
+#azecraft-mission-dashboard .azd-frame-top::after { right: 0; }
 
 #azecraft-mission-dashboard.azd--framed .azd-panel {
     box-shadow: inset 0 0 0 1px var(--azd-line-soft);

@@ -160,8 +160,9 @@ the card falls back to the portrait.
 
 ## Hiding and compact mode (everyone)
 
-By default the squad column and the mission bar form a solid **frame** around the map; the Scene
-shows through the window between them. The client setting *Mission dashboard style* switches to
+By default the squad column, a top rail holding the toolbar tabs (Dashboard, Players, UI
+Performance…) and the mission bar form a solid **frame** around the map; the Scene shows through
+the window between them. Toolbar windows open inside that window. The client setting *Mission dashboard style* switches to
 separate **floating panels** instead.
 
 The three mission tabs form one bar. Drag the line between two tabs to resize them (each keeps at
