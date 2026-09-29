@@ -1,0 +1,22 @@
+<section class="azpf-charts">
+    <div class="azpf-charts-head">
+        <h4>Snapshots</h4>
+        <label class="azpf-muted">every <input type="number" min="0" max="600" step="1" value="{{interval}}" data-azpf-interval> s (0 pauses) · last {{count}}</label>
+    </div>
+    {{#if empty}}
+    <p class="azpf-muted">The first snapshot comes {{interval}} seconds after opening the game.</p>
+    {{else}}
+    <div class="azpf-chart-grid">
+        {{#each charts as |c|}}
+        <figure class="azpf-chart">
+            <figcaption><span>{{c.label}}</span><span>now {{c.last}} · peak {{c.peak}}</span></figcaption>
+            <svg viewBox="0 0 {{@root.chart.width}} {{@root.chart.height}}" preserveAspectRatio="none" role="img" aria-label="{{c.label}}">
+                <line x1="0" y1="{{@root.chart.height}}" x2="{{@root.chart.width}}" y2="{{@root.chart.height}}" class="azpf-axis"></line>
+                <path d="{{c.path}}" stroke="{{c.color}}" fill="none" vector-effect="non-scaling-stroke"></path>
+            </svg>
+            <span class="azpf-chart-max">{{c.max}}</span>
+        </figure>
+        {{/each}}
+    </div>
+    {{/if}}
+</section>

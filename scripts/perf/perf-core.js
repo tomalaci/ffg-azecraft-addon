@@ -89,7 +89,10 @@ export function scriptOwner(url) {
     if (/\/scripts\/foundry|\/common\/|\/client\//.test(text)) return "foundry";
     if (!text) return "unknown";
     try {
-        return new URL(text).host || text;
+        const url = new URL(text);
+        // The page itself (/game): inline and event-handler code, including Foundry's own.
+        if (/^\/(game|join)?$/.test(url.pathname)) return "page (inline)";
+        return url.host || text;
     } catch {
         return text;
     }
@@ -111,4 +114,39 @@ export function formatBytes(bytes) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1048576) return `${round(bytes / 1024)} KB`;
     return `${round(bytes / 1048576)} MB`;
+}
+
+/**
+ * SVG path ("M x y L ...") for a line chart of `values` in a width × height box, scaled to
+ * `max` (default: the largest value, at least 1). Null values break the line.
+ */
+export function chartPath(values, width, height, max = null) {
+    const top = max ?? Math.max(1, ...values.filter(v => Number.isFinite(v)));
+    const step = values.length > 1 ? width / (values.length - 1) : 0;
+    let path = "";
+    let drawing = false;
+    values.forEach((value, index) => {
+        if (!Number.isFinite(value)) {
+            drawing = false;
+            return;
+        }
+        const x = round(index * step);
+        const y = round(height - (Math.min(value, top) / top) * height);
+        path += `${drawing ? "L" : "M"}${x} ${y} `;
+        drawing = true;
+    });
+    return path.trim();
+}
+
+/** What kind of asset a URL is, by extension. */
+export function assetKind(url) {
+    const path = String(url ?? "").split(/[?#]/)[0].toLowerCase();
+    if (/\.(png|jpe?g|webp|gif|avif|svg|bmp)$/.test(path)) return "image";
+    if (/\.(webm|mp4|m4v|ogv)$/.test(path)) return "video";
+    if (/\.(ogg|mp3|wav|flac|m4a|opus)$/.test(path)) return "audio";
+    if (/\.(m?js)$/.test(path)) return "script";
+    if (/\.css$/.test(path)) return "style";
+    if (/\.(woff2?|ttf|otf)$/.test(path)) return "font";
+    if (/\.(json|db)$/.test(path)) return "data";
+    return "other";
 }

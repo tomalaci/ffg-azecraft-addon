@@ -1,0 +1,40 @@
+<section class="azpf-stats">
+    <div class="azpf-toolbar">
+        <button type="button" data-action="lag" data-tooltip="Press when you feel a stutter: saves what happened in the last 5 seconds"><i class="fa-solid fa-bolt" inert></i> Lag now!</button>
+        <button type="button" data-action="report" data-tooltip="Detailed report of recent performance and loaded assets: send to the GM, download or copy"><i class="fa-solid fa-file-waveform" inert></i> Detailed report</button>
+        <button type="button" data-action="reset" data-tooltip="Start counting again"><i class="fa-solid fa-rotate-left" inert></i> Reset</button>
+        {{#if marks}}<span class="azpf-muted">{{marks}} lag mark(s)</span>{{/if}}
+    </div>
+
+    <div class="azpf-tiles">
+        <div class="azpf-tile"><span class="azpf-tile-value">{{stats.recentFps}}</span><span class="azpf-tile-label">UI fps now</span></div>
+        <div class="azpf-tile"><span class="azpf-tile-value">{{#if stats.canvasFps}}{{stats.canvasFps}}{{else}}–{{/if}}</span><span class="azpf-tile-label">Canvas fps</span></div>
+        <div class="azpf-tile {{#if (gt stats.slowShare 10)}}azpf-tile--bad{{/if}}"><span class="azpf-tile-value">{{stats.slowShare}}%</span><span class="azpf-tile-label">Slow frames</span></div>
+        <div class="azpf-tile {{#if stats.freezes}}azpf-tile--warn{{/if}}"><span class="azpf-tile-value">{{stats.freezes}}</span><span class="azpf-tile-label">Freezes</span></div>
+        <div class="azpf-tile"><span class="azpf-tile-value">{{stats.worstFrame}} ms</span><span class="azpf-tile-label">Worst frame</span></div>
+        <div class="azpf-tile"><span class="azpf-tile-value">{{#if stats.heapMB}}{{stats.heapMB}} MB{{else}}–{{/if}}</span><span class="azpf-tile-label">Memory{{#unless stats.heapMB}} (n/a in {{browserShort}}){{/unless}}</span></div>
+        <div class="azpf-tile"><span class="azpf-tile-value">{{stats.elements}}</span><span class="azpf-tile-label">Page elements</span></div>
+        <div class="azpf-tile"><span class="azpf-tile-value">{{stats.animations}}</span><span class="azpf-tile-label">Animations</span></div>
+    </div>
+
+    <p class="azpf-env">{{browserShort}} · {{env.gpu}} · {{env.cpuThreads}} threads{{#if env.deviceMemoryGB}} · {{env.deviceMemoryGB}} GB{{/if}} · {{env.screen}} · Foundry {{env.foundry}} · {{env.system}} · {{env.canvas.scene}}, {{env.canvas.tokens}} tokens · {{stats.minutes}} min measured</p>
+
+    <div class="azpf-tables">
+        <div>
+            <h4>Slow-frame time by code</h4>
+            {{#if attribution}}
+            {{#if byOwner.length}}<ol>{{#each byOwner}}<li><span>{{name}}</span><span>{{total}} ms</span></li>{{/each}}</ol>{{else}}<p class="azpf-muted">No slow frames yet.</p>{{/if}}
+            {{else}}
+            <p class="azpf-muted">Not available in {{browserShort}} (Chrome and Edge only); use the frame numbers and graphs.</p>
+            {{/if}}
+        </div>
+        <div>
+            <h4>Slowest renders</h4>
+            {{#if renders.length}}<ol>{{#each renders}}<li><span>{{name}}</span><span>avg {{avg}} / max {{max}} ms</span></li>{{/each}}</ol>{{else}}<p class="azpf-muted">None yet.</p>{{/if}}
+        </div>
+        <div>
+            <h4>Hooks (all handlers)</h4>
+            {{#if hooks.length}}<ol>{{#each hooks}}<li><span>{{name}}</span><span>{{total}} ms ({{count}}×)</span></li>{{/each}}</ol>{{else}}<p class="azpf-muted">None yet.</p>{{/if}}
+        </div>
+    </div>
+</section>

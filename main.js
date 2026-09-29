@@ -9,13 +9,15 @@ import { initAmmo } from "./scripts/ammo/ammo.js";
 import { initApplyDamage } from "./scripts/combat/apply-damage.js";
 import { initSheetPatches } from "./scripts/sheet-patches.js";
 import { initThumbnails } from "./scripts/thumbnails/thumbnails.js";
-import { initToolbar } from "./scripts/toolbar/toolbar.js";
-import { initPerfMonitor } from "./scripts/perf/perf-monitor.js";
+import { initToolbar, refreshToolbar, registerToolbarButton } from "./scripts/toolbar/toolbar.js";
+import { initPerfCollector } from "./scripts/perf/perf-collector.js";
+import { initPerfWindow, UIPerformanceApp } from "./scripts/perf/perf-window.js";
 import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
-    initPerfMonitor();
+    initPerfCollector();
+    initPerfWindow();
     initVisualEffects();
 
     patchOverrideActorTemplates();
@@ -30,4 +32,16 @@ Hooks.once("init", () => {
     initSheetPatches();
     initThumbnails();
     initToolbar();
+    registerToolbarButton({
+        id: "ui-performance",
+        order: 30,
+        label: "UI Performance",
+        icon: "fa-solid fa-gauge-high",
+        tooltip: "Frame rate, slow code, graphs and loaded assets on this computer",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-ui-performance")),
+        onClick: async () => {
+            await UIPerformanceApp.toggle();
+            refreshToolbar();
+        }
+    });
 });

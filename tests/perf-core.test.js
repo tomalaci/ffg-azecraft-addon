@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
+import * as perfCore from "../scripts/perf/perf-core.js";
 import { FrameStats, TimingTable, formatBytes, largest, scriptOwner } from "../scripts/perf/perf-core.js";
 
 test("TimingTable sorts by total time with averages", () => {
@@ -35,6 +36,7 @@ test("scriptOwner attributes URLs to modules, systems and core", () => {
     assert.equal(scriptOwner("https://f.example/systems/starwarsffg/modules/x.js"), "system:starwarsffg");
     assert.equal(scriptOwner("https://f.example/scripts/foundry.mjs"), "foundry");
     assert.equal(scriptOwner("https://cdn.example/lib.js"), "cdn.example");
+    assert.equal(scriptOwner("http://localhost:30000/game"), "page (inline)");
     assert.equal(scriptOwner(""), "unknown");
 });
 
@@ -44,4 +46,14 @@ test("largest and formatBytes", () => {
     assert.equal(formatBytes(512), "512 B");
     assert.equal(formatBytes(2048), "2 KB");
     assert.equal(formatBytes(76 * 1048576), "76 MB");
+});
+
+test("chartPath scales values into the box and breaks on gaps", () => {
+    const { chartPath, assetKind } = perfCore;
+    assert.equal(chartPath([0, 10, 5], 100, 50), "M0 50 L50 0 L100 25");
+    assert.equal(chartPath([60, null, 30], 100, 60, 60), "M0 0 M100 30");
+    assert.equal(chartPath([], 100, 50), "");
+    assert.equal(assetKind("worlds/x/Map.WEBP?1"), "image");
+    assert.equal(assetKind("modules/a/b.mjs"), "script");
+    assert.equal(assetKind("sounds/x.ogg"), "audio");
 });

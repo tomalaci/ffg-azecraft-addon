@@ -1,0 +1,17 @@
+<section class="azpf-assets">
+    <div class="azpf-assets-head">
+        <h4>Loaded assets</h4>
+        <button type="button" data-action="rescan" data-tooltip="Check loaded assets again (including canvas textures)"><i class="fa-solid fa-magnifying-glass" inert></i> Rescan</button>
+    </div>
+    <p class="azpf-muted">{{count}} assets · {{total}} downloaded · canvas textures {{gpu}} of GPU memory</p>
+    <input type="search" placeholder="Filter paths" value="{{filter}}" data-azpf-filter>
+    <ol class="azpf-asset-list">
+        {{#each rows as |r|}}
+        <li class="{{#if r.heavy}}azpf-heavy{{/if}}" data-tooltip="{{r.display}}">
+            <span class="azpf-asset-name">{{r.display}}</span>
+            <span class="azpf-asset-meta">{{r.kind}}{{#if r.pixels}} · {{r.pixels}}{{/if}}{{#if r.gpuText}} · GPU {{r.gpuText}}{{/if}}</span>
+            <span class="azpf-asset-size">{{r.sizeText}}</span>
+        </li>
+        {{/each}}
+    </ol>
+</section>

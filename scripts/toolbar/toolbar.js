@@ -153,6 +153,7 @@ export function initToolbar() {
 
     // Keep the online count and the dashboard state current.
     Hooks.on("userConnected", refreshToolbar);
-    for (const hook of ["azecraftDashboardChanged", "renderMissionDashboardApp", "closeMissionDashboardApp"]) Hooks.on(hook, () => refreshToolbar());
+    // Windows opened from the toolbar (UI Performance, Admin Panel) un-press their button on close.
+    for (const hook of ["azecraftDashboardChanged", "renderMissionDashboardApp", "closeApplicationV2"]) Hooks.on(hook, () => refreshToolbar());
     Hooks.on("canvasReady", () => setTimeout(refreshToolbar, 500));
 }

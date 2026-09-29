@@ -30,9 +30,9 @@ The module:
 - Shows **lightweight copies** of large actor art (made automatically by the GM's browser) in
   the dashboard, the Actors tab and sheets; the originals stay untouched. See
   [docs/lightweight-images.md](docs/lightweight-images.md).
-- A **performance monitor** (per player, off by default) that measures frame rate, slow scripts by
-  module, render and hook times and heavy images, and sends a report to the GM; plus a *Reduce
-  visual effects* option. See [docs/performance.md](docs/performance.md).
+- A **toolbar** next to the Scene list: Dashboard on/off, Players, **UI Performance** (frame rate,
+  slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, the **Admin
+  Panel**; plus a *Reduce visual effects* option. See [docs/performance.md](docs/performance.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).
