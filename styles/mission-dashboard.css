@@ -290,6 +290,8 @@
     background:
         repeating-linear-gradient(0deg, rgba(114, 212, 255, 0.025) 0 1px, transparent 1px 4px),
         linear-gradient(135deg, #0b1422 0%, #070c15 60%, #0a1220 100%);
+    /* One background for all frame pieces, so there is no seam where they meet. */
+    background-attachment: fixed;
 }
 
 #azecraft-mission-dashboard .azd-frame-left {
@@ -297,7 +299,19 @@
     bottom: 0;
     left: 0;
     width: var(--azd-panels-left);
+}
+
+/* The column's edge line and glow only border the map window: they start under the top rail, so
+ * they do not run behind the toolbar tabs. */
+#azecraft-mission-dashboard .azd-frame-left::after {
+    content: "";
+    position: absolute;
+    top: calc(var(--aztb-bottom, 46px) + var(--aztb-top, 12px));
+    right: 0;
+    bottom: 0;
+    width: 14px;
     box-shadow: inset -1px 0 0 var(--azd-line), inset -6px 0 12px -6px rgba(114, 212, 255, 0.35), 4px 0 14px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
 }
 
 #azecraft-mission-dashboard .azd-frame-bottom {
@@ -314,7 +328,16 @@
     left: var(--azd-panels-left);
     right: max(0px, calc(var(--azd-right, 360px) - 12px));
     height: calc(var(--aztb-bottom, 46px) + var(--aztb-top, 12px));
-    box-shadow: inset 0 -1px 0 var(--azd-line), inset 0 -6px 12px -6px rgba(114, 212, 255, 0.35), 0 4px 14px rgba(0, 0, 0, 0.6);
+    /* The edge glow is a gradient along the bottom only (an inset shadow would also glow at the ends,
+     * showing a seam where the rail meets the squad column). */
+    background:
+        linear-gradient(0deg, rgba(114, 212, 255, 0.16), transparent 7px),
+        repeating-linear-gradient(0deg, rgba(114, 212, 255, 0.025) 0 1px, transparent 1px 4px),
+        linear-gradient(135deg, #0b1422 0%, #070c15 60%, #0a1220 100%);
+    background-attachment: scroll, fixed, fixed;
+    box-shadow: inset 0 -1px 0 var(--azd-line), 0 4px 14px rgba(0, 0, 0, 0.6);
+    /* The shadow falls on the map only, not sideways onto the squad column. */
+    clip-path: inset(0 0 -24px 0);
 }
 
 /* Inner corner accents where the map window meets the frame. */
