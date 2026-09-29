@@ -20,6 +20,7 @@ test("candidates exclude vector, animated and already-copied images", () => {
     assert.ok(!isCandidatePath("icons/svg/mystery-man.svg"));
     assert.ok(!isCandidatePath("worlds/x/a.webm"));
     assert.ok(!isCandidatePath("worlds/x/azecraft-thumbs/abc-a.webp"));
+    assert.ok(!isCandidatePath("worlds/x/Party/Moyra.thumb.webp"));
 });
 
 test("worthCopying: large files or large images", () => {
@@ -36,12 +37,14 @@ test("copySize keeps the aspect ratio and never enlarges", () => {
     assert.deepEqual(copySize(0, 0), { width: 0, height: 0 });
 });
 
-test("copy paths are stable per source and readable", () => {
+test("copies sit next to their originals, except in Foundry's and packages' folders", () => {
     const a = copyPath("test", "worlds/test/Mass Effect/Party/Moyra_New.png");
-    assert.equal(a.directory, "worlds/test/azecraft-thumbs");
-    assert.match(a.name, /^[0-9a-f]{8}-Moyra_New\.webp$/);
+    assert.deepEqual(a, { directory: "worlds/test/Mass Effect/Party", name: "Moyra_New.thumb.webp" });
     assert.deepEqual(copyPath("test", "worlds/test/Mass%20Effect/Party/Moyra_New.png"), a, "encoded path gives the same copy");
-    assert.notEqual(copyPath("test", "worlds/test/Other/Moyra_New.png").name, a.name);
+    const b = copyPath("test", "modules/some-module/art/Hero.png");
+    assert.equal(b.directory, "worlds/test/azecraft-thumbs");
+    assert.match(b.name, /^[0-9a-f]{8}-Hero\.webp$/);
+    assert.equal(copyPath("test", "icons/svg/x.png").directory, "worlds/test/azecraft-thumbs");
     assert.equal(hash("abc"), hash("abc"));
 });
 

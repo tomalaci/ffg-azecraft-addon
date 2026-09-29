@@ -9,8 +9,9 @@ actor image and shows it instead. The originals are untouched: clicking a portra
 full image, and the actors' data keeps pointing at the originals.
 
 - **Automatic.** The GM's browser makes the copies when the world loads, and again when an actor
-  is created or its portrait or dashboard art changes. Copies are saved in
-  `worlds/<world>/azecraft-thumbs/` and listed in a world setting, so every player gets them.
+  is created or its portrait or dashboard art changes. Copies are saved next to
+  their originals as `Name.thumb.webp` (images inside `modules/` or `systems/` go to
+  `worlds/<world>/azecraft-thumbs/`) and listed in a world setting, so every player gets them.
   Images under 600 KB and 2000 px, and SVGs, are left as they are.
 - **Everywhere.** Any image showing an original that has a copy is switched to the copy: dashboard
   cards and People of Note, the Actors tab, sheet headers, chat. The image viewer and the file

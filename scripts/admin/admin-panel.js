@@ -6,14 +6,14 @@
  * - Assets: browse the user data folders; per file size and how many documents use it; convert
  *   images to WebP (Name.optimized.webp) or copy files to another folder, relinking every document.
  * - Large files: every file over a size (default 5 MB) under a folder, largest first.
- * - Archive: originals no longer used after a conversion or move, to delete by hand (Foundry's API
- *   cannot delete files).
+ * - Unused files: files under a folder that no world document, setting or world compendium uses,
+ *   to delete by hand on the server (Foundry's API cannot delete files).
  */
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
 import { formatBytes } from "../perf/perf-core.js";
 import { decodePath, extension, isConvertible, isImage } from "./asset-core.js";
-import { addToArchive, archiveList, browse, convertToWebp, copyTo, fileSize, findReferences, referenceIndex, registerAssetSettings, relink, removeFromArchive } from "./asset-ops.js";
+import { browse, convertToWebp, copyTo, fileSize, findReferences, listFiles, referenceIndex, registerAssetSettings, relink } from "./asset-ops.js";
 import { replacePlaceholderArt } from "../default-art/default-art.js";
 import { candidateSources, makeCopies } from "../thumbnails/thumbnails.js";
 import { readSquads } from "../mission-dashboard/squads.js";
@@ -70,8 +70,8 @@ export class AdminPanelApp extends SceneSpaceApp {
             convert: AdminPanelApp.#onConvert,
             move: AdminPanelApp.#onMove,
             scanLarge: AdminPanelApp.#onScanLarge,
-            unarchive: AdminPanelApp.#onUnarchive,
-            copyArchive: AdminPanelApp.#onCopyArchive
+            scanUnused: AdminPanelApp.#onScanUnused,
+            copyUnused: AdminPanelApp.#onCopyUnused
         }
     };
 
@@ -87,6 +87,8 @@ export class AdminPanelApp extends SceneSpaceApp {
     selected = new Set();
     large = null;
     largeRoot = null;
+    unused = null;
+    unusedRoot = null;
     busy = "";
 
     get quality() {
@@ -96,18 +98,20 @@ export class AdminPanelApp extends SceneSpaceApp {
     async _prepareContext() {
         this.path ??= `worlds/${game.world.id}`;
         this.largeRoot ??= `worlds/${game.world.id}`;
+        this.unusedRoot ??= `worlds/${game.world.id}`;
         const context = {
             tab: this.tab,
             busy: this.busy,
             quality: this.quality,
             largeMB: game.settings.get(MODULE_ID, "assetLargeMB"),
             skipWebp: game.settings.get(MODULE_ID, "assetSkipWebp"),
-            archiveCount: archiveList().length
+            skipUnused: game.settings.get(MODULE_ID, "assetSkipUnused")
         };
         if (this.tab === "actions") Object.assign(context, this.#actionsContext());
         if (this.tab === "assets") Object.assign(context, await this.#assetsContext());
+        if ((this.tab === "large" && this.large) || (this.tab === "unused" && this.unused)) this.refCounts ??= await referenceIndex();
         if (this.tab === "large") Object.assign(context, this.#largeContext());
-        if (this.tab === "archive") Object.assign(context, { archive: archiveList().map(e => ({ ...e, when: e.at?.slice(0, 10) })).reverse() });
+        if (this.tab === "unused") Object.assign(context, this.#unusedContext());
         return context;
     }
 
@@ -117,7 +121,7 @@ export class AdminPanelApp extends SceneSpaceApp {
     }
 
     async #assetsContext() {
-        this.refCounts ??= referenceIndex();
+        this.refCounts ??= await referenceIndex();
         if (!this.listing || this.listing.target !== this.path) {
             try {
                 this.listing = await browse(this.path);
@@ -162,8 +166,13 @@ export class AdminPanelApp extends SceneSpaceApp {
         if (this.rendered && this.tab === "assets") this.render();
     }
 
+    #unusedContext() {
+        const rows = this.unused?.map(path => this.#fileRow(path)) ?? null;
+        const total = this.unused?.reduce((sum, path) => sum + Math.max(0, this.sizes.get(path) ?? 0), 0) ?? 0;
+        return { unusedRoot: this.unusedRoot, unused: rows, unusedTotal: formatBytes(total) };
+    }
+
     #largeContext() {
-        if (this.large) this.refCounts ??= referenceIndex();
         return { largeRoot: this.largeRoot, large: this.large?.map(path => this.#fileRow(path)) ?? null, selectedCount: this.selected.size };
     }
 
@@ -177,6 +186,7 @@ export class AdminPanelApp extends SceneSpaceApp {
                 game.settings.set(MODULE_ID, key, value);
             }
             if (input.matches("[data-azap-large-root]")) this.largeRoot = input.value.trim().replace(/^\/+|\/+$/g, "");
+            if (input.matches("[data-azap-unused-root]")) this.unusedRoot = input.value.trim().replace(/^\/+|\/+$/g, "");
             if (input.matches("[data-azap-path]")) {
                 this.path = input.value.trim().replace(/^\/+|\/+$/g, "");
                 this.selected.clear();
@@ -272,7 +282,7 @@ export class AdminPanelApp extends SceneSpaceApp {
         const ok = await confirm("Convert to WebP",
             `<p>Make a WebP version (quality ${Math.round(quality * 100)}%, full resolution) of ${paths.length} image(s), saved next to each as <code>Name.optimized.webp</code>, and point every document below at it.</p>
             <ol class="azap-preflight">${rows}</ol>
-            <p>The originals stay on disk (Foundry cannot delete files); they are added to the <strong>Archive</strong> list to delete by hand. Images where WebP saves less than 5% are skipped.</p>`,
+            <p>The originals stay on disk (Foundry cannot delete files) and then show under <strong>Unused files</strong>, to delete by hand. Images where WebP saves less than 5% are skipped.</p>`,
             "Convert");
         if (!ok) return;
         await this.#run(`Converting ${paths.length} image(s)…`, async () => {
@@ -288,7 +298,6 @@ export class AdminPanelApp extends SceneSpaceApp {
                     const { documents, failed: relinkFailed } = await relink(path, result.path);
                     relinked += documents;
                     failed.push(...relinkFailed);
-                    await addToArchive(path, result.path, "converted to WebP");
                     converted++;
                     saved += result.before - result.after;
                 } catch (error) {
@@ -311,7 +320,7 @@ export class AdminPanelApp extends SceneSpaceApp {
             content: `<p>Copy ${paths.length} file(s) into another folder and point every document below at the new place.</p>
                 <ol class="azap-preflight">${paths.map(p => `<li><strong>${esc(p)}</strong>: used by ${refsHtml(refs.get(decodePath(p)))}</li>`).join("")}</ol>
                 <div class="form-group"><label>Target folder</label><div class="form-fields"><input type="text" name="folder" value="${esc(this.path)}" autofocus></div></div>
-                <p class="hint">The originals stay on disk (Foundry cannot delete files) and go on the Archive list. Files already in the target folder are not overwritten. Folders under modules/ and systems/ are not allowed.</p>`,
+                <p class="hint">The originals stay on disk (Foundry cannot delete files) and then show under Unused files. Files already in the target folder are not overwritten. Folders under modules/ and systems/ are not allowed.</p>`,
             ok: { label: "Move", icon: "fa-solid fa-check", callback: (e, button) => button.form.elements.folder.value.trim().replace(/^\/+|\/+$/g, "") },
             rejectClose: false
         });
@@ -327,7 +336,6 @@ export class AdminPanelApp extends SceneSpaceApp {
                     const { documents, failed: relinkFailed } = await relink(path, newPath);
                     relinked += documents;
                     failed.push(...relinkFailed);
-                    await addToArchive(path, newPath, "moved");
                     moved++;
                 } catch (error) {
                     failed.push(`${path}: ${error.message}`);
@@ -343,41 +351,34 @@ export class AdminPanelApp extends SceneSpaceApp {
         const root = this.largeRoot;
         const minBytes = game.settings.get(MODULE_ID, "assetLargeMB") * 1048576;
         const skipWebp = game.settings.get(MODULE_ID, "assetSkipWebp");
+        const skipUnused = game.settings.get(MODULE_ID, "assetSkipUnused");
         await this.#run(`Scanning ${root}…`, async () => {
-            const files = [];
-            const queue = [root];
-            let folders = 0;
-            while (queue.length && folders < 2000) {
-                const dir = queue.shift();
-                folders++;
-                try {
-                    const listing = await browse(dir);
-                    queue.push(...listing.dirs);
-                    files.push(...listing.files);
-                } catch {
-                    // Unreadable folder: skip.
-                }
-            }
-            const candidates = files.filter(file => !(skipWebp && extension(file) === "webp"));
+            const { files, folders } = await listFiles(root);
+            const refs = skipUnused ? await referenceIndex() : null;
+            const candidates = files.filter(file => !(skipWebp && extension(file) === "webp") && !(refs && !refs.get(file)));
             await withConcurrency(candidates.filter(file => !this.sizes.has(file)), 8, async file => this.sizes.set(file, await fileSize(file)));
-            this.refCounts = null;
             this.large = candidates.filter(file => (this.sizes.get(file) ?? 0) >= minBytes).sort((a, b) => this.sizes.get(b) - this.sizes.get(a));
             ui.notifications.info(`Scanned ${files.length} file(s) in ${folders} folder(s): ${this.large.length} over ${formatBytes(minBytes)}.`);
         });
     }
 
-    static async #onUnarchive(event, target) {
-        await removeFromArchive([target.dataset.path]);
-        this.render();
+    static async #onScanUnused() {
+        const root = this.unusedRoot;
+        await this.#run(`Looking for unused files in ${root}…`, async () => {
+            const [{ files, folders }, refs] = await Promise.all([listFiles(root), referenceIndex()]);
+            this.unused = files.filter(file => !refs.get(file));
+            await withConcurrency(this.unused.filter(file => !this.sizes.has(file)), 8, async file => this.sizes.set(file, await fileSize(file)));
+            this.unused.sort((a, b) => (this.sizes.get(b) ?? 0) - (this.sizes.get(a) ?? 0));
+            ui.notifications.info(`Scanned ${files.length} file(s) in ${folders} folder(s): ${this.unused.length} unused.`);
+        });
     }
 
-    static async #onCopyArchive() {
-        const text = archiveList().map(entry => entry.path).join("\n");
+    static async #onCopyUnused() {
+        const text = (this.unused ?? []).join("\n");
         await navigator.clipboard.writeText(text);
-        ui.notifications.info("Archived file paths copied to the clipboard.");
+        ui.notifications.info(`${this.unused?.length ?? 0} unused file path(s) copied to the clipboard.`);
     }
 }
-
 export function initAdminPanel() {
     registerAssetSettings();
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE]));

@@ -4,14 +4,13 @@
  *
  * Foundry's API can upload files and create folders but cannot delete, move or rename them. So a
  * "convert" writes `Name.optimized.webp` next to the original and a "move" copies the file; the
- * original is then unused and goes on the archive list (world setting) to delete by hand.
+ * original is then unused, and the Unused files scan lists it for deleting by hand.
  * Compendium packs are not changed.
  */
 
 import { decodePath, mentionsPath, optimizedPath, replacePathDeep, replacePathInString } from "./asset-core.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
-export const ARCHIVE_SETTING = "assetArchive";
 
 const FilePicker = () => foundry.applications.apps.FilePicker.implementation;
 
@@ -74,28 +73,59 @@ export function findReferences(paths) {
     return result;
 }
 
-/** How many documents use each asset path in the world (for "used by" counts). */
-export function referenceIndex() {
-    const counts = new Map();
-    const pattern = /"([^"]+\.(?:png|jpe?g|webp|gif|avif|svg|bmp|webm|mp4|m4v|ogg|oga|mp3|wav|flac|m4a|opus))"/gi;
-    for (const doc of allDocuments()) {
-        const seen = new Set();
-        for (const match of JSON.stringify(ownSource(doc)).matchAll(pattern)) {
-            for (const path of [decodePath(match[1]).replace(/^\/+/, "")]) {
-                if (seen.has(path)) continue;
-                seen.add(path);
-                counts.set(path, (counts.get(path) ?? 0) + 1);
-            }
-        }
-        // Paths inside HTML (descriptions, journal pages).
-        for (const match of JSON.stringify(ownSource(doc)).matchAll(/src=\\"([^"\\]+)\\"/g)) {
-            const path = decodePath(match[1]).replace(/^\/+/, "");
+const ASSET_PATTERN = /"([^"]+\.(?:png|jpe?g|webp|gif|avif|svg|bmp|webm|mp4|m4v|ogg|oga|mp3|wav|flac|m4a|opus))"/gi;
+const HTML_SRC_PATTERN = /(?:src|href)=\\"([^"\\]+)\\"/g;
+
+function countPaths(counts, source) {
+    const text = JSON.stringify(source);
+    const seen = new Set();
+    for (const pattern of [ASSET_PATTERN, HTML_SRC_PATTERN]) {
+        for (const match of text.matchAll(pattern)) {
+            const path = decodePath(match[1]).split(/[?#]/)[0].replace(/^\/+/, "");
             if (seen.has(path)) continue;
             seen.add(path);
             counts.set(path, (counts.get(path) ?? 0) + 1);
         }
     }
+}
+
+/**
+ * How many documents use each asset path (for "used by" counts and the unused-file scan): world
+ * documents and their embedded documents, world settings (all modules'), the world's own images
+ * and, unless turned off, the world's compendium packs.
+ * @returns {Promise<Map<string, number>>}
+ */
+export async function referenceIndex({ compendiums = true } = {}) {
+    const counts = new Map();
+    for (const doc of allDocuments()) countPaths(counts, ownSource(doc));
+    countPaths(counts, { background: game.world.background, thumbnail: game.world.thumbnail });
+    if (compendiums) {
+        for (const pack of game.packs.filter(p => p.metadata.packageType === "world")) {
+            for (const doc of await pack.getDocuments()) {
+                for (const each of withEmbedded(doc)) countPaths(counts, ownSource(each));
+            }
+        }
+    }
     return counts;
+}
+
+/** Every file under a folder (sub-folders included, at most `maxFolders` folders). */
+export async function listFiles(root, { maxFolders = 2000 } = {}) {
+    const files = [];
+    const queue = [root];
+    let folders = 0;
+    while (queue.length && folders < maxFolders) {
+        const dir = queue.shift();
+        folders++;
+        try {
+            const listing = await browse(dir);
+            queue.push(...listing.dirs);
+            files.push(...listing.files);
+        } catch {
+            // Unreadable folder: skip.
+        }
+    }
+    return { files, folders };
 }
 
 /* -------------------------------------------- */
@@ -248,30 +278,11 @@ export async function copyTo(path, folder) {
     return upload(folder.replace(/\/+$/, ""), name, blob, blob.type || "application/octet-stream");
 }
 
-/* -------------------------------------------- */
-/*  Archive list                                */
-/* -------------------------------------------- */
-
-export function archiveList() {
-    return game.settings.get(MODULE_ID, ARCHIVE_SETTING) ?? [];
-}
-
-export async function addToArchive(path, replacedBy, reason) {
-    const list = archiveList().filter(entry => entry.path !== path);
-    list.push({ path, replacedBy, reason, at: new Date().toISOString() });
-    await game.settings.set(MODULE_ID, ARCHIVE_SETTING, list);
-}
-
-export async function removeFromArchive(paths) {
-    const drop = new Set(paths);
-    await game.settings.set(MODULE_ID, ARCHIVE_SETTING, archiveList().filter(entry => !drop.has(entry.path)));
-}
-
 export function registerAssetSettings() {
-    game.settings.register(MODULE_ID, ARCHIVE_SETTING, { scope: "world", config: false, type: Array, default: [] });
     game.settings.register(MODULE_ID, "assetWebpQuality", { scope: "client", config: false, type: Number, default: 0.9 });
     game.settings.register(MODULE_ID, "assetLargeMB", { scope: "client", config: false, type: Number, default: 5 });
     game.settings.register(MODULE_ID, "assetSkipWebp", { scope: "client", config: false, type: Boolean, default: true });
+    game.settings.register(MODULE_ID, "assetSkipUnused", { scope: "client", config: false, type: Boolean, default: true });
 }
 
 export { replacePathInString };

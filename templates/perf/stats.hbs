@@ -17,7 +17,7 @@
         <div class="azpf-tile"><span class="azpf-tile-value">{{stats.animations}}</span><span class="azpf-tile-label">Animations</span></div>
     </div>
 
-    <p class="azpf-env">{{browserShort}} · {{env.gpu}} · {{env.cpuThreads}} threads{{#if env.deviceMemoryGB}} · {{env.deviceMemoryGB}} GB{{/if}} · {{env.screen}} · Foundry {{env.foundry}} · {{env.system}} · {{env.canvas.scene}}, {{env.canvas.tokens}} tokens · {{stats.minutes}} min measured</p>
+    <p class="azpf-env">{{browserShort}} · {{env.gpu}}{{#if firefox}} <span class="azpf-muted" data-tooltip="Firefox reports a generic GPU name to websites (anti-fingerprinting)">(approximate)</span>{{/if}} · {{env.cpuThreads}} threads{{#if env.deviceMemoryGB}} · {{env.deviceMemoryGB}} GB{{/if}} · {{env.screen}} · Foundry {{env.foundry}} · {{env.system}} · {{env.canvas.scene}}, {{env.canvas.tokens}} tokens · {{stats.minutes}} min measured</p>
 
     <div class="azpf-tables">
         <div>

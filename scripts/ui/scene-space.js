@@ -55,6 +55,17 @@ export class SceneSpaceApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.setPosition(sceneSpaceRect());
     }
 
+    /** Always exactly the free scene area: re-renders never grow or shrink the window. */
+    setPosition(position = {}) {
+        if (this.minimized) return super.setPosition(position);
+        return super.setPosition({ ...position, ...sceneSpaceRect() });
+    }
+
+    async _onRender(context, options) {
+        await super._onRender(context, options);
+        this.fit();
+    }
+
     async _onFirstRender(context, options) {
         await super._onFirstRender(context, options);
         window.addEventListener("resize", this.#refit);

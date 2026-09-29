@@ -39,8 +39,11 @@ export function normalizeSrc(src, origin = "") {
 /** Whether an image could get a lightweight copy at all (by its path). */
 export function isCandidatePath(src) {
     const path = normalizeSrc(src);
-    return Boolean(path) && !SKIP_EXTENSIONS.test(path) && !path.includes("/azecraft-thumbs/");
+    return Boolean(path) && !SKIP_EXTENSIONS.test(path) && !path.includes("/azecraft-thumbs/") && !path.endsWith(".thumb.webp");
 }
+
+/** Folders of Foundry and packages, where copies must not be written. */
+const PACKAGE_ROOTS = /^(modules|systems|icons|ui|cards|fonts|scripts|lang|common|client|css|sounds|nue)\//;
 
 /** Whether an image of this size is worth a copy (bytes and/or pixel size, when known). */
 export function worthCopying({ bytes = 0, width = 0, height = 0 } = {}) {
@@ -65,10 +68,17 @@ export function hash(text) {
     return h.toString(16).padStart(8, "0");
 }
 
-/** Where the copy of an image is stored: one folder per world, named after the source. */
+/**
+ * Where the copy of an image is stored: next to the original as "Name.thumb.webp" (so folders stay
+ * tidy), or in the world's azecraft-thumbs folder for originals inside Foundry's or a package's
+ * folders.
+ */
 export function copyPath(worldId, src) {
     const path = normalizeSrc(src);
-    const base = (path.split("/").pop() ?? "image").replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 40) || "image";
+    const slash = path.lastIndexOf("/");
+    const file = path.slice(slash + 1).replace(/\.[^.]+$/, "") || "image";
+    if (slash > 0 && !PACKAGE_ROOTS.test(path)) return { directory: path.slice(0, slash), name: `${file}.thumb.webp` };
+    const base = file.replace(/[^a-z0-9_-]+/gi, "-").slice(0, 40) || "image";
     return { directory: `worlds/${worldId}/azecraft-thumbs`, name: `${hash(path)}-${base}.webp` };
 }
 

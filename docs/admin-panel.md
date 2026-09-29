@@ -24,7 +24,7 @@ Tick files for bulk actions, or use the buttons on a row:
   full resolution, then points every document that used the original at it: actor portraits and
   tokens, items, Scene backgrounds, tokens and tiles, journal pages and images inside text,
   playlists, chat messages, world settings (including the addon's default art). Images where WebP
-  would save less than 5% are skipped.
+  would save less than 5% are skipped. The originals then show under Unused files.
 - **Move:** copies files into another folder (not `modules/` or `systems/`; existing files are never
   overwritten) and points every document at the new place.
 
@@ -34,18 +34,17 @@ are not changed.
 ## Large files
 
 Scan a folder (sub-folders included) for every file over a size (default 5 MB), largest first,
-with how many documents use it; `.webp` files are skipped by default. Tick files to convert them in
-one go. "Unused" files are candidates to delete or archive.
+with how many documents use it. `.webp` files and unused files are skipped by default (see Unused
+files for those). Tick files to convert them in one go.
 
-## Archive
+## Unused files
 
-Foundry's API can upload files and create folders, but it cannot delete, move or rename files. So
-after a conversion or move the original stays on disk, unused, and is listed here with what
-replaced it. Delete those files on the server by hand (for example with a file browser), then tick
-them off the list. **Copy paths** copies the whole list.
-
-A real archive (moving originals to `archived/` with the same folder structure) needs a small
-helper on the server; the panel's file actions are built so they can use one later.
+Scan a folder (sub-folders included) for files that no world document (actors, items, Scenes,
+journals, playlists, chat…), no world setting (any module's) and no world compendium uses, largest
+first, with their total size. **Copy paths** copies the list, to delete the files on the server by
+hand (Foundry's API cannot delete files). Originals left behind by a conversion or move show up
+here. Check before deleting: files used only by other modules' compendiums, or by macros that build
+paths in code, are not detected.
 
 ## How it works (developers)
 
@@ -53,5 +52,5 @@ helper on the server; the panel's file actions are built so they can use one lat
 plain and URL-encoded form (whole paths only), and names copies. `scripts/admin/asset-ops.js` walks
 every world document and its embedded documents (`metadata.embedded`), finds references, relinks
 with `diffObject` updates, converts with `createImageBitmap` → `OffscreenCanvas` → WebP, copies with
-`FilePicker.upload`, and keeps the archive list (world setting `assetArchive`).
+`FilePicker.upload`, and builds the reference index (world documents, settings, world compendiums).
 `scripts/admin/admin-panel.js` is the window.
