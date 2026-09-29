@@ -32,7 +32,7 @@ The module:
   [docs/lightweight-images.md](docs/lightweight-images.md).
 - A **toolbar** next to the Scene list: Dashboard on/off, Players, **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
-  Management** (add, reduce or set player characters' XP with a logged reason, edit their XP logs)
+  Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs)
   and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
   documents, large and unused files); plus a *Reduce visual effects* option. See
   [docs/performance.md](docs/performance.md), [docs/xp-management.md](docs/xp-management.md) and

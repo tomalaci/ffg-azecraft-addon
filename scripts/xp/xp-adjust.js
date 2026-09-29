@@ -3,7 +3,8 @@
  * spending there, but the system changed the total XP along with the available XP, so the total no
  * longer showed all XP ever given. Now it changes available XP only (negative: XP spent; positive:
  * spent XP given back); the total is XP given, set by GMs in XP Management. It is logged like
- * before: an "adjusted" entry with the reason.
+ * before: an "adjusted" entry with the reason. XP Management's per-character Adjust XP button uses
+ * the same dialog.
  */
 
 import { logDate, xpStatus, xpSummary } from "./xp-core.js";
@@ -12,7 +13,12 @@ const PATCHED = Symbol("azecraftXpAdjust");
 const { DialogV2 } = foundry.applications.api;
 const esc = text => foundry.utils.escapeHTML(String(text ?? ""));
 
-async function adjustXp(actor) {
+/**
+ * Ask for an amount and reason, then change the character's available XP and log it.
+ * @returns {Promise<{amount: number, reason: string, before: object, after: object}|null>}
+ *          null when cancelled; before/after: {total, available}
+ */
+export async function adjustXp(actor) {
     const result = await DialogV2.prompt({
         window: { title: game.i18n.localize("SWFFG.XP.Adjust.Window.Title"), icon: "fa-solid fa-eraser" },
         content: `<div class="form-group"><label>${esc(game.i18n.localize("SWFFG.XP.Adjust.Window.Amount"))}</label>
@@ -27,7 +33,7 @@ async function adjustXp(actor) {
         },
         rejectClose: false
     });
-    if (!result?.amount) return;
+    if (!result?.amount) return null;
 
     const { amount, reason } = result;
     const stored = xpSummary(actor._source.system?.experience);
@@ -46,6 +52,12 @@ async function adjustXp(actor) {
         "system.experience.available": stored.available + amount,
         "flags.starwarsffg.xpLog": [entry, ...entries]
     });
+    return {
+        amount,
+        reason,
+        before: { total: before.total, available: before.available },
+        after: { total: before.total, available: before.available + amount }
+    };
 }
 
 function patchSheets() {

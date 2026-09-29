@@ -1,15 +1,16 @@
 /**
  * XP Management (toolbar tab, GMs only): the player characters the GMs added, with their total,
  * available and spent XP; add, reduce or set XP for selected characters with a reason (logged on the
- * character and in the XP Ledger journal); each character's XP log, editable in place. All data is
- * in the world (see xp-ops.js), so every GM sees and changes the same; this window only remembers
- * which rows are open or selected.
+ * character and in the XP Ledger journal); per character, Adjust XP (available only, like the sheet's)
+ * and its XP log, read-only. All data is in the world (see xp-ops.js), so every GM sees and changes
+ * the same; this window only remembers which rows are open or selected.
  */
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
 import { displaySrc } from "../thumbnails/thumbnails.js";
-import { CHANGE_MODES, LOG_ACTIONS, changeLabel, signed } from "./xp-core.js";
-import { actorXp, addToRoster, addableCharacters, changeXp, findLedger, ledgerRows, readRoster, registerXpSettings, removeFromRoster, repairTotals, rosterActors, updateLogEntry, xpLog } from "./xp-ops.js";
+import { CHANGE_MODES, actionLabel, changeLabel, entryDelta, signed } from "./xp-core.js";
+import { actorXp, addToRoster, addableCharacters, changeXp, findLedger, ledgerRows, readRoster, recordAdjustment, registerXpSettings, removeFromRoster, repairTotals, rosterActors, xpLog } from "./xp-ops.js";
+import { adjustXp } from "./xp-adjust.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const TEMPLATE = `modules/${MODULE_ID}/templates/xp/xp-manager.hbs`;
@@ -34,7 +35,7 @@ export class XPManagerApp extends SceneSpaceApp {
             openSheet: XPManagerApp.#onOpenSheet,
             remove: XPManagerApp.#onRemove,
             add: XPManagerApp.#onAdd,
-            deleteEntry: XPManagerApp.#onDeleteEntry,
+            adjust: XPManagerApp.#onAdjust,
             repair: XPManagerApp.#onRepair,
             openLedger: XPManagerApp.#onOpenLedger
         }
@@ -49,21 +50,17 @@ export class XPManagerApp extends SceneSpaceApp {
     expanded = new Set();
     draft = { mode: "add", amount: 0, reason: "" };
     busy = "";
-    /** XP log entries as last shown, to detect entries that changed before an edit is saved. */
-    #shownLog = new Map();
 
     async _prepareContext() {
         const actors = rosterActors();
         const ids = new Set(actors.map(actor => actor.id));
         for (const id of this.selected) if (!ids.has(id)) this.selected.delete(id);
-        this.#shownLog.clear();
 
         const rows = actors.map(actor => {
             const xp = actorXp(actor);
             const log = xpLog(actor);
             const last = log[0];
             const expanded = this.expanded.has(actor.id);
-            if (expanded) this.#shownLog.set(actor.id, log);
             return {
                 id: actor.id,
                 name: actor.name,
@@ -73,17 +70,21 @@ export class XPManagerApp extends SceneSpaceApp {
                 negative: xp.available < 0,
                 selected: this.selected.has(actor.id),
                 expanded,
-                last: last ? { date: last.date, description: last.description || last.action, cost: signed(last.action === "purchased" ? -Math.abs(last.xp?.cost ?? 0) : last.xp?.cost) } : null,
-                log: expanded ? log.map((entry, index) => ({
-                    index,
-                    date: entry.date ?? "",
-                    action: entry.action ?? "",
-                    description: entry.description ?? "",
-                    cost: entry.xp?.cost ?? 0,
-                    available: entry.xp?.available ?? "",
-                    total: entry.xp?.total ?? "",
-                    purchase: Boolean(entry.id)
-                })) : []
+                last: last ? { date: last.date, description: last.description || actionLabel(last.action), cost: signed(entryDelta(last)) } : null,
+                log: expanded ? log.map(entry => {
+                    const delta = entryDelta(entry);
+                    return {
+                        date: entry.date ?? "",
+                        action: actionLabel(entry.action),
+                        description: entry.description ?? "",
+                        delta: signed(delta),
+                        gain: delta > 0,
+                        loss: delta < 0,
+                        available: entry.xp?.available ?? "",
+                        total: entry.xp?.total ?? "",
+                        purchase: Boolean(entry.id)
+                    };
+                }) : []
             };
         });
 
@@ -101,7 +102,6 @@ export class XPManagerApp extends SceneSpaceApp {
 
         return {
             rows,
-            actions: LOG_ACTIONS,
             draft: this.draft,
             busy: this.busy,
             selectedCount: this.selected.size,
@@ -129,9 +129,6 @@ export class XPManagerApp extends SceneSpaceApp {
                 if (key in this.draft) this.draft[key] = key === "amount" ? Number(field.value) || 0 : field.value;
             });
         }
-        for (const field of root.querySelectorAll("[data-azxp-log]")) {
-            field.addEventListener("change", () => this.#saveLogField(field));
-        }
     }
 
     async #run(label, task) {
@@ -152,19 +149,6 @@ export class XPManagerApp extends SceneSpaceApp {
         const value = key => this.element.querySelector(`[data-azxp-field="${key}"]`)?.value ?? "";
         this.draft = { mode: value("mode"), amount: Number(value("amount")) || 0, reason: value("reason").trim() };
         return this.draft;
-    }
-
-    async #saveLogField(field) {
-        const row = field.closest("tr[data-actor]");
-        const actor = game.actors.get(row?.dataset.actor);
-        const index = Number(row?.dataset.index);
-        const snapshot = this.#shownLog.get(actor?.id)?.[index];
-        if (!actor || !snapshot) return;
-        const saved = await updateLogEntry(actor, index, snapshot, { [field.dataset.azxpLog]: field.value });
-        if (!saved) {
-            ui.notifications.warn(`${actor.name}'s XP log changed meanwhile; showing the current log. Please redo the edit.`);
-            this.render();
-        }
     }
 
     /* -------------------------------------------- */
@@ -253,21 +237,13 @@ export class XPManagerApp extends SceneSpaceApp {
         if (id) await addToRoster(id);
     }
 
-    static async #onDeleteEntry(event, target) {
+    static async #onAdjust(event, target) {
         const actor = game.actors.get(target.dataset.actor);
-        const index = Number(target.dataset.index);
-        const snapshot = this.#shownLog.get(actor?.id)?.[index];
-        if (!actor || !snapshot) return;
-        const link = snapshot.id ? "<p>This entry is linked to a purchase: without it, the sheet can no longer refund that purchase.</p>" : "";
-        const ok = await DialogV2.confirm({
-            window: { title: "Delete XP log entry" },
-            content: `<p>Delete "${esc(snapshot.description || snapshot.action)}" (${esc(snapshot.date)}) from ${esc(actor.name)}'s XP log? The character's XP is not changed.</p>${link}`,
-            rejectClose: false
-        });
-        if (!ok) return;
-        const saved = await updateLogEntry(actor, index, snapshot, null);
-        if (!saved) ui.notifications.warn(`${actor.name}'s XP log changed meanwhile; nothing was deleted.`);
-        this.render();
+        if (!actor) return;
+        const result = await adjustXp(actor);
+        if (!result) return;
+        await recordAdjustment(actor, result);
+        ui.notifications.info(`${actor.name}: available XP ${signed(result.amount)} (${result.after.available}).`);
     }
 
     static #onOpenLedger() {

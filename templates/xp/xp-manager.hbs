@@ -31,6 +31,7 @@
                     <td class="azxp-last">{{#if row.last}}<span class="azxp-muted">{{row.last.date}}</span> {{row.last.description}} <span class="azxp-muted">({{row.last.cost}})</span>{{/if}}</td>
                     <td class="azxp-tools">
                         <button type="button" data-action="openSheet" data-actor="{{row.id}}" data-tooltip="Open the character sheet"><i class="fa-solid fa-id-card" inert></i></button>
+                        <button type="button" data-action="adjust" data-actor="{{row.id}}" data-tooltip="Adjust XP: change available XP (negative: spent; positive: given back), logged like the sheet's Adjust XP"><i class="fa-solid fa-eraser" inert></i></button>
                         <button type="button" data-action="remove" data-actor="{{row.id}}" data-tooltip="Remove from XP Management (the character's XP and log stay)"><i class="fa-solid fa-xmark" inert></i></button>
                     </td>
                 </tr>
@@ -38,27 +39,23 @@
                 <tr class="azxp-logrow">
                     <td colspan="8">
                         <table class="azxp-log">
-                            <thead><tr><th>Date</th><th>Action</th><th>Description</th><th>XP</th><th>Available</th><th>Total</th><th></th></tr></thead>
+                            <thead><tr><th class="azxp-fit">Date</th><th class="azxp-fit">Action</th><th>Description</th><th class="azxp-num">XP</th><th class="azxp-num">Available</th><th class="azxp-num">Total</th></tr></thead>
                             <tbody>
                             {{#each row.log as |entry|}}
-                                <tr data-actor="{{row.id}}" data-index="{{entry.index}}">
-                                    <td><input type="text" value="{{entry.date}}" data-azxp-log="date" aria-label="Date"></td>
-                                    <td><select data-azxp-log="action" aria-label="Action">{{#each @root.actions as |action|}}<option value="{{action}}" {{#if (eq action entry.action)}}selected{{/if}}>{{action}}</option>{{/each}}</select></td>
-                                    <td><input type="text" value="{{entry.description}}" data-azxp-log="description" aria-label="Description"></td>
-                                    <td><input type="number" step="1" value="{{entry.cost}}" data-azxp-log="cost" aria-label="XP"></td>
-                                    <td><input type="number" step="1" value="{{entry.available}}" data-azxp-log="available" aria-label="Available after"></td>
-                                    <td><input type="number" step="1" value="{{entry.total}}" data-azxp-log="total" aria-label="Total after"></td>
-                                    <td class="azxp-tools">
-                                        {{#if entry.purchase}}<i class="fa-solid fa-link azxp-muted" data-tooltip="Linked to a purchase: the sheet can refund it" inert></i>{{/if}}
-                                        <button type="button" data-action="deleteEntry" data-actor="{{row.id}}" data-index="{{entry.index}}" data-tooltip="Delete this log entry (XP is not changed)"><i class="fa-solid fa-trash" inert></i></button>
-                                    </td>
+                                <tr>
+                                    <td class="azxp-fit">{{entry.date}}</td>
+                                    <td class="azxp-fit">{{entry.action}}{{#if entry.purchase}} <i class="fa-solid fa-link azxp-muted" data-tooltip="Linked to a purchase: the sheet can refund it"></i>{{/if}}</td>
+                                    <td>{{entry.description}}</td>
+                                    <td class="azxp-num {{#if entry.gain}}azxp-gain{{/if}} {{#if entry.loss}}azxp-loss{{/if}}">{{entry.delta}}</td>
+                                    <td class="azxp-num">{{entry.available}}</td>
+                                    <td class="azxp-num">{{entry.total}}</td>
                                 </tr>
                             {{else}}
-                                <tr><td colspan="7" class="azxp-muted">No XP log entries yet.</td></tr>
+                                <tr><td colspan="6" class="azxp-muted">No XP log entries yet.</td></tr>
                             {{/each}}
                             </tbody>
                         </table>
-                        <p class="azxp-hint">Edits save when you leave a field and show on the character sheet's XP log. Editing the log does not change the character's XP; use the bar above for that.</p>
+                        <p class="azxp-hint">The character's XP log, as its sheet shows it. XP is the change to available XP; Available and Total are after the entry.</p>
                     </td>
                 </tr>
                 {{/if}}

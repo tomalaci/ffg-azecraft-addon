@@ -3,12 +3,13 @@
  *
  * - The roster: a world setting with the ids of the characters added to XP Management.
  * - XP changes: the actor's `system.experience` plus an entry in its own XP log (the
- *   `starwarsffg.xpLog` flag the character sheet shows), and a row in the XP Ledger journal.
+ *   `starwarsffg.xpLog` flag the character sheet shows, read-only here), and a row in the XP Ledger
+ *   journal.
  * - The XP Ledger: a GM-only Journal Entry. Its rows are kept as data in a flag; its "Log" page is
  *   rewritten from them after every change, so it reads as a table.
  */
 
-import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, xpStatus, xpSummary } from "./xp-core.js";
+import { applyXpChange, changeLabel, changeLogEntry, ledgerRow, signed, xpStatus, xpSummary } from "./xp-core.js";
 
 export const MODULE_ID = "ffg-azecraft-addon";
 export const ROSTER_SETTING = "xpRoster";
@@ -131,20 +132,10 @@ export async function repairTotals(actorIds) {
     return repaired;
 }
 
-/**
- * Edit or delete one entry of a character's XP log. `snapshot` is the entry as shown; if it changed
- * meanwhile (another GM, a purchase), nothing is written.
- * @param {object|null} changes  null deletes the entry
- * @returns {Promise<boolean>} whether it was written
- */
-export async function updateLogEntry(actor, index, snapshot, changes) {
+/** Record in the ledger an Adjust XP made from XP Management (available XP only). */
+export async function recordAdjustment(actor, { amount, reason, before, after }) {
     assertGM();
-    const log = [...xpLog(actor)];
-    if (!sameEntry(log[index], snapshot)) return false;
-    if (changes === null) log.splice(index, 1);
-    else log[index] = editLogEntry(log[index], changes);
-    await actor.update({ [`flags.${LOG_FLAG.join(".")}`]: log });
-    return true;
+    await appendLedger([ledgerRow({ actorId: actor.id, actorName: actor.name, gm: game.user.name, mode: "adjust", amount, before, after, reason })]);
 }
 
 /* -------------------------------------------- */

@@ -29,13 +29,12 @@ remembers, per GM, which rows are selected or open.
   - Each change also adds a row to the **XP Ledger** (a GM-only journal, created on the first
     change): when, character, change, total before → after, available, reason and GM. The newest
     30 rows show at the bottom of the window; *Open journal* shows them all.
-- **XP log:** click a character's name to open its XP log. Date, action, description and the XP
-  numbers can be edited in place (saved when you leave the field) and show on the character
-  sheet straight away. The bin deletes an entry. Editing or deleting log entries never changes
-  the character's XP. An entry with a link icon belongs to a purchase the sheet can refund;
-  deleting it removes that refund option.
-- If another GM changed the same XP log while you were editing, your edit is not saved and the
-  current log is shown instead.
+- **Adjust XP** (eraser button on a row): the same dialog as the character sheet's *Adjust XP* —
+  changes available XP only (negative: spent; positive: given back), with a reason in the
+  character's XP log. From here it is also recorded in the XP Ledger.
+- **XP log:** click a character's name to show its XP log, read-only: date, action, description,
+  the change to available XP (purchases negative, refunds positive) and available / total after
+  the entry. A link icon marks an entry the sheet can refund.
 
 ## The sheet's Adjust XP
 
@@ -48,7 +47,7 @@ Management. The system changed both, so total and available moved together. It a
 ## Planned (0.6.0)
 
 Buying talents, characteristics and skills with XP from the addon's own screens instead of the
-system's drag-and-drop. Until then, XP Management reads and edits the XP log as the system writes
+system's drag-and-drop. Until then, XP Management reads the XP log as the system writes
 it.
 
 ## How it works (developers)
@@ -61,10 +60,11 @@ it.
   resulting effective values, like the system does.
 - The character's XP log is the system's actor flag `starwarsffg.xpLog`: an array, newest first,
   of `{action, id, xp: {cost, available, total}, date, description}`. `id` links a purchase to its
-  Active Effect (the sheet's Refund link) and is kept on edits.
+  Active Effect (the sheet's Refund link).
 - The roster is the world setting `ffg-azecraft-addon.xpRoster` (actor ids). The ledger is a
   Journal Entry flagged `flags.ffg-azecraft-addon.xpLedger`, rows in its `rows` flag; its "Log"
   page is rewritten from the rows after every change.
 - `scripts/xp/xp-core.js` holds the pure rules (unit-tested), `xp-ops.js` the data,
-  `xp-manager.js` the window and `xp-adjust.js` the replacement of the sheet's `_xpAdjustment`. The window refreshes on actor, roster and ledger changes, so
+  `xp-manager.js` the window and `xp-adjust.js` the Adjust XP dialog (the sheet's `_xpAdjustment`
+  replaced; also used by the window's row button). The window refreshes on actor, roster and ledger changes, so
   other GMs' changes show up live.

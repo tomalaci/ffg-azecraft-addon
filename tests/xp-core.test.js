@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { applyXpChange, changeLabel, changeLogEntry, editLogEntry, ledgerRow, sameEntry, signed, spentFromLog, xpStatus, xpSummary } from "../scripts/xp/xp-core.js";
+import { actionLabel, applyXpChange, changeLabel, changeLogEntry, entryDelta, ledgerRow, signed, spentFromLog, xpStatus, xpSummary } from "../scripts/xp/xp-core.js";
 
 const now = new Date("2026-09-29T18:30:00Z");
 
@@ -31,14 +31,13 @@ test("changeLogEntry writes the system's XP log format", () => {
     assert.equal(changeLogEntry({ delta: -3, total: 97, available: 12 }, "Correction", now).action, "granted");
 });
 
-test("editLogEntry changes only the edited fields and keeps the purchase link", () => {
-    const entry = { action: "purchased", id: "abc", xp: { cost: 10, available: 5, total: 100 }, date: "2026-09-01", description: "skill rank Pilot 1 --> 2" };
-    const edited = editLogEntry(entry, { description: "Pilot rank 2", cost: "12" });
-    assert.deepEqual(edited, { ...entry, description: "Pilot rank 2", xp: { cost: 12, available: 5, total: 100 } });
-    assert.equal(entry.xp.cost, 10, "the original entry is not modified");
-    assert.equal(editLogEntry(entry, { action: "stolen" }).action, "purchased");
-    assert.ok(sameEntry(entry, JSON.parse(JSON.stringify(entry))));
-    assert.ok(!sameEntry(entry, edited));
+test("entryDelta and actionLabel show a log entry's effect on available XP", () => {
+    assert.equal(entryDelta({ action: "purchased", xp: { cost: 10 } }), -10);
+    assert.equal(entryDelta({ action: "refunded", xp: { cost: 10 } }), 10);
+    assert.equal(entryDelta({ action: "adjusted", xp: { cost: -30 } }), -30);
+    assert.equal(entryDelta({ action: "granted", xp: { cost: 25 } }), 25);
+    assert.equal(actionLabel("granted"), "Given");
+    assert.equal(actionLabel("custom"), "custom");
 });
 
 test("ledgerRow records who changed what", () => {
@@ -53,6 +52,7 @@ test("labels", () => {
     assert.equal(signed(-3), "−3");
     assert.equal(changeLabel("set", 120), "Set total to 120");
     assert.equal(changeLabel("reduce", 4), "Reduce 4");
+    assert.equal(changeLabel("adjust", -30), "Adjust available");
 });
 
 const entry = (action, cost, description = "") => ({ action, xp: { cost }, description });

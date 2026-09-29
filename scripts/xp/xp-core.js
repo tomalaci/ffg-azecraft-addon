@@ -89,29 +89,19 @@ export function changeLogEntry({ delta, total, available }, reason, now = new Da
     };
 }
 
-/**
- * An XP log entry after an edit from XP Management (fields that were not edited keep their value,
- * including the purchase link `id`).
- */
-export function editLogEntry(entry, changes) {
-    const next = clone(entry);
-    if ("action" in changes) next.action = LOG_ACTIONS.includes(changes.action) ? changes.action : next.action;
-    if ("date" in changes) next.date = String(changes.date ?? "").trim();
-    if ("description" in changes) next.description = String(changes.description ?? "");
-    next.xp = { ...(next.xp ?? {}) };
-    for (const key of ["cost", "available", "total"]) {
-        if (key in changes) next.xp[key] = int(changes[key]);
-    }
-    return next;
+/** How an XP log entry changed available XP: purchases take, refunds give back. */
+export function entryDelta(entry) {
+    const cost = int(entry?.xp?.cost);
+    if (entry?.action === "purchased") return -Math.abs(cost);
+    if (entry?.action === "refunded") return Math.abs(cost);
+    return cost;
 }
 
-function clone(value) {
-    return value === undefined ? {} : JSON.parse(JSON.stringify(value));
-}
+const ACTION_LABELS = { granted: "Given", adjusted: "Adjusted", purchased: "Purchased", refunded: "Refunded", undid: "Undone" };
 
-/** Whether two XP log entries are the same (to detect an entry that changed meanwhile). */
-export function sameEntry(a, b) {
-    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+/** A readable name for an XP log action. */
+export function actionLabel(action) {
+    return ACTION_LABELS[action] ?? String(action ?? "");
 }
 
 /** A row of the shared XP Ledger. */
@@ -140,5 +130,6 @@ export function signed(value) {
 export function changeLabel(mode, amount) {
     if (mode === "set") return `Set total to ${int(amount)}`;
     if (mode === "repair") return "Repair stored total";
+    if (mode === "adjust") return "Adjust available";
     return `${mode === "reduce" ? "Reduce" : "Add"} ${int(amount)}`;
 }
