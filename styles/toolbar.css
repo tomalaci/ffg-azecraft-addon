@@ -44,6 +44,11 @@
     color: #72d4ff;
 }
 
+/* Narrow screens: icons (and state) only; the label stays in the tooltip. */
+#azecraft-toolbar.aztb--compact .aztb-button > span:not(.aztb-state) {
+    display: none;
+}
+
 /* On/off indicator (Dashboard) and counts (Players). */
 #azecraft-toolbar .aztb-state {
     padding: 0 4px;

@@ -6,8 +6,8 @@
  * - Other features add their own buttons with registerToolbarButton() (UI Performance, Admin Panel).
  *
  * It is independent of the dashboard, so it stays when the dashboard is hidden or not on a Scene.
- * With the framed dashboard shown, it sits inside the dashboard's top rail (sized from the
- * --aztb-top / --aztb-bottom variables set here).
+ * With the framed dashboard shown, it sits inside the dashboard's top rail, right of the squad
+ * column (the rail is sized from the --aztb-top / --aztb-bottom variables set here).
  */
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -42,15 +42,24 @@ function visibleRect(selector) {
     return rect.width || rect.height ? rect : null;
 }
 
-/** Put the toolbar right of the scene list, level with the scene controls. */
+/**
+ * Put the toolbar right of the scene list, level with the scene controls; with the framed dashboard
+ * shown, in its top rail right of the squad column's edge.
+ */
 function position() {
     if (!element) return;
     const controls = visibleRect("#scene-controls");
     const edges = ["#scene-navigation-active", "#scene-navigation-expand", "#scene-navigation"].map(visibleRect).filter(Boolean);
+    const column = visibleRect("#azecraft-mission-dashboard.azd--framed:not(.azd--hidden) .azd-frame-left");
+    if (column) edges.push(column);
     const left = Math.round(Math.max(controls?.right ?? 0, ...edges.map(rect => rect.right)) + GAP);
     const top = Math.round(controls?.top ?? edges[0]?.top ?? GAP);
     element.style.left = `${left}px`;
     element.style.top = `${top}px`;
+    // Icons only when the labelled tabs would run under the sidebar (narrow screens).
+    element.classList.remove("aztb--compact");
+    const sidebar = visibleRect("#sidebar");
+    if (sidebar && element.getBoundingClientRect().right > sidebar.left - GAP) element.classList.add("aztb--compact");
     // The dashboard's top rail is sized around the toolbar (same margin above and below it).
     const rect = element.getBoundingClientRect();
     const root = document.documentElement.style;
@@ -106,6 +115,8 @@ function mount() {
         if (node) observer.observe(node);
     }
     window.addEventListener("resize", position);
+    // The dashboard's layout (shown, hidden, column width) moves the toolbar.
+    document.addEventListener("azecraft:layout", () => requestAnimationFrame(position));
     for (const hook of ["collapseSceneNavigation", "renderSceneNavigation", "renderSceneControls"]) Hooks.on(hook, () => requestAnimationFrame(position));
 }
 
@@ -164,5 +175,6 @@ export function initToolbar() {
     Hooks.on("userConnected", refreshToolbar);
     // Windows opened from the toolbar (UI Performance, Admin Panel) un-press their button on close.
     for (const hook of ["azecraftDashboardChanged", "renderMissionDashboardApp", "closeApplicationV2"]) Hooks.on(hook, () => refreshToolbar());
+    for (const hook of ["azecraftDashboardChanged", "renderMissionDashboardApp"]) Hooks.on(hook, () => requestAnimationFrame(position));
     Hooks.on("canvasReady", () => setTimeout(refreshToolbar, 500));
 }

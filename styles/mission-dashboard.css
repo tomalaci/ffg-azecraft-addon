@@ -299,19 +299,7 @@
     bottom: 0;
     left: 0;
     width: var(--azd-panels-left);
-}
-
-/* The column's edge line and glow only border the map window: they start under the top rail, so
- * they do not run behind the toolbar tabs. */
-#azecraft-mission-dashboard .azd-frame-left::after {
-    content: "";
-    position: absolute;
-    top: calc(var(--aztb-bottom, 46px) + var(--aztb-top, 12px));
-    right: 0;
-    bottom: 0;
-    width: 14px;
     box-shadow: inset -1px 0 0 var(--azd-line), inset -6px 0 12px -6px rgba(114, 212, 255, 0.35), 4px 0 14px rgba(0, 0, 0, 0.6);
-    pointer-events: none;
 }
 
 #azecraft-mission-dashboard .azd-frame-bottom {
