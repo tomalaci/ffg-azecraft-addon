@@ -46,17 +46,11 @@ spent XP back (e.g. an undone purchase). The total (all XP given) stays; GMs set
 Management. The system changed both, so total and available moved together. It adds an
 "adjusted" entry to the XP log.
 
-## Planned (0.6.0)
+## Not planned
 
-Talent, characteristic and item management in the addon's own screens instead of the system's
-drag-and-drop, with XP handled by specific actions instead of free amounts:
-
-- spending XP on skills, talents and characteristics / ability points (characteristics only at
-  character creation), and refunding those purchases;
-- *Adjust XP* restricted to those actions, so every XP log entry says what it was for and spent
-  XP no longer has to be read from free-form adjustments.
-
-Until then, XP Management reads the XP log as the system writes it.
+Managers for buying talents, skills and characteristics (with XP handled by specific actions)
+were designed and then shelved; see [plans/shelved-character-advancement.md](plans/shelved-character-advancement.md).
+XP Management reads the XP log as the system and the sheet's *Adjust XP* write it.
 
 ## How it works (developers)
 

@@ -1,6 +1,8 @@
-# 0.6.0 plan: character advancement (talents, skills, characteristics)
+# Shelved: character advancement managers (talents, skills, characteristics)
 
-Design decisions agreed with the GMs (2026-10-02). Nothing here is built yet.
+**Status: shelved (2026-10-02).** The GMs decided not to build talent, skill or characteristic
+managers for now, to avoid over-engineering; there is no 0.6.0 goal yet. Kept as a record of the
+design and of the rules it was checked against, in case the idea comes back. Nothing here is built.
 
 ## Principles
 
