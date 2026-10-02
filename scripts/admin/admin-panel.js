@@ -2,7 +2,8 @@
  * Admin Panel (toolbar tab, GMs only): bulk fixes and an asset manager, each with a pre-flight
  * summary and a confirmation before anything changes.
  *
- * - Quick actions: replace Star Wars placeholder art; make lightweight copies of squad portraits.
+ * - Quick actions: replace Star Wars placeholder art; make lightweight copies of squad portraits;
+ *   give NPC weapons the properties their descriptions list (weapon-props.js).
  * - Assets: browse the user data folders; per file size and how many documents use it; convert
  *   images to WebP (Name.optimized.webp) or copy files to another folder, relinking every document.
  * - Large files: every file over a size (default 5 MB) under a folder, largest first.
@@ -17,6 +18,7 @@ import { browse, convertToWebp, copyTo, fileSize, findReferences, listFiles, ref
 import { replacePlaceholderArt } from "../default-art/default-art.js";
 import { candidateSources, makeCopies } from "../thumbnails/thumbnails.js";
 import { readSquads } from "../mission-dashboard/squads.js";
+import { actorFolders, applyWeaponPlans, describePlan, scanWeapons } from "./weapon-props.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const TEMPLATE = `modules/${MODULE_ID}/templates/admin/admin-panel.hbs`;
@@ -64,6 +66,7 @@ export class AdminPanelApp extends SceneSpaceApp {
             replaceArt: AdminPanelApp.#onReplaceArt,
             optimizeSquads: AdminPanelApp.#onOptimizeSquads,
             optimizeAll: AdminPanelApp.#onOptimizeAll,
+            weaponProps: AdminPanelApp.#onWeaponProps,
             open: AdminPanelApp.#onOpen,
             up: AdminPanelApp.#onUp,
             select: AdminPanelApp.#onSelect,
@@ -89,6 +92,7 @@ export class AdminPanelApp extends SceneSpaceApp {
     largeRoot = null;
     unused = null;
     unusedRoot = null;
+    npcFolder = null;
     busy = "";
 
     get quality() {
@@ -117,7 +121,9 @@ export class AdminPanelApp extends SceneSpaceApp {
 
     #actionsContext() {
         const copies = game.settings.get(MODULE_ID, "imageCopies") ?? {};
-        return { squadCount: readSquads().length, copyCount: Object.keys(copies).length };
+        const npcFolders = actorFolders();
+        if (!npcFolders.some(folder => folder.id === this.npcFolder)) this.npcFolder = npcFolders[0]?.id ?? null;
+        return { squadCount: readSquads().length, copyCount: Object.keys(copies).length, npcFolders, npcFolder: this.npcFolder };
     }
 
     async #assetsContext() {
@@ -236,6 +242,35 @@ export class AdminPanelApp extends SceneSpaceApp {
         await this.#run("Checking copies…", async () => {
             const counts = await makeCopies(sources, { refresh: true });
             ui.notifications.info(`Squad portraits: ${counts.made} copies made, ${counts.current} already up to date, ${counts.skipped} not needed (small), ${counts.failed} failed.`);
+        });
+    }
+
+    static async #onWeaponProps() {
+        this.npcFolder = this.element.querySelector("[data-azap-npc-folder]")?.value ?? this.npcFolder;
+        const folder = game.folders.get(this.npcFolder);
+        if (!folder) return;
+        const scan = scanWeapons(folder.id);
+        const unknownHtml = scan.unknown.length
+            ? `<details><summary>${scan.unknown.length} weapon(s) without properties and no quality list or same-named Items weapon (left as they are)</summary><ul>${scan.unknown.map(u => `<li>${esc(u.actor)} › ${esc(u.weapon)}</li>`).join("")}</ul></details>`
+            : "";
+        if (!scan.results.length) {
+            await DialogV2.prompt({
+                window: { title: "NPC weapon properties", icon: "fa-solid fa-gun" },
+                content: `<p>Checked ${scan.weapons} weapon(s) of ${scan.actors} actor(s) in ${esc(folder.name)}: nothing to change.</p>${unknownHtml}`,
+                rejectClose: false
+            });
+            return;
+        }
+        const rows = scan.results.map(r => `<li><strong>${esc(r.actor.name)} › ${esc(r.weapon.name)}</strong>: ${esc(describePlan(r.plan))}`
+            + ` <span class="azap-muted">(from ${esc(r.source)}${r.plan.extra.length ? `; also has ${esc(r.plan.extra.join(", "))}, kept` : ""})</span></li>`).join("");
+        const ok = await confirm("NPC weapon properties",
+            `<p>${scan.results.length} of ${scan.weapons} weapon(s) of ${scan.actors} actor(s) in <strong>${esc(folder.name)}</strong> get properties added or ranks fixed:</p>`
+            + `<ul class="azap-preflight">${rows}</ul>${unknownHtml}`,
+            "Apply");
+        if (!ok) return;
+        await this.#run("Updating weapons…", async () => {
+            const { weapons, failed } = await applyWeaponPlans(scan.results);
+            ui.notifications.info(`NPC weapon properties: ${weapons} weapon(s) updated${failed.length ? `, ${failed.length} failed (see console)` : ""}.`);
         });
     }
 

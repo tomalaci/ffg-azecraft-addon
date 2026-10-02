@@ -12,6 +12,16 @@ touch first and waits for confirmation.
 - **Lightweight portraits:** *Update squad portraits* makes the WebP copies of squad members' and
   People of Note's portraits that are missing or whose original changed (the rest are reported as up
   to date), or make missing copies for all actors (see [lightweight-images.md](lightweight-images.md)).
+- **NPC weapon properties:** pick an actor folder (default *NPC Stats*, sub-folders included) and
+  *Check and fix…*. Each weapon whose description lists its qualities the way the books do
+  ("Blast 5, Inferior, Knockdown, Stun Damage.") gets those properties from the *Item Properties*
+  items (as if dropped on it, with the ranks), and wrong ranks are fixed (e.g. Blast 1 → 5). A
+  weapon with no properties and only flavour text gets the properties of the Items weapon with the
+  same name, if that one has any. Only a sentence made entirely of known qualities counts, so
+  nothing is guessed from prose. You see every change (and the weapons left alone) before
+  applying; nothing is removed, and running it again finds nothing left to do. To fix a weapon it
+  leaves alone, write its quality list into its description and run it again. Placed tokens of
+  these NPCs follow their actor unless their own copy of the weapon was changed.
 - **Conversion settings:** the WebP quality used by *Convert* (default 0.9: generous, keeps
   battlemaps crisp).
 
@@ -55,6 +65,8 @@ plain and URL-encoded form (whole paths only), and names copies. `scripts/admin/
 every world document and its embedded documents (`metadata.embedded`), finds references, relinks
 with `diffObject` updates, converts with `createImageBitmap` → `OffscreenCanvas` → WebP, copies with
 `FilePicker.upload`, and builds the reference index (world documents, settings, world compendiums).
+`scripts/admin/weapon-props-core.js` (pure, unit-tested) parses quality lists and plans the
+changes; `scripts/admin/weapon-props.js` scans the folder and writes the weapons' `system.itemmodifier`.
 `scripts/admin/admin-panel.js` is the window.
 
 Paths: Foundry stores and returns them URL-encoded (`Mass%20Effect`, `foundry.utils.encodeURL`), people

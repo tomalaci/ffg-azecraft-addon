@@ -21,6 +21,16 @@
             <button type="button" data-action="optimizeAll"><i class="fa-solid fa-magnifying-glass" inert></i> Make missing copies for all actors</button>
         </section>
         <section class="azap-card">
+            <h3><i class="fa-solid fa-gun" inert></i> NPC weapon properties</h3>
+            <p>Gives NPC weapons the properties their description lists in the books' form (e.g. "Blast 5, Inferior, Knockdown, Stun Damage."), using the Item Properties items, and fixes wrong ranks. Weapons with flavour text get the properties of the Items weapon with the same name. You see every change first; nothing is removed.</p>
+            <div class="azap-bulk">
+                <select data-azap-npc-folder aria-label="Actor folder">
+                    {{#each npcFolders as |f|}}<option value="{{f.id}}" {{#if (eq f.id @root.npcFolder)}}selected{{/if}}>{{f.path}}</option>{{/each}}
+                </select>
+                <button type="button" data-action="weaponProps" {{disabled (not npcFolders.length)}}><i class="fa-solid fa-magnifying-glass" inert></i> Check and fix…</button>
+            </div>
+        </section>
+        <section class="azap-card">
             <h3><i class="fa-solid fa-sliders" inert></i> Conversion settings</h3>
             <div class="form-group"><label>WebP quality</label><div class="form-fields"><input type="number" min="0.5" max="1" step="0.01" value="{{quality}}" data-azap-setting="assetWebpQuality"></div>
                 <p class="hint">Used by Assets → Convert. 0.9 (default) keeps battlemaps crisp; lower saves more space.</p></div>
