@@ -12,6 +12,11 @@
 
 - Use local .memory folder for managing memory notes.
 - Star Wars FFG system code is available at `.memory/StarWarsFFG`.
+- Book material lives in the git-ignored `.book_db/` folder: the source PDFs (`pdf/`), their text
+  (`text/`) and anything extracted from them (Markdown, JSON). It is copyrighted: never commit it,
+  never copy it into tracked files (code, docs, tests, release notes), and never ship it in the
+  module. `.ai/check` fails if any of it is tracked. Code may only use data the GMs entered in the
+  world, not text from the books.
 - Prefer Foundry V13-compatible APIs and hooks (context7)
 - Treat Star Wars FFG system behavior as the primary integration surface.
 - When making changes, inspect the relevant system templates, sheet data flow, and text enrichment/rendering behavior first.

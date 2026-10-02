@@ -11,7 +11,7 @@ const foundryGlobals = Object.fromEntries([
 ].map(name => [name, "readonly"]));
 
 export default [
-    { ignores: ["node_modules/", ".memory/", ".playwright-mcp/", "dist/"] },
+    { ignores: ["node_modules/", ".memory/", ".book_db/", ".playwright-mcp/", "dist/"] },
     js.configs.recommended,
     {
         files: ["main.js", "scripts/**/*.js"],
