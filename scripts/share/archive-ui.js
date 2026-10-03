@@ -9,13 +9,17 @@ import { archives, currentArchive, deleteShare, newArchive, setCurrentArchive, s
 const MODULE_ID = "ffg-azecraft-addon";
 export const ARCHIVE_PARTIAL = `modules/${MODULE_ID}/templates/share/archive.hbs`;
 
-/** Context for the partial. `browseId`: the archive this window shows (default: the current one). */
-export function archiveContext(browseId, kind) {
+/**
+ * Context for the partial. `browseId`: the archive this window shows (default: the current one);
+ * `shareTo`: who "Share again" sends to (the window's Show-to choice), for its tooltip.
+ */
+export function archiveContext(browseId, kind, shareTo = "everyone online") {
     const current = currentArchive();
     const list = archives();
     const shown = list.find(entry => entry.id === browseId) ?? current ?? null;
     return {
         isGM: game.user.isGM,
+        shareTo,
         kindLabel: kind === "image" ? "shared as an image" : "shared as text",
         shownIsCurrent: shown?.id === current?.id,
         list: list.map(entry => ({ id: entry.id, name: entry.name, current: entry.id === current?.id, shown: entry.id === shown?.id })),

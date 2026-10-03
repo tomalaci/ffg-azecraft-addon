@@ -7,7 +7,7 @@
  * this page's images ("Recent (until you reload)") reopens recent ones until a reload.
  */
 
-import { MAX_BYTES, QUALITY, dataUrlBytes, imageLink, isFor, recipients, scaled, shareTitle, sideSteps } from "./share-core.js";
+import { MAX_BYTES, QUALITY, dataUrlBytes, imageLink, isFor, recipients, scaled, shareTitle, shareToLabel, sideSteps } from "./share-core.js";
 import { keepShare } from "./share-archive.js";
 import { ARCHIVE_PARTIAL, archiveContext, archivedItem, bindArchiveBrowse, onDeleteArchived, onNewArchive, onSetCurrentArchive } from "./archive-ui.js";
 
@@ -22,6 +22,8 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const recent = [];
 
 function remember(entry) {
+    const index = recent.findIndex(other => other.src === entry.src);
+    if (index >= 0) recent.splice(index, 1);
     recent.unshift(entry);
     recent.length = Math.min(recent.length, RECENT_MAX);
     foundry.applications.instances.get(ShareImageApp.DEFAULT_OPTIONS.id)?.render();
@@ -71,6 +73,7 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
             reopen: ShareImageApp.#onReopen,
             openArchived: ShareImageApp.#onOpenArchived,
             reshow: ShareImageApp.#onReshow,
+            reshare: ShareImageApp.#onReshare,
             deleteArchived: (event, target) => onDeleteArchived(target),
             newArchive: function () { return onNewArchive(this); },
             setCurrentArchive: function () { return onSetCurrentArchive(this); }
@@ -106,7 +109,7 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
             canShare: Boolean(this.pending) && !this.busy && (this.everyone || this.chosen.size > 0),
             recent: recent.map(entry => ({ src: entry.src, title: entry.title })),
             keep: this.keep,
-            archive: archiveContext(this.browseId, "image")
+            archive: archiveContext(this.browseId, "image", shareToLabel(this.everyone, this.chosen.size))
         };
     }
 
@@ -206,16 +209,24 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.render();
     }
 
-    static #onShare() {
-        if (!this.pending) return;
+    /** Send an image to the Show-to choice and keep it (unless unticked). False if nobody is chosen. */
+    #send(src, caption) {
         const to = recipients(this.everyone, [...this.chosen], game.user.id);
-        if (Array.isArray(to) && !to.length) return ui.notifications.warn("Choose who should see the image.");
-        const title = shareTitle(game.user.name, this.caption);
-        game.socket.emit(SOCKET, { type: "shareImage", from: game.user.id, to, src: this.pending.src, title, caption: this.caption.trim() });
-        remember({ src: this.pending.src, title, caption: this.caption.trim() });
-        if (this.keep) keepShare({ kind: "image", src: this.pending.src, caption: this.caption.trim(), title: this.caption.trim() || "Image" });
+        if (Array.isArray(to) && !to.length) {
+            ui.notifications.warn("Choose who should see the image.");
+            return false;
+        }
+        const title = shareTitle(game.user.name, caption);
+        game.socket.emit(SOCKET, { type: "shareImage", from: game.user.id, to, src, title, caption });
+        remember({ src, title, caption });
+        if (this.keep) keepShare({ kind: "image", src, caption, title: caption || "Image" });
         const count = to === null ? "everyone online" : `${to.length} player(s)`;
         ui.notifications.info(`Image shown to ${count}.`);
+        return true;
+    }
+
+    static #onShare() {
+        if (!this.pending || !this.#send(this.pending.src, this.caption.trim())) return;
         this.pending = null;
         this.link = "";
         this.caption = "";
@@ -233,6 +244,11 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.pending = { src: item.image, label: `From the archive (${item.when})` };
         this.caption = item.caption;
         this.render();
+    }
+
+    static #onReshare(event, target) {
+        const item = archivedItem(target.dataset.uuid);
+        if (item?.image) this.#send(item.image, item.caption);
     }
 
     static #onReopen(event, target) {

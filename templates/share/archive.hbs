@@ -20,7 +20,8 @@
             {{#if s.image}}<button type="button" class="azsh-archive-thumb" data-action="openArchived" data-uuid="{{s.uuid}}" data-tooltip="Open"><img src="{{s.image}}" alt=""></button>
             {{else}}<button type="button" class="azsh-archive-open" data-action="openArchived" data-uuid="{{s.uuid}}" data-tooltip="Open"><i class="fa-solid fa-file-lines" inert></i></button>{{/if}}
             <span class="azsh-archive-name">{{s.title}}<span class="azsh-muted">{{s.when}}</span></span>
-            <button type="button" data-action="reshow" data-uuid="{{s.uuid}}" data-tooltip="Put it in the window to share again"><i class="fa-solid fa-share-from-square" inert></i></button>
+            <button type="button" data-action="reshare" data-uuid="{{s.uuid}}" data-tooltip="Share again now, to {{@root.archive.shareTo}}"><i class="fa-solid fa-share-from-square" inert></i></button>
+            <button type="button" data-action="reshow" data-uuid="{{s.uuid}}" data-tooltip="Put it in the window (to change it or who sees it, then Share)"><i class="fa-solid fa-pen-to-square" inert></i></button>
             {{#if s.canDelete}}<button type="button" data-action="deleteArchived" data-uuid="{{s.uuid}}" data-tooltip="Delete from the archive"><i class="fa-solid fa-trash" inert></i></button>{{/if}}
         </li>
         {{/each}}

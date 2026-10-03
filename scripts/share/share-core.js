@@ -67,3 +67,9 @@ export function shareTitle(senderName, caption) {
 export function dataUrlBytes(dataUrl) {
     return String(dataUrl ?? "").length;
 }
+
+/** Who a share goes to, in words ("Share again" tooltip). */
+export function shareToLabel(everyone, chosenCount) {
+    if (everyone) return "everyone online";
+    return chosenCount === 1 ? "the 1 person chosen" : `the ${chosenCount} people chosen`;
+}

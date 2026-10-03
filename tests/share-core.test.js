@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { imageLink, isFor, recipients, scaled, shareTitle, sideSteps } from "../scripts/share/share-core.js";
+import { imageLink, isFor, recipients, scaled, shareTitle, shareToLabel, sideSteps } from "../scripts/share/share-core.js";
 
 test("sideSteps shrinks from 1600 px down to the minimum, never enlarging", () => {
     assert.deepEqual(sideSteps(4000), [1600, 1280, 1024, 819, 655, 600]);
@@ -38,4 +38,10 @@ test("imageLink accepts web links and Foundry image paths, not text", () => {
 test("shareTitle", () => {
     assert.equal(shareTitle("Jesper", ""), "Shared by Jesper");
     assert.equal(shareTitle("Jesper", " The door code "), "Shared by Jesper: The door code");
+});
+
+test("shareToLabel", () => {
+    assert.equal(shareToLabel(true, 3), "everyone online");
+    assert.equal(shareToLabel(false, 1), "the 1 person chosen");
+    assert.equal(shareToLabel(false, 2), "the 2 people chosen");
 });

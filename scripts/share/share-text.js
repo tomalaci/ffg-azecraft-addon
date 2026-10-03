@@ -5,7 +5,7 @@
  * the current share archive (share-archive.js), browsable from the window.
  */
 
-import { isFor, recipients, shareTitle } from "./share-core.js";
+import { isFor, recipients, shareTitle, shareToLabel } from "./share-core.js";
 import { keepShare } from "./share-archive.js";
 import { ARCHIVE_PARTIAL, archiveContext, archivedItem, bindArchiveBrowse, onDeleteArchived, onNewArchive, onSetCurrentArchive } from "./archive-ui.js";
 
@@ -56,6 +56,7 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
             share: ShareTextApp.#onShare,
             openArchived: ShareTextApp.#onOpenArchived,
             reshow: ShareTextApp.#onReshow,
+            reshare: ShareTextApp.#onReshare,
             deleteArchived: (event, target) => onDeleteArchived(target),
             newArchive: function () { return onNewArchive(this); },
             setCurrentArchive: function () { return onSetCurrentArchive(this); }
@@ -82,7 +83,7 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
             everyone: this.everyone,
             users,
             keep: this.keep,
-            archive: archiveContext(this.browseId, "text")
+            archive: archiveContext(this.browseId, "text", shareToLabel(this.everyone, this.chosen.size))
         };
     }
 
@@ -161,12 +162,21 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.#readEditor();
         const html = String(this.html ?? "").trim();
         if (!html || html === "<p></p>") return ui.notifications.warn("Write something or drop a journal page first.");
+        this.#send(this.heading.trim(), html);
+    }
+
+    /** Send text to the Show-to choice and keep it (unless unticked). */
+    #send(name, html) {
         const to = recipients(this.everyone, [...this.chosen], game.user.id);
         if (Array.isArray(to) && !to.length) return ui.notifications.warn("Choose who should see the text.");
-        const name = this.heading.trim();
         game.socket.emit(SOCKET, { type: "shareText", from: game.user.id, to, title: shareTitle(game.user.name, name), html });
         if (this.keep) keepShare({ kind: "text", title: name || "Text", html });
         ui.notifications.info(`Text shown to ${to === null ? "everyone online" : `${to.length} player(s)`}.`);
+    }
+
+    static #onReshare(event, target) {
+        const item = archivedItem(target.dataset.uuid);
+        if (item) this.#send(item.title.replace(/ — [^—]+$/, ""), item.html);
     }
 
     static #onOpenArchived(event, target) {

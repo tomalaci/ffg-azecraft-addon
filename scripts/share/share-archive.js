@@ -94,9 +94,37 @@ function pageContent({ kind, src, caption, html }) {
     return String(html ?? "");
 }
 
+/** A kept share with the same image or text (sharing it again moves it up instead of copying it). */
+function findSame(archive, share) {
+    const content = pageContent(share);
+    return archive.pages.find(page => {
+        const meta = page.getFlag(MODULE_ID, PAGE_FLAG);
+        if (meta?.kind !== share.kind) return false;
+        const html = page.text?.content ?? "";
+        if (share.kind === "image") {
+            const src = html.match(/<img[^>]+src="([^"]+)"/)?.[1];
+            return src === share.src || src === esc(share.src);
+        }
+        return html === content;
+    }) ?? null;
+}
+
 async function store(share) {
     const archive = currentArchive() ?? await createArchive("Shared");
     const name = share.title || (share.kind === "image" ? "Image" : "Text");
+    const same = findSame(archive, share);
+    if (same) {
+        const meta = same.getFlag(MODULE_ID, PAGE_FLAG);
+        const update = { [`flags.${MODULE_ID}.${PAGE_FLAG}.time`]: Date.now() };
+        // A new caption replaces the old one (the author stays who first shared it).
+        if (share.kind === "image" && share.caption && share.caption !== meta.caption) {
+            update[`flags.${MODULE_ID}.${PAGE_FLAG}.caption`] = share.caption;
+            update["text.content"] = pageContent(share);
+            update.name = `${name} — ${game.users.get(meta.author)?.name ?? "someone"}`;
+        }
+        await same.update(update);
+        return;
+    }
     await archive.createEmbeddedDocuments("JournalEntryPage", [{
         name: `${name} — ${game.users.get(share.author)?.name ?? "someone"}`,
         type: "text",

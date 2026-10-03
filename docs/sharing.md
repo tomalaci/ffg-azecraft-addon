@@ -30,8 +30,11 @@ unless the sharer unticks **Keep in the archive**.
   one page per share named "<title> — <author>". Everyone can read the archives; the pages are written
   by the GM's client, so keeping a share needs a GM online (otherwise it is shown but not kept, with a
   warning).
-- Both windows list the current archive's shares of their kind, newest first: open one, put it back
-  in the window to share again, or delete it (its author and GMs; asks first).
+- Both windows list the current archive's shares of their kind, most recently shared first: open one,
+  **share it again** at once (to the window's Show-to choice), put it back in the window to change it
+  or who sees it, or delete it (its author and GMs; asks first).
+- Sharing the same image or text again does not copy it: the kept one moves to the top (a new image
+  caption replaces the old one). The Recent list also shows each image once.
 - The first kept share starts an archive called "Shared". GMs can start a **New archive** (e.g. one
   per session; it becomes current) and choose another archive to browse, and **Make current** to send
   new shares there. Archives are ordinary journal entries: rename, move or delete them as usual.
