@@ -1,0 +1,29 @@
+<div class="azst">
+    <div class="azst-scroll">
+        <div class="azst-drop" data-azst-drop>
+            <div class="form-group">
+                <label>Title</label>
+                <div class="form-fields"><input type="text" data-azst-title value="{{heading}}" placeholder="Optional, e.g. Message from the Shadow Broker"></div>
+            </div>
+            <p class="azsh-hint"><i class="fa-solid fa-file-import" inert></i> Write below, or drop a journal page here to share its text.</p>
+            <div class="azst-editor" data-azst-editor></div>
+        </div>
+
+        <fieldset class="azsh-to">
+            <legend>Show to</legend>
+            <label class="azsh-everyone"><input type="checkbox" data-azsh-everyone {{checked everyone}}> Everyone online</label>
+            <div class="azsh-users">
+                {{#each users as |u|}}
+                <label><input type="checkbox" data-azsh-user="{{u.id}}" {{checked u.chosen}} {{disabled @root.everyone}}> <span style="--azsh-color: {{u.color}}">{{u.name}}</span>{{#if u.isGM}} <span class="azsh-muted">GM</span>{{/if}}</label>
+                {{else}}
+                <span class="azsh-muted">Nobody else is online.</span>
+                {{/each}}
+            </div>
+        </fieldset>
+
+        <label class="azsh-keep"><input type="checkbox" data-azsh-keep {{checked keep}}> Keep in the archive</label>
+        <button type="button" class="azsh-send" data-action="share"><i class="fa-solid fa-share-from-square" inert></i> Share</button>
+
+        {{> "modules/ffg-azecraft-addon/templates/share/archive.hbs"}}
+    </div>
+</div>

@@ -17,6 +17,8 @@ import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
 import { XPManagerApp, initXpManager } from "./scripts/xp/xp-manager.js";
 import { initXpAdjust } from "./scripts/xp/xp-adjust.js";
 import { ShareImageApp, initImageShare } from "./scripts/share/image-share.js";
+import { ShareTextApp, initShareText } from "./scripts/share/share-text.js";
+import { initShareArchive } from "./scripts/share/share-archive.js";
 import { initQuickEffects } from "./scripts/effects/quick-effects.js";
 
 Hooks.once("init", () => {
@@ -37,7 +39,9 @@ Hooks.once("init", () => {
     initSheetPatches();
     initThumbnails();
     initToolbar();
+    initShareArchive();
     initImageShare();
+    initShareText();
     initQuickEffects();
     registerToolbarButton({
         id: "share-image",
@@ -48,6 +52,18 @@ Hooks.once("init", () => {
         isActive: () => Boolean(foundry.applications.instances.get("azecraft-share-image")),
         onClick: async () => {
             await ShareImageApp.toggle();
+            refreshToolbar();
+        }
+    });
+    registerToolbarButton({
+        id: "share-text",
+        order: 26,
+        label: "Share Text",
+        icon: "fa-solid fa-file-lines",
+        tooltip: "Show text (written here or a dropped journal page) to everyone or chosen players",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-share-text")),
+        onClick: async () => {
+            await ShareTextApp.toggle();
             refreshToolbar();
         }
     });

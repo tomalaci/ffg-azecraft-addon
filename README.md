@@ -33,9 +33,9 @@ The module:
 - **Quick effects** on the mission dashboard: statuses and custom roll effects (dice on chosen
   checks, for the next check, this combat or until removed) on a character card or the whole squad.
   See [docs/quick-effects.md](docs/quick-effects.md).
-- A **toolbar** next to the Scene list: Dashboard on/off, Players, **Share Image** (show an
-  image to everyone or chosen people without uploading it; see
-  [docs/image-sharing.md](docs/image-sharing.md)), **UI Performance** (frame rate,
+- A **toolbar** next to the Scene list: Dashboard on/off, Players, **Share Image** and **Share
+  Text** (show an image or text to everyone or chosen people, kept in share archives under the
+  *Shared Content* journal folder; see [docs/sharing.md](docs/sharing.md)), **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
   Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs)
   and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
@@ -97,7 +97,7 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 : Lightweight copies of large images.
 
 `scripts/toolbar/`, `scripts/share/`, `scripts/perf/`, `scripts/xp/`, `scripts/admin/`, `scripts/ui/`, `scripts/paths.js`
-: Toolbar, Share Image, UI Performance window, XP Management, Admin Panel, the scene-space window
+: Toolbar, Share Image and Share Text with the share archives, UI Performance window, XP Management, Admin Panel, the scene-space window
   base, and file path forms.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`

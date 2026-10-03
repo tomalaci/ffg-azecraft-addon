@@ -2,11 +2,14 @@
  * Quick image sharing (toolbar tab, everyone): drop, paste or link an image and show it to everyone
  * online or to chosen people, like Foundry's "Show to players" but without uploading anything. The
  * image is shrunk to a WebP in the browser (see share-core.js) and sent over the module socket inside
- * the message; recipients see it in Foundry's image viewer. Nothing is stored: a strip of this
- * page's images ("Recent (until you reload)") lets people reopen them until they reload.
+ * the message; recipients see it in Foundry's image viewer. Unless "Keep" is unticked, the image is
+ * also kept in the current share archive (share-archive.js), browsable from the window; a strip of
+ * this page's images ("Recent (until you reload)") reopens recent ones until a reload.
  */
 
 import { MAX_BYTES, QUALITY, dataUrlBytes, imageLink, isFor, recipients, scaled, shareTitle, sideSteps } from "./share-core.js";
+import { keepShare } from "./share-archive.js";
+import { ARCHIVE_PARTIAL, archiveContext, archivedItem, bindArchiveBrowse, onDeleteArchived, onNewArchive, onSetCurrentArchive } from "./archive-ui.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SOCKET = `module.${MODULE_ID}`;
@@ -65,7 +68,12 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
         position: { width: 440 },
         actions: {
             share: ShareImageApp.#onShare,
-            reopen: ShareImageApp.#onReopen
+            reopen: ShareImageApp.#onReopen,
+            openArchived: ShareImageApp.#onOpenArchived,
+            reshow: ShareImageApp.#onReshow,
+            deleteArchived: (event, target) => onDeleteArchived(target),
+            newArchive: function () { return onNewArchive(this); },
+            setCurrentArchive: function () { return onSetCurrentArchive(this); }
         }
     };
 
@@ -80,6 +88,9 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
     everyone = true;
     chosen = new Set();
     busy = "";
+    keep = true;
+    /** The archive shown in the window (null: the current one). */
+    browseId = null;
     #onPaste = event => this.#paste(event);
 
     async _prepareContext() {
@@ -93,7 +104,9 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
             users,
             busy: this.busy,
             canShare: Boolean(this.pending) && !this.busy && (this.everyone || this.chosen.size > 0),
-            recent: recent.map(entry => ({ src: entry.src, title: entry.title }))
+            recent: recent.map(entry => ({ src: entry.src, title: entry.title })),
+            keep: this.keep,
+            archive: archiveContext(this.browseId, "image")
         };
     }
 
@@ -134,6 +147,10 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
         root.querySelector("[data-azsh-caption]").addEventListener("input", event => {
             this.caption = event.target.value;
         });
+        root.querySelector("[data-azsh-keep]")?.addEventListener("change", event => {
+            this.keep = event.target.checked;
+        });
+        bindArchiveBrowse(this, root);
         root.querySelector("[data-azsh-everyone]").addEventListener("change", event => {
             this.everyone = event.target.checked;
             this.render();
@@ -196,11 +213,25 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const title = shareTitle(game.user.name, this.caption);
         game.socket.emit(SOCKET, { type: "shareImage", from: game.user.id, to, src: this.pending.src, title, caption: this.caption.trim() });
         remember({ src: this.pending.src, title, caption: this.caption.trim() });
+        if (this.keep) keepShare({ kind: "image", src: this.pending.src, caption: this.caption.trim(), title: this.caption.trim() || "Image" });
         const count = to === null ? "everyone online" : `${to.length} player(s)`;
         ui.notifications.info(`Image shown to ${count}.`);
         this.pending = null;
         this.link = "";
         this.caption = "";
+        this.render();
+    }
+
+    static #onOpenArchived(event, target) {
+        const item = archivedItem(target.dataset.uuid);
+        if (item?.image) show({ src: item.image, title: `${item.title} (${item.when})`, caption: item.caption });
+    }
+
+    static #onReshow(event, target) {
+        const item = archivedItem(target.dataset.uuid);
+        if (!item?.image) return;
+        this.pending = { src: item.image, label: `From the archive (${item.when})` };
+        this.caption = item.caption;
         this.render();
     }
 
@@ -218,6 +249,7 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
 }
 
 export function initImageShare() {
+    Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([ARCHIVE_PARTIAL]));
     Hooks.once("ready", () => {
         game.socket.on(SOCKET, message => {
             if (message?.type !== "shareImage" || !isFor(message, game.user.id) || typeof message.src !== "string") return;

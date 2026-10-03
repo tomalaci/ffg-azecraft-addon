@@ -1,0 +1,31 @@
+<section class="azsh-archive">
+    <h4><i class="fa-solid fa-box-archive" inert></i> Archive</h4>
+    <div class="azsh-archive-bar">
+        {{#if archive.list.length}}
+        <select data-azsh-browse aria-label="Archive to show">
+            {{#each archive.list as |a|}}<option value="{{a.id}}" {{#if a.shown}}selected{{/if}}>{{a.name}}{{#if a.current}} (current){{/if}}</option>{{/each}}
+        </select>
+        {{else}}
+        <span class="azsh-muted">No archive yet: the first kept share starts one.</span>
+        {{/if}}
+        {{#if archive.isGM}}
+        {{#unless archive.shownIsCurrent}}{{#if archive.list.length}}<button type="button" data-action="setCurrentArchive" data-tooltip="New shares go to this archive">Make current</button>{{/if}}{{/unless}}
+        <button type="button" data-action="newArchive" data-tooltip="Start a new archive (e.g. for a session) and make it current"><i class="fa-solid fa-plus" inert></i> New archive</button>
+        {{/if}}
+    </div>
+    {{#if archive.items.length}}
+    <ul class="azsh-archive-list">
+        {{#each archive.items as |s|}}
+        <li>
+            {{#if s.image}}<button type="button" class="azsh-archive-thumb" data-action="openArchived" data-uuid="{{s.uuid}}" data-tooltip="Open"><img src="{{s.image}}" alt=""></button>
+            {{else}}<button type="button" class="azsh-archive-open" data-action="openArchived" data-uuid="{{s.uuid}}" data-tooltip="Open"><i class="fa-solid fa-file-lines" inert></i></button>{{/if}}
+            <span class="azsh-archive-name">{{s.title}}<span class="azsh-muted">{{s.when}}</span></span>
+            <button type="button" data-action="reshow" data-uuid="{{s.uuid}}" data-tooltip="Put it in the window to share again"><i class="fa-solid fa-share-from-square" inert></i></button>
+            {{#if s.canDelete}}<button type="button" data-action="deleteArchived" data-uuid="{{s.uuid}}" data-tooltip="Delete from the archive"><i class="fa-solid fa-trash" inert></i></button>{{/if}}
+        </li>
+        {{/each}}
+    </ul>
+    {{else if archive.list.length}}
+    <p class="azsh-muted">Nothing {{archive.kindLabel}} in this archive yet.</p>
+    {{/if}}
+</section>

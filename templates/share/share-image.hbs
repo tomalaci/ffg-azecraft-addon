@@ -32,8 +32,11 @@
         </div>
     </fieldset>
 
+    <label class="azsh-keep"><input type="checkbox" data-azsh-keep {{checked keep}}> Keep in the archive</label>
     <button type="button" class="azsh-send" data-action="share" {{disabled (not canShare)}}><i class="fa-solid fa-share-from-square" inert></i> Share</button>
-    <p class="azsh-hint">Nothing is uploaded or saved: the image goes straight to the people you chose and opens for them. People who join later do not get it.</p>
+    <p class="azsh-hint">Nothing is uploaded: the image goes straight to the people you chose and opens for them. Kept images are stored in the world's share archive (Journal › Shared Content), not as files; people who join later can find them there.</p>
+
+    {{> "modules/ffg-azecraft-addon/templates/share/archive.hbs"}}
 
     {{#if recent.length}}
     <h4 data-tooltip="Images shared with you or by you since this page loaded; cleared on reload">Recent (until you reload)</h4>
