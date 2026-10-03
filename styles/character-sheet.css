@@ -380,6 +380,53 @@
     background: rgba(114, 212, 255, 0.06);
 }
 
+/* Equipped weapons and armour: the system only darkens the toggle (invisible on this theme). Make
+ * the state readable at a glance: a dim icon when not equipped, a lit icon with a check badge when
+ * equipped, and the whole row edged and tinted. */
+.azcs.starwarsffg.sheet.actor .items-list .item .toggle-equipped {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 22px;
+    border: 1px solid rgba(116, 200, 255, 0.18);
+    color: var(--azcs-muted, #95a6ba);
+    opacity: 0.45;
+}
+
+.azcs.starwarsffg.sheet.actor .items-list .item .toggle-equipped:hover {
+    border-color: #ff9d42;
+    color: #ff9d42;
+    opacity: 1;
+}
+
+.azcs.starwarsffg.sheet.actor .items-list .item .toggle-equipped.active {
+    border-color: rgba(114, 212, 255, 0.8);
+    background: rgba(114, 212, 255, 0.16);
+    color: #72d4ff;
+    opacity: 1;
+    text-shadow: 0 0 6px rgba(114, 212, 255, 0.8);
+}
+
+.azcs.starwarsffg.sheet.actor .items-list .item .toggle-equipped.active::after {
+    content: "\f00c";
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    padding: 1px;
+    border-radius: 50%;
+    background: #7fe0a0;
+    color: #08111d;
+    font: 900 7px/1 "Font Awesome 6 Pro", "Font Awesome 6 Free";
+    text-shadow: none;
+}
+
+.azcs.starwarsffg.sheet.actor li.item:has(.toggle-equipped.active) {
+    box-shadow: inset 3px 0 0 #72d4ff;
+    background: rgba(114, 212, 255, 0.07);
+}
+
 /* -------------------------------------------- */
 /*  Text blocks and editors                     */
 /* -------------------------------------------- */
