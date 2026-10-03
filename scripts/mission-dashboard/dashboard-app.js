@@ -13,6 +13,8 @@ import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
 import { artOverflow, artViewStyle, normalizeArtView, panArtView, zoomArtView, DEFAULT_ART_VIEW } from "./art-view.js";
+import { squadGroups } from "../effects/effect-core.js";
+import { EffectPickerApp, runEffectOp } from "../effects/quick-effects.js";
 
 const ART_VIEW_KEY = `${MODULE_ID}.artView`;
 const DRAG_THRESHOLD = 4;
@@ -115,7 +117,11 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             newEntry: MissionDashboardApp.#onNewEntry,
             newLedger: MissionDashboardApp.#onNewLedger,
             setDefaultLedger: MissionDashboardApp.#onSetDefaultLedger,
-            openLedger: MissionDashboardApp.#onOpenLedger
+            openLedger: MissionDashboardApp.#onOpenLedger,
+            addEffect: MissionDashboardApp.#onAddEffect,
+            removeEffect: MissionDashboardApp.#onRemoveEffect,
+            addSquadEffect: MissionDashboardApp.#onAddSquadEffect,
+            removeSquadEffect: MissionDashboardApp.#onRemoveSquadEffect
         }
     };
 
@@ -172,10 +178,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
         const people = view?.people?.map(person => ({ ...person, displayImg: person.img ? displaySrc(person.img) : person.img }));
 
+        const members = cards.filter(card => card.uuid && card.effects);
         return {
             ...view,
             ...(people ? { people } : {}),
             cards,
+            squadEffects: { show: members.length > 0, members: members.length, groups: squadGroups(members.map(card => card.effects)) },
             visibleCards: cards.filter(card => card.availability !== "empty" || view?.isGM),
             prefs,
             compactLabel: { auto: "Auto", always: "On", never: "Off" }[prefs.compact],
@@ -335,6 +343,31 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     /** Stop concentrating on a power (the flag the Biotics / Tech tabs set). */
+    /** The squad members shown as cards (Actors the user can see). */
+    #squadActors() {
+        return (this.controller.view?.cards ?? []).filter(card => card.uuid && card.effects)
+            .map(card => fromUuidSync(card.uuid)).filter(Boolean);
+    }
+
+    static #onAddEffect(event, target) {
+        const actor = fromUuidSync(target.closest("[data-uuid]")?.dataset.uuid ?? "");
+        if (actor) EffectPickerApp.open({ actors: [actor], label: actor.name });
+    }
+
+    static async #onRemoveEffect(event, target) {
+        const uuid = target.closest("[data-uuid]")?.dataset.uuid;
+        if (uuid) await runEffectOp({ kind: "remove", effectId: target.dataset.effectId, actorUuids: [uuid] });
+    }
+
+    static #onAddSquadEffect() {
+        const actors = this.#squadActors();
+        if (actors.length) EffectPickerApp.open({ actors, label: "Squad", squad: true });
+    }
+
+    static async #onRemoveSquadEffect(event, target) {
+        await runEffectOp({ kind: "removeGroup", group: target.dataset.group, actorUuids: this.#squadActors().map(actor => actor.uuid) });
+    }
+
     static async #onEndConcentration(event, target) {
         const actor = MissionDashboardApp.#resolve(target.closest("[data-uuid]")?.dataset.uuid);
         if (!actor?.canUserModify(game.user, "update")) return;

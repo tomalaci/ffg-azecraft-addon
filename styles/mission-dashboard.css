@@ -48,7 +48,8 @@
     font-size: 14px;
     line-height: 1.35;
 
-    --azd-header-height: 66px;
+    /* Title, controls, and the squad effects strip. */
+    --azd-header-height: 94px;
     --azd-panels-left: calc(var(--azd-left, 100px) + var(--azd-rail-width, 330px) + 12px);
     --azd-panels-width: calc(100vw - var(--azd-panels-left) - var(--azd-right, 360px));
 }
@@ -538,6 +539,107 @@
 }
 
 /* Concentration powers the character keeps up (set on the sheet's Biotics / Tech tabs). */
+/* Statuses and quick effects (scripts/effects/): chips on cards, a strip for the squad. */
+#azecraft-mission-dashboard .azd-effects {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px;
+    margin: 2px 0 4px;
+}
+
+#azecraft-mission-dashboard .azd-effect {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 1px;
+    border: 1px solid var(--azd-line-soft);
+    background: rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+#azecraft-mission-dashboard .azd-effect img {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: contain;
+}
+
+#azecraft-mission-dashboard .azd-effect:not(.azd-effect-add):hover {
+    border-color: var(--azd-red);
+    background: rgba(255, 93, 85, 0.2);
+}
+
+#azecraft-mission-dashboard .azd-effect-add {
+    color: var(--azd-muted);
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+#azecraft-mission-dashboard .azd-effect-add:hover {
+    border-color: var(--azd-orange);
+    color: var(--azd-orange);
+    opacity: 1;
+}
+
+#azecraft-mission-dashboard .azd-squad-effects {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+}
+
+#azecraft-mission-dashboard .azd-squad-effects-label {
+    flex: none;
+    color: var(--azd-accent);
+    font-family: var(--azd-font-heading);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 3px;
+    height: 22px;
+    padding: 0 2px 0 3px;
+    border: 1px solid var(--azd-line-soft);
+    background: rgba(114, 212, 255, 0.08);
+    font-size: 11px;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect img {
+    width: 16px;
+    height: 16px;
+    border: 0;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect button {
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: var(--azd-muted);
+    font-size: 10px;
+    line-height: 1;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect button:hover {
+    color: var(--azd-red);
+}
+
 #azecraft-mission-dashboard .azd-conc {
     display: flex;
     flex-wrap: wrap;
@@ -1705,4 +1807,110 @@
     .azd-help .azd-help-toc {
         display: none;
     }
+}
+
+/* -------------------------------------------- */
+/*  Effect picker (scripts/effects/quick-effects.js) */
+/* -------------------------------------------- */
+
+.azecraft-effect-picker .azfx {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.azecraft-effect-picker .azfx h4 {
+    margin: 4px 0 0;
+    border: 0;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azecraft-effect-picker .azfx-statuses,
+.azecraft-effect-picker .azfx-presets,
+.azecraft-effect-picker .azfx-icons,
+.azecraft-effect-picker .azfx-members,
+.azecraft-effect-picker .azfx-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.azecraft-effect-picker .azfx-members,
+.azecraft-effect-picker .azfx-skills {
+    gap: 2px 12px;
+}
+
+.azecraft-effect-picker .azfx-members legend {
+    font-size: 11px;
+}
+
+.azecraft-effect-picker .azfx-statuses button,
+.azecraft-effect-picker .azfx-preset button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    width: auto;
+    height: 26px;
+    padding: 0 6px;
+    font-size: 12px;
+}
+
+.azecraft-effect-picker .azfx-statuses img,
+.azecraft-effect-picker .azfx-preset img {
+    width: 18px;
+    height: 18px;
+    border: 0;
+}
+
+.azecraft-effect-picker .azfx-preset {
+    display: inline-flex;
+}
+
+.azecraft-effect-picker .azfx-x {
+    width: 22px !important;
+    padding: 0 !important;
+}
+
+.azecraft-effect-picker .azfx-icons button {
+    width: 30px;
+    height: 30px;
+    padding: 3px;
+    opacity: 0.55;
+}
+
+.azecraft-effect-picker .azfx-icons button img {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.azecraft-effect-picker .azfx-icons .azfx-icon--on {
+    border-color: #ff9d42;
+    opacity: 1;
+}
+
+.azecraft-effect-picker .azfx-dice {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 10px;
+}
+
+.azecraft-effect-picker .azfx-die {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.azecraft-effect-picker .azfx-summary {
+    margin: 2px 0;
+    font-style: italic;
+    opacity: 0.85;
+}
+
+.azecraft-effect-picker .azfx-buttons {
+    display: flex;
+    gap: 6px;
 }

@@ -30,6 +30,9 @@ The module:
 - Shows **lightweight copies** of large actor art (made automatically by the GM's browser) in
   the dashboard, the Actors tab and sheets; the originals stay untouched. See
   [docs/lightweight-images.md](docs/lightweight-images.md).
+- **Quick effects** on the mission dashboard: statuses and custom roll effects (dice on chosen
+  checks, for the next check, this combat or until removed) on a character card or the whole squad.
+  See [docs/quick-effects.md](docs/quick-effects.md).
 - A **toolbar** next to the Scene list: Dashboard on/off, Players, **Share Image** (show an
   image to everyone or chosen people without uploading it; see
   [docs/image-sharing.md](docs/image-sharing.md)), **UI Performance** (frame rate,

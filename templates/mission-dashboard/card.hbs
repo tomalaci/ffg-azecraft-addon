@@ -26,6 +26,15 @@
             </div>
             {{/if}}
 
+            {{#unless (eq card.availability "limited")}}
+            <div class="azd-effects">
+                {{#each card.effects as |fx|}}
+                <button type="button" class="azd-effect" data-action="removeEffect" data-effect-id="{{fx.id}}" data-tooltip="{{fx.tooltip}}. Click to remove." aria-label="Remove {{fx.name}}"><img src="{{fx.img}}" alt=""></button>
+                {{/each}}
+                <button type="button" class="azd-effect azd-effect-add" data-action="addEffect" data-tooltip="Add a status or effect (e.g. Disoriented, Boost next check, a custom roll effect)" aria-label="Add effect"><i class="fa-solid fa-plus" inert></i></button>
+            </div>
+            {{/unless}}
+
             {{#if (eq card.availability "limited")}}
             <p class="azd-muted azd-limited-note">Details restricted.</p>
             {{else}}

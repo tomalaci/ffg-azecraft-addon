@@ -49,4 +49,16 @@
         </button>
         {{/if}}
     </div>
+    {{#if squadEffects.show}}
+    <div class="azd-squad-effects">
+        <span class="azd-squad-effects-label"><i class="fa-solid fa-wand-sparkles" inert></i> Squad effects</span>
+        {{#each squadEffects.groups as |g|}}
+        <span class="azd-squad-effect" data-tooltip="{{g.tooltip}} ({{g.count}} of {{@root.squadEffects.members}})">
+            <img src="{{g.img}}" alt=""> {{g.name}} <span class="azd-muted">{{g.count}}/{{@root.squadEffects.members}}</span>
+            <button type="button" data-action="removeSquadEffect" data-group="{{g.group}}" aria-label="Remove {{g.name}} from the squad"><i class="fa-solid fa-xmark" inert></i></button>
+        </span>
+        {{/each}}
+        <button type="button" class="azd-effect azd-effect-add" data-action="addSquadEffect" data-tooltip="Add an effect to the whole squad (or chosen members)" aria-label="Add squad effect"><i class="fa-solid fa-plus" inert></i></button>
+    </div>
+    {{/if}}
 </header>

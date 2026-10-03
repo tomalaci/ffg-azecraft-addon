@@ -303,7 +303,12 @@ export class DashboardController {
         const onItem = item => onActor(item.parent);
         for (const hook of ["createItem", "updateItem", "deleteItem"]) Hooks.on(hook, onItem);
 
-        const onEffect = effect => onActor(effect.parent?.documentName === "Item" ? effect.parent.parent : effect.parent);
+        // Effects also change the squad effects strip in the header.
+        const onEffect = effect => {
+            const actor = effect.parent?.documentName === "Item" ? effect.parent.parent : effect.parent;
+            if (actor && this.#refs.actors.has(actor.uuid)) this.refresh("rail", "header");
+            else onActor(actor);
+        };
         for (const hook of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(hook, onEffect);
 
         // Any change to a mission ledger (new entry, edit, ownership, rename) can change a tab.

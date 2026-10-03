@@ -17,6 +17,7 @@ import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
 import { XPManagerApp, initXpManager } from "./scripts/xp/xp-manager.js";
 import { initXpAdjust } from "./scripts/xp/xp-adjust.js";
 import { ShareImageApp, initImageShare } from "./scripts/share/image-share.js";
+import { initQuickEffects } from "./scripts/effects/quick-effects.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -37,6 +38,7 @@ Hooks.once("init", () => {
     initThumbnails();
     initToolbar();
     initImageShare();
+    initQuickEffects();
     registerToolbarButton({
         id: "share-image",
         order: 25,

@@ -14,6 +14,7 @@
 
 import { DESIRE_MAX_LENGTH, FLAG_KEY, MODULE_ID, OWNERSHIP, PLACEHOLDER_ART } from "./constants.js";
 import { findPower, normalizeConcentration } from "../powers/power-catalog.js";
+import { effectChips } from "../effects/effect-core.js";
 
 const CRITICAL_INJURY_TYPE = "criticalinjury";
 
@@ -202,6 +203,8 @@ export function buildCharacterCard(slot, actor, user) {
         criticalInjuries,
         concentrating: readConcentration(actor),
         canEditConcentration: canEdit,
+        // Statuses and quick effects; anyone may change them (the GM relays for non-owners).
+        effects: effectChips(actor.effects?.contents ?? actor.effects ?? [], MODULE_ID),
         hasDesire: Boolean(desire),
         desire: desire?.text ?? "",
         desireRich: Boolean(desire?.rich),

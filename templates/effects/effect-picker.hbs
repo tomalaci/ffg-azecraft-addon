@@ -1,0 +1,68 @@
+<div class="azfx">
+    {{#if squad}}
+    <fieldset class="azfx-members">
+        <legend>Who</legend>
+        {{#each members as |m|}}
+        <label><input type="checkbox" data-member="{{m.uuid}}" {{checked m.chosen}}> {{m.name}}</label>
+        {{/each}}
+    </fieldset>
+    {{/if}}
+
+    <h4>Statuses</h4>
+    <div class="azfx-statuses">
+        {{#each statuses as |s|}}
+        <button type="button" data-action="status" data-status="{{s.id}}" data-name="{{s.name}}" data-tooltip="Add {{s.name}}"><img src="{{s.img}}" alt=""> {{s.name}}</button>
+        {{/each}}
+    </div>
+
+    {{#if presets.length}}
+    <h4>Presets</h4>
+    <div class="azfx-presets">
+        {{#each presets as |p|}}
+        <span class="azfx-preset">
+            <button type="button" data-action="preset" data-preset="{{p.id}}" data-tooltip="{{p.text}}"><img src="{{p.img}}" alt=""> {{p.name}}</button>
+            {{#if @root.isGM}}<button type="button" class="azfx-x" data-action="deletePreset" data-preset="{{p.id}}" data-tooltip="Delete preset" aria-label="Delete preset {{p.name}}"><i class="fa-solid fa-xmark" inert></i></button>{{/if}}
+        </span>
+        {{/each}}
+    </div>
+    {{/if}}
+
+    <h4>Custom effect</h4>
+    <div class="azfx-custom">
+        <div class="form-group">
+            <label>Name</label>
+            <div class="form-fields"><input type="text" data-draft="name" value="{{draft.name}}" placeholder="e.g. Inspired, Smoke, Toxic air"></div>
+        </div>
+        <div class="azfx-icons">
+            {{#each icons as |i|}}
+            <button type="button" class="{{#if i.on}}azfx-icon--on{{/if}}" data-action="icon" data-src="{{i.src}}" aria-pressed="{{i.on}}"><img src="{{i.src}}" alt=""></button>
+            {{/each}}
+        </div>
+        <div class="azfx-dice">
+            {{#each dice as |d|}}
+            <label class="azfx-die">
+                <span class="az-stepper"><button type="button" data-step="-1" aria-label="One less">−</button><input type="number" min="0" max="9" step="1" value="{{d.value}}" data-dice="{{d.key}}"><button type="button" data-step="1" aria-label="One more">+</button></span>
+                <span>{{d.label}}</span>
+            </label>
+            {{/each}}
+        </div>
+        <div class="form-group">
+            <label>On</label>
+            <div class="form-fields"><select data-draft="scope">{{#each scopes as |s|}}<option value="{{s.id}}" {{#if s.on}}selected{{/if}}>{{s.label}}</option>{{/each}}</select></div>
+        </div>
+        {{#if chooseSkills}}
+        <div class="azfx-skills">
+            {{#each skills as |s|}}<label><input type="checkbox" data-skill="{{s.key}}" {{checked s.on}}> {{s.label}}</label>{{/each}}
+        </div>
+        {{/if}}
+        <div class="form-group">
+            <label>Lasts</label>
+            <div class="form-fields"><select data-draft="duration">{{#each durations as |d|}}<option value="{{d.id}}" {{#if d.on}}selected{{/if}}>{{d.label}}</option>{{/each}}</select></div>
+        </div>
+        <p class="azfx-summary">{{summary}}</p>
+        <div class="azfx-buttons">
+            <button type="button" data-action="apply" {{disabled (not canApply)}}><i class="fa-solid fa-check" inert></i> Add effect</button>
+            {{#if isGM}}<button type="button" data-action="savePreset" data-tooltip="Keep it in the presets for everyone"><i class="fa-solid fa-bookmark" inert></i> Save as preset</button>{{/if}}
+        </div>
+    </div>
+</div>
