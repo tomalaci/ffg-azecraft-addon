@@ -4,6 +4,34 @@
         <span class="azpw-skills">{{skill}} rank {{rank}}</span>
     </header>
 
+    {{#if omniTool}}
+    <section class="azpw-omni {{#if omniTool.overSlots}}azpw-omni--over{{/if}}">
+        <header class="azpw-omni-head">
+            <span class="azpw-omni-tool"><i class="fa-solid fa-microchip" inert></i>
+                {{#if omniTool.hasTool}}{{omniTool.name}}{{#unless omniTool.equipped}} <span class="azpw-muted">(not equipped)</span>{{/unless}}{{else}}<span class="azpw-muted">No omni-tool: add one to the character's weapons</span>{{/if}}</span>
+            <span class="azpw-meter {{#if omniTool.overSlots}}azpw-meter--over{{/if}}"
+                data-tooltip="Slots: {{omniTool.readied}} readied power(s) + {{omniTool.softwareSlots}} for software{{#each omniTool.software}} ({{name}} {{slots}}){{/each}}, of {{omniTool.total}}{{#if omniTool.customizedRanks}} (incl. +{{omniTool.customizedRanks}} Customized Omni-tool){{/if}}">
+                Slots {{omniTool.used}} / {{omniTool.total}}</span>
+            <span class="azpw-meter {{#if omniTool.overRank}}azpw-meter--over{{/if}}" data-tooltip="A character can have as many tech powers ready as ranks in Tech">
+                Readied {{omniTool.readied}} / {{omniTool.techRank}}</span>
+        </header>
+        <div class="azpw-ready">
+            {{#each omniTool.groups as |group|}}
+            <div class="azpw-ready-group">
+                <span class="azpw-ready-label">{{group.label}}</span>
+                {{#each group.units as |unit|}}
+                <button type="button" class="azpw-ready-unit {{#if unit.on}}azpw-ready-unit--on{{/if}}" data-azpw="ready" data-unit="{{unit.id}}" {{disabled (not @root.canEdit)}}
+                    aria-pressed="{{unit.on}}" data-tooltip="{{#if unit.on}}Readied on the omni-tool (click to remove){{else}}Click to ready it on the omni-tool{{/if}}">
+                    {{#if unit.icon}}<i class="fa-solid {{unit.icon}}" inert></i> {{/if}}{{unit.label}}</button>
+                {{/each}}
+            </div>
+            {{/each}}
+        </div>
+        {{#if omniTool.overSlots}}<p class="azpw-omni-warn"><i class="fa-solid fa-triangle-exclamation" inert></i> More installed than the omni-tool has slots.</p>{{/if}}
+        {{#if omniTool.overRank}}<p class="azpw-omni-warn"><i class="fa-solid fa-triangle-exclamation" inert></i> More tech powers readied than ranks in Tech.</p>{{/if}}
+    </section>
+    {{/if}}
+
     <div class="azpw-grid">
         {{#each powers as |power|}}
         <div class="azpw-power azpw-power--{{@root.discipline}}">
@@ -25,9 +53,9 @@
             {{#if power.loadoutOptions}}
             <div class="azpw-loadout" role="group" aria-label="{{power.loadoutLabel}} loaded for {{power.label}}">
                 {{#each power.loadoutOptions as |option|}}
-                <button type="button" class="azpw-load {{#if option.active}}azpw-load--on{{/if}}" data-azpw="load" data-power="{{power.id}}" data-subtype="{{option.id}}"
+                <button type="button" class="azpw-load {{#if option.active}}azpw-load--on{{/if}} {{#unless option.readied}}azpw-load--unready{{/unless}}" data-azpw="load" data-power="{{power.id}}" data-subtype="{{option.id}}"
                     {{disabled (not @root.canEdit)}} aria-pressed="{{option.active}}"
-                    data-tooltip="{{option.label}}{{#if option.effect}}: {{option.effect}}{{/if}}"><i class="fa-solid {{option.icon}}" inert></i></button>
+                    data-tooltip="{{option.label}}{{#if option.effect}}: {{option.effect}}{{/if}}{{#unless option.readied}} (not readied on the omni-tool){{/unless}}"><i class="fa-solid {{option.icon}}" inert></i></button>
                 {{/each}}
                 <span class="azpw-load-name">{{power.loaded.label}}</span>
             </div>

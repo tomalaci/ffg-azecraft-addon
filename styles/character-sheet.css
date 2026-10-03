@@ -702,6 +702,109 @@
     color: var(--azcs-orange);
 }
 
+/* A variant not readied on the omni-tool: still usable, shown faded with a dashed edge. */
+.azcs.starwarsffg.sheet.actor .window-content .azpw-load--unready {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+/* Omni-tool panel (Tech tab): readied tech powers, slots and limits. */
+.azcs.starwarsffg.sheet.actor .window-content .azpw-omni {
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--azcs-line-soft, rgba(116, 200, 255, 0.22));
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-omni-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin-bottom: 6px;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-omni-tool {
+    flex: 1;
+    min-width: 0;
+    color: var(--azcs-accent);
+    font-family: var(--azcs-font-heading);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-muted {
+    color: var(--azcs-muted, #95a6ba);
+    font-weight: 400;
+    text-transform: none;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-meter {
+    padding: 1px 8px;
+    border: 1px solid var(--azcs-line-soft, rgba(116, 200, 255, 0.22));
+    color: var(--azcs-text, #e7eef7);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-meter--over,
+.azcs.starwarsffg.sheet.actor .window-content .azpw-omni-warn {
+    border-color: var(--azcs-orange);
+    color: var(--azcs-orange);
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-omni-warn {
+    margin: 6px 0 0;
+    font-size: 12px;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready-label {
+    flex: 0 0 7.5em;
+    color: var(--azcs-muted, #95a6ba);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready-unit {
+    flex: none;
+    width: auto;
+    height: 24px;
+    margin: 0;
+    padding: 0 8px;
+    border: 1px dashed var(--azcs-line-soft, rgba(116, 200, 255, 0.3));
+    background: transparent;
+    color: var(--azcs-muted, #95a6ba);
+    font-size: 12px;
+    line-height: 22px;
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready-unit:not(:disabled):hover {
+    border-color: var(--azcs-orange);
+    color: var(--azcs-orange);
+}
+
+.azcs.starwarsffg.sheet.actor .window-content .azpw-ready-unit--on {
+    border-style: solid;
+    border-color: rgba(114, 212, 255, 0.8);
+    background: rgba(114, 212, 255, 0.16);
+    color: #72d4ff;
+}
+
 .azcs.starwarsffg.sheet.actor .window-content .azpw-load-name {
     margin-left: 4px;
     color: var(--azcs-orange);

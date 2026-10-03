@@ -34,6 +34,16 @@ character starts keeping the power up: it turns orange ("Concentrating") and the
 chip on the character's mission dashboard card. Click it again (or the chip's ×) when it ends. It
 is only a reminder: no stats change.
 
+**Omni-tool (Tech tab).** The book's rule: tech powers are readied by installing them into the
+omni-tool's slots, and a character can have as many tech powers ready as ranks in Tech. Each attack
+element, augment mode and construct is its own readied power; Tech Sabotage is one. The panel at the
+top of the Tech tab shows the character's omni-tool (the equipped weapon named "Omni-tool …", else
+the first), **Slots** used (installed software from the omni-tool's attachments + readied powers) of
+the omni-tool's slots (its hardpoints, +1 per rank of Customized Omni-tool) and **Readied** of the
+Tech rank. Click a power to ready or unready it. Over either limit the counters turn orange with a
+warning; nothing is blocked. Variants that are not readied show dashed on the power buttons, and
+rolling one says so (and rolls anyway).
+
 **Tech loadout.** Tech Attack and Tech Augment subtypes are readied separately, so their buttons
 have a loadout row: the element (Incinerate, Cryo Blast, Overload, Neural Shock) and the augment
 mode (Tech Armor, Charged Melee, Turbocharge, Tactical Cloak). Click an icon to load it; rolls use
@@ -68,7 +78,9 @@ off to get the parchment look back on all of them (the header fields stay remove
   tabs that `scripts/powers/power-tabs.js` fills in `renderActorSheet`; presets are edited in
   `scripts/powers/preset-editor.js`. Actor flags: `powerPresets` (list of
   `{id, name, power, subtype, modifiers}`, modifiers as `"<power or general id>:<option id>"`) and
-  `techLoadout` (`{power id: subtype id}`) and `concentration` (list of power ids). A power button calls the system's
+  `techLoadout` (`{power id: subtype id}`), `techReadied` (readied unit ids, e.g.
+  `tech-attack:overload`, `tech-sabotage`; rules in `scripts/powers/omni-tool-core.js`) and
+  `concentration` (list of power ids). A power button calls the system's
   `DiceHelpers.rollSkill` for the power's skill and parks the power, subtype and modifiers for the
   roll dialog; the patched `RollBuilderFFG.getData` in `scripts/roll-power-modifiers.js` claims it
   (within 5 s, same discipline), moves the difficulty from Average to the base, ticks the preset's
