@@ -16,6 +16,7 @@ import { initVisualEffects } from "./scripts/perf/visual-effects.js";
 import { AdminPanelApp, initAdminPanel } from "./scripts/admin/admin-panel.js";
 import { XPManagerApp, initXpManager } from "./scripts/xp/xp-manager.js";
 import { initXpAdjust } from "./scripts/xp/xp-adjust.js";
+import { ShareImageApp, initImageShare } from "./scripts/share/image-share.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -35,6 +36,19 @@ Hooks.once("init", () => {
     initSheetPatches();
     initThumbnails();
     initToolbar();
+    initImageShare();
+    registerToolbarButton({
+        id: "share-image",
+        order: 25,
+        label: "Share Image",
+        icon: "fa-solid fa-share-from-square",
+        tooltip: "Show an image to everyone or chosen players without uploading it (drop, paste or link)",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-share-image")),
+        onClick: async () => {
+            await ShareImageApp.toggle();
+            refreshToolbar();
+        }
+    });
     registerToolbarButton({
         id: "ui-performance",
         order: 30,

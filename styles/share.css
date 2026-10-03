@@ -1,0 +1,45 @@
+/* Share Image window (scripts/share/image-share.js). */
+
+.azsh {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.azsh-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 140px;
+    padding: 10px;
+    border: 1px dashed rgba(116, 200, 255, 0.5);
+    background: rgba(0, 0, 0, 0.2);
+    color: #95a6ba;
+    text-align: center;
+    cursor: pointer;
+}
+
+.azsh-drop i { color: #72d4ff; font-size: 28px; }
+.azsh-drop:hover, .azsh-drop--over { border-color: #ff9d42; color: #e7eef7; }
+.azsh-drop--filled { min-height: 0; }
+.azsh-drop img { max-width: 100%; max-height: 260px; border: 0; object-fit: contain; }
+.azsh-meta { font-size: 11px; }
+.azsh-busy { margin: 0; color: #ff9d42; }
+
+.azsh-to { margin: 0; padding: 6px 8px; border: 1px solid rgba(116, 200, 255, 0.25); }
+.azsh-to legend { padding: 0 4px; color: #72d4ff; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.azsh-everyone { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.azsh-users { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 4px; }
+.azsh-users label { display: flex; align-items: center; gap: 4px; }
+.azsh-users span[style] { border-left: 3px solid var(--azsh-color, transparent); padding-left: 4px; }
+.azsh-muted { opacity: 0.65; font-size: 11px; }
+
+.azsh-send { width: 100%; }
+.azsh-hint { margin: 0; font-size: 11px; opacity: 0.7; }
+
+.azsh h4 { margin: 4px 0 0; border: 0; font-size: 12px; }
+.azsh-recent { display: flex; flex-wrap: wrap; gap: 4px; }
+.azsh-recent button { width: 56px; height: 56px; padding: 0; border: 1px solid rgba(116, 200, 255, 0.35); background: rgba(0, 0, 0, 0.25); }
+.azsh-recent img { width: 100%; height: 100%; border: 0; object-fit: cover; }

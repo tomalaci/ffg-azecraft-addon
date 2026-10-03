@@ -1,0 +1,46 @@
+<div class="azsh">
+    <div class="azsh-drop {{#if pending}}azsh-drop--filled{{/if}}" data-azsh-drop tabindex="0" role="button" aria-label="Drop, paste or choose an image">
+        {{#if pending}}
+            <img src="{{pending.src}}" alt="">
+            <span class="azsh-meta">{{pending.label}}</span>
+        {{else}}
+            <i class="fa-solid fa-image" inert></i>
+            <span>Drop an image here, paste one (Ctrl+V) or click to choose a file</span>
+        {{/if}}
+        <input type="file" accept="image/*" data-azsh-file hidden>
+    </div>
+    {{#if busy}}<p class="azsh-busy"><i class="fa-solid fa-spinner fa-spin" inert></i> {{busy}}</p>{{/if}}
+
+    <div class="form-group">
+        <label>Or a link</label>
+        <div class="form-fields"><input type="text" data-azsh-link value="{{link}}" placeholder="https://… or a Foundry image path"></div>
+    </div>
+    <div class="form-group">
+        <label>Caption</label>
+        <div class="form-fields"><input type="text" data-azsh-caption value="{{caption}}" placeholder="Optional, shown with the image"></div>
+    </div>
+
+    <fieldset class="azsh-to">
+        <legend>Show to</legend>
+        <label class="azsh-everyone"><input type="checkbox" data-azsh-everyone {{checked everyone}}> Everyone online</label>
+        <div class="azsh-users">
+            {{#each users as |u|}}
+            <label><input type="checkbox" data-azsh-user="{{u.id}}" {{checked u.chosen}} {{disabled @root.everyone}}> <span style="--azsh-color: {{u.color}}">{{u.name}}</span>{{#if u.isGM}} <span class="azsh-muted">GM</span>{{/if}}</label>
+            {{else}}
+            <span class="azsh-muted">Nobody else is online.</span>
+            {{/each}}
+        </div>
+    </fieldset>
+
+    <button type="button" class="azsh-send" data-action="share" {{disabled (not canShare)}}><i class="fa-solid fa-share-from-square" inert></i> Share</button>
+    <p class="azsh-hint">Nothing is uploaded or saved: the image goes straight to the people you chose and opens for them. People who join later do not get it.</p>
+
+    {{#if recent.length}}
+    <h4>This session</h4>
+    <div class="azsh-recent">
+        {{#each recent as |r|}}
+        <button type="button" data-action="reopen" data-index="{{@index}}" data-tooltip="{{r.title}}"><img src="{{r.src}}" alt=""></button>
+        {{/each}}
+    </div>
+    {{/if}}
+</div>

@@ -30,7 +30,9 @@ The module:
 - Shows **lightweight copies** of large actor art (made automatically by the GM's browser) in
   the dashboard, the Actors tab and sheets; the originals stay untouched. See
   [docs/lightweight-images.md](docs/lightweight-images.md).
-- A **toolbar** next to the Scene list: Dashboard on/off, Players, **UI Performance** (frame rate,
+- A **toolbar** next to the Scene list: Dashboard on/off, Players, **Share Image** (show an
+  image to everyone or chosen people without uploading it; see
+  [docs/image-sharing.md](docs/image-sharing.md)), **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
   Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs)
   and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
@@ -91,9 +93,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 `scripts/thumbnails/`
 : Lightweight copies of large images.
 
-`scripts/toolbar/`, `scripts/perf/`, `scripts/xp/`, `scripts/admin/`, `scripts/ui/`, `scripts/paths.js`
-: Toolbar, UI Performance window, XP Management, Admin Panel, the scene-space window base, and
-  file path forms.
+`scripts/toolbar/`, `scripts/share/`, `scripts/perf/`, `scripts/xp/`, `scripts/admin/`, `scripts/ui/`, `scripts/paths.js`
+: Toolbar, Share Image, UI Performance window, XP Management, Admin Panel, the scene-space window
+  base, and file path forms.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.
