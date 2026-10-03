@@ -123,6 +123,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             addSquadEffect: MissionDashboardApp.#onAddSquadEffect,
             removeSquadEffect: MissionDashboardApp.#onRemoveSquadEffect,
             addCondition: MissionDashboardApp.#onAddCondition,
+            scrollSquadChips: MissionDashboardApp.#onScrollSquadChips,
             toggleCondition: MissionDashboardApp.#onToggleCondition,
             removeCondition: MissionDashboardApp.#onRemoveCondition
         }
@@ -205,12 +206,16 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         super._preSyncPartState(partId, newElement, priorElement, state);
         const focus = priorElement.querySelector("textarea:focus, input:focus");
         if (focus && "selectionStart" in focus) state.selection = [focus.selectionStart, focus.selectionEnd];
+        const chips = priorElement.querySelector("[data-squad-chips]");
+        if (chips) state.squadChipsLeft = chips.scrollLeft;
     }
 
     _syncPartState(partId, newElement, priorElement, state) {
         super._syncPartState(partId, newElement, priorElement, state);
         const focus = state.focus ? newElement.querySelector(state.focus) : null;
         if (focus && state.selection) focus.setSelectionRange(...state.selection);
+        const chips = newElement.querySelector("[data-squad-chips]");
+        if (chips && state.squadChipsLeft) chips.scrollLeft = state.squadChipsLeft;
     }
 
     async _onFirstRender(context, options) {
@@ -301,13 +306,35 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         // Rail fade edges follow the scroll position (scroll events do not bubble: capture them).
         this.element.addEventListener("scroll", event => {
             if (event.target.classList?.contains("azd-rail-cards")) this.#updateRailEdges();
+            if (event.target.matches?.("[data-squad-chips]")) this.#updateSquadChips();
         }, true);
         document.addEventListener("azecraft:layout", this.#onLayout);
 
         this.#layout.start();
     }
 
-    #onLayout = () => this.#updateRailEdges();
+    #onLayout = () => {
+        this.#updateRailEdges();
+        this.#updateSquadChips();
+    };
+
+    /** Show the squad strip's ‹ › buttons when its chips do not fit, enabled towards hidden ones. */
+    #updateSquadChips() {
+        const chips = this.element?.querySelector("[data-squad-chips]");
+        if (!chips) return;
+        const overflow = chips.scrollWidth > chips.clientWidth + 1;
+        const strip = chips.closest(".azd-squad-effects");
+        strip.toggleAttribute("data-overflow", overflow);
+        const before = strip.querySelector("[data-action=scrollSquadChips][data-dir='-1']");
+        const after = strip.querySelector("[data-action=scrollSquadChips][data-dir='1']");
+        if (before) before.disabled = chips.scrollLeft <= 1;
+        if (after) after.disabled = chips.scrollLeft + chips.clientWidth >= chips.scrollWidth - 1;
+    }
+
+    static #onScrollSquadChips(event, target) {
+        const chips = this.element.querySelector("[data-squad-chips]");
+        if (chips) chips.scrollBy({ left: Number(target.dataset.dir) * Math.max(80, chips.clientWidth * 0.7), behavior: "smooth" });
+    }
 
     /** Show the rail's top / bottom fade only where cards are scrolled out of view. */
     #updateRailEdges() {
@@ -324,6 +351,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         await super._onRender(context, options);
         this.applyPreferences();
         this.#updateRailEdges();
+        this.#updateSquadChips();
     }
 
     applyPreferences() {

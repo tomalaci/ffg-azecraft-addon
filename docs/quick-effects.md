@@ -16,7 +16,8 @@ Buffs and debuffs on characters without finding their tokens.
   - **One-off effect** (wand icon): give an effect to the whole squad or the members you tick, now
     (e.g. Boost on the next check). Each member keeps their own copy; the strip shows how many still
     have it (e.g. "Inspired 6/6") and **×** removes it from all of them.
-  - The chips scroll sideways with the mouse wheel when they do not fit.
+  - When the chips do not fit, ‹ › buttons at the ends of the strip (or the mouse wheel over it)
+    scroll through them.
 - **Add effect** window:
   - **Statuses:** the system's statuses (Boost / Setback / Upgrade / Success next check or this
     combat, Heavy Cover, Disoriented, Immobilized, Staggered); click one to add it right away.

@@ -56,6 +56,7 @@
         <button type="button" class="azd-squad-add" data-action="addCondition" data-tooltip="Add a squad condition: stays on every member (and anyone who joins) until you switch it off, e.g. a hazardous environment" aria-label="Add squad condition"><i class="fa-solid fa-smog" inert></i><i class="fa-solid fa-plus azd-squad-add-plus" inert></i></button>
         {{/if}}
         <button type="button" class="azd-squad-add" data-action="addSquadEffect" data-tooltip="Give an effect to the whole squad or chosen members now (one-off, e.g. Boost on the next check); each member keeps their own copy" aria-label="Add effect to squad members"><i class="fa-solid fa-wand-sparkles" inert></i><i class="fa-solid fa-plus azd-squad-add-plus" inert></i></button>
+        <button type="button" class="azd-squad-scroll" data-action="scrollSquadChips" data-dir="-1" aria-label="Earlier squad effects"><i class="fa-solid fa-chevron-left" inert></i></button>
         <div class="azd-squad-effects-chips" data-squad-chips>
             {{#each squadEffects.conditions as |c|}}
             <span class="azd-squad-effect azd-squad-condition {{#unless c.on}}azd-squad-condition--off{{/unless}}">
@@ -74,6 +75,7 @@
             {{#unless squadEffects.conditions.length}}<span class="azd-muted azd-squad-effects-empty">No squad effects</span>{{/unless}}
             {{/each}}
         </div>
+        <button type="button" class="azd-squad-scroll" data-action="scrollSquadChips" data-dir="1" aria-label="More squad effects"><i class="fa-solid fa-chevron-right" inert></i></button>
     </div>
     {{/if}}
 </header>

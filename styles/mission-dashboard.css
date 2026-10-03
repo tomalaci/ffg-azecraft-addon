@@ -2039,3 +2039,34 @@
 .azecraft-effect-picker .azfx-custom[open] > summary {
     margin-bottom: 4px;
 }
+
+/* ‹ › buttons when the squad effect chips do not fit (dashboard-app.js #updateSquadChips). */
+#azecraft-mission-dashboard .azd-squad-scroll {
+    display: none;
+    flex: none;
+    width: 16px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--azd-accent);
+    font-size: 10px;
+    line-height: 1;
+}
+
+#azecraft-mission-dashboard .azd-squad-effects[data-overflow] .azd-squad-scroll {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#azecraft-mission-dashboard .azd-squad-scroll:disabled {
+    color: var(--azd-muted);
+    opacity: 0.35;
+    cursor: default;
+}
+
+#azecraft-mission-dashboard .azd-squad-scroll:not(:disabled):hover {
+    color: var(--azd-orange);
+}
