@@ -310,6 +310,7 @@ export class DashboardController {
             else onActor(actor);
         };
         for (const hook of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(hook, onEffect);
+        Hooks.on("azecraftSquadConditions", () => this.refresh("rail", "header"));
 
         // Any change to a mission ledger (new entry, edit, ownership, rename) can change a tab.
         const onPage = page => {

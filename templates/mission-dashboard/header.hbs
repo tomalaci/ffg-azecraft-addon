@@ -51,14 +51,29 @@
     </div>
     {{#if squadEffects.show}}
     <div class="azd-squad-effects">
-        <span class="azd-squad-effects-label"><i class="fa-solid fa-wand-sparkles" inert></i> Squad effects</span>
-        {{#each squadEffects.groups as |g|}}
-        <span class="azd-squad-effect" data-tooltip="{{g.tooltip}} ({{g.count}} of {{@root.squadEffects.members}})">
-            <img src="{{g.img}}" alt=""> {{g.name}} <span class="azd-muted">{{g.count}}/{{@root.squadEffects.members}}</span>
-            <button type="button" data-action="removeSquadEffect" data-group="{{g.group}}" aria-label="Remove {{g.name}} from the squad"><i class="fa-solid fa-xmark" inert></i></button>
-        </span>
-        {{/each}}
-        <button type="button" class="azd-effect azd-effect-add" data-action="addSquadEffect" data-tooltip="Add an effect to the whole squad (or chosen members)" aria-label="Add squad effect"><i class="fa-solid fa-plus" inert></i></button>
+        <span class="azd-squad-effects-label" data-tooltip="Squad effects"><i class="fa-solid fa-people-group" inert></i></span>
+        {{#if squadEffects.canCondition}}
+        <button type="button" class="azd-squad-add" data-action="addCondition" data-tooltip="Add a squad condition: stays on every member (and anyone who joins) until you switch it off, e.g. a hazardous environment" aria-label="Add squad condition"><i class="fa-solid fa-smog" inert></i><i class="fa-solid fa-plus azd-squad-add-plus" inert></i></button>
+        {{/if}}
+        <button type="button" class="azd-squad-add" data-action="addSquadEffect" data-tooltip="Give an effect to the whole squad or chosen members now (one-off, e.g. Boost on the next check); each member keeps their own copy" aria-label="Add effect to squad members"><i class="fa-solid fa-wand-sparkles" inert></i><i class="fa-solid fa-plus azd-squad-add-plus" inert></i></button>
+        <div class="azd-squad-effects-chips" data-squad-chips>
+            {{#each squadEffects.conditions as |c|}}
+            <span class="azd-squad-effect azd-squad-condition {{#unless c.on}}azd-squad-condition--off{{/unless}}">
+                <button type="button" class="azd-squad-condition-toggle" data-action="toggleCondition" data-condition="{{c.id}}" data-tooltip="{{c.tooltip}}. Click to switch it {{#if c.on}}off{{else}}on{{/if}}." aria-pressed="{{c.on}}" aria-label="{{c.name}}: switch {{#if c.on}}off{{else}}on{{/if}}">
+                    <i class="fa-solid {{#if c.on}}fa-toggle-on{{else}}fa-toggle-off{{/if}}" inert></i><img src="{{c.img}}" alt=""> {{c.name}}{{#if c.on}} <span class="azd-muted">{{c.count}}/{{@root.squadEffects.members}}</span>{{/if}}
+                </button>
+                <button type="button" data-action="removeCondition" data-condition="{{c.id}}" data-tooltip="Remove the condition" aria-label="Remove {{c.name}}"><i class="fa-solid fa-xmark" inert></i></button>
+            </span>
+            {{/each}}
+            {{#each squadEffects.groups as |g|}}
+            <span class="azd-squad-effect" data-tooltip="{{g.tooltip}} ({{g.count}} of {{@root.squadEffects.members}})">
+                <img src="{{g.img}}" alt=""> {{g.name}} <span class="azd-muted">{{g.count}}/{{@root.squadEffects.members}}</span>
+                <button type="button" data-action="removeSquadEffect" data-group="{{g.group}}" aria-label="Remove {{g.name}} from the squad"><i class="fa-solid fa-xmark" inert></i></button>
+            </span>
+            {{else}}
+            {{#unless squadEffects.conditions.length}}<span class="azd-muted azd-squad-effects-empty">No squad effects</span>{{/unless}}
+            {{/each}}
+        </div>
     </div>
     {{/if}}
 </header>

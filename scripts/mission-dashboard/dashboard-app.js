@@ -13,8 +13,8 @@ import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
 import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
 import { artOverflow, artViewStyle, normalizeArtView, panArtView, zoomArtView, DEFAULT_ART_VIEW } from "./art-view.js";
-import { squadGroups } from "../effects/effect-core.js";
-import { EffectPickerApp, runEffectOp } from "../effects/quick-effects.js";
+import { describeCondition, squadGroups } from "../effects/effect-core.js";
+import { EffectPickerApp, readConditions, runConditionOp, runEffectOp } from "../effects/quick-effects.js";
 
 const ART_VIEW_KEY = `${MODULE_ID}.artView`;
 const DRAG_THRESHOLD = 4;
@@ -121,7 +121,10 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             addEffect: MissionDashboardApp.#onAddEffect,
             removeEffect: MissionDashboardApp.#onRemoveEffect,
             addSquadEffect: MissionDashboardApp.#onAddSquadEffect,
-            removeSquadEffect: MissionDashboardApp.#onRemoveSquadEffect
+            removeSquadEffect: MissionDashboardApp.#onRemoveSquadEffect,
+            addCondition: MissionDashboardApp.#onAddCondition,
+            toggleCondition: MissionDashboardApp.#onToggleCondition,
+            removeCondition: MissionDashboardApp.#onRemoveCondition
         }
     };
 
@@ -179,11 +182,18 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const people = view?.people?.map(person => ({ ...person, displayImg: person.img ? displaySrc(person.img) : person.img }));
 
         const members = cards.filter(card => card.uuid && card.effects);
+        const squadId = view?.squad?.id ?? null;
+        const conditions = squadId ? readConditions().filter(c => c.squadId === squadId).map(c => ({
+            ...c,
+            img: c.img || "icons/svg/aura.svg",
+            tooltip: describeCondition(c),
+            count: members.filter(card => card.effects.some(chip => chip.condition === c.id)).length
+        })) : [];
         return {
             ...view,
             ...(people ? { people } : {}),
             cards,
-            squadEffects: { show: members.length > 0, members: members.length, groups: squadGroups(members.map(card => card.effects)) },
+            squadEffects: { show: members.length > 0, members: members.length, canCondition: Boolean(squadId), conditions, groups: squadGroups(members.map(card => card.effects)) },
             visibleCards: cards.filter(card => card.availability !== "empty" || view?.isGM),
             prefs,
             compactLabel: { auto: "Auto", always: "On", never: "Off" }[prefs.compact],
@@ -266,7 +276,14 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         });
 
         // Shift + wheel over card art zooms it; a plain wheel still scrolls the squad column.
+        // The squad effects strip scrolls sideways with a plain wheel.
         this.element.addEventListener("wheel", event => {
+            const chips = event.target.closest("[data-squad-chips]");
+            if (chips && !event.shiftKey && chips.scrollWidth > chips.clientWidth) {
+                event.preventDefault();
+                chips.scrollLeft += event.deltaY || event.deltaX;
+                return;
+            }
             if (!event.shiftKey) return;
             const img = event.target.closest(".azd-card-art")?.querySelector("img");
             if (!img) return;
@@ -362,6 +379,27 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     static #onAddSquadEffect() {
         const actors = this.#squadActors();
         if (actors.length) EffectPickerApp.open({ actors, label: "Squad", squad: true });
+    }
+
+    static #onAddCondition() {
+        const squad = this.controller.view?.squad;
+        const actors = this.#squadActors();
+        if (squad && actors.length) EffectPickerApp.open({ actors, label: squad.name, condition: squad.id });
+    }
+
+    static async #onToggleCondition(event, target) {
+        await runConditionOp({ action: "toggle", id: target.dataset.condition });
+    }
+
+    static async #onRemoveCondition(event, target) {
+        const condition = readConditions().find(c => c.id === target.dataset.condition);
+        if (!condition) return;
+        const ok = await foundry.applications.api.DialogV2.confirm({
+            window: { title: "Remove squad condition" },
+            content: `<p>Remove <strong>${foundry.utils.escapeHTML(condition.name)}</strong> from the squad? To keep it for later, switch it off instead (click its name).</p>`,
+            rejectClose: false
+        });
+        if (ok) await runConditionOp({ action: "remove", id: condition.id });
     }
 
     static async #onRemoveSquadEffect(event, target) {

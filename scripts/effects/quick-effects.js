@@ -7,13 +7,20 @@
  * system's dice pools and its "next check" / "this combat" clean-up handle them. Anyone may add or
  * remove them on any squad member: changes to actors the user does not own go to the active GM over
  * the module socket. GMs can save custom effects as presets (world setting) for everyone.
+ *
+ * Squad conditions (world setting `squadConditions`) are effects that stay on every member of a squad
+ * while they are on: the active GM's client keeps the members' effects in line with the list (when it
+ * changes, when squads change, and when someone removes one), so switching one off or removing it
+ * clears it from everybody, and new members get it.
  */
 
-import { DICE_FIELDS, DURATIONS, EFFECT_FLAG, SCOPES, describeSpec, effectChanges, normalizeSpec, systemDuration } from "./effect-core.js";
+import { DICE_FIELDS, DURATIONS, EFFECT_FLAG, SCOPES, conditionPlan, describeSpec, effectChanges, normalizeConditions, normalizeSpec, systemDuration } from "./effect-core.js";
+import { readSquads } from "../mission-dashboard/squads.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SOCKET = `module.${MODULE_ID}`;
 const PRESETS = "effectPresets";
+const CONDITIONS = "squadConditions";
 const TEMPLATE = `modules/${MODULE_ID}/templates/effects/effect-picker.hbs`;
 const ICONS = ["icons/svg/aura.svg", "icons/svg/upgrade.svg", "icons/svg/downgrade.svg", "icons/svg/daze.svg", "icons/svg/terror.svg",
     "icons/svg/eye.svg", "icons/svg/blind.svg", "icons/svg/shield.svg", "icons/svg/target.svg", "icons/svg/fire.svg",
@@ -73,6 +80,95 @@ export async function runEffectOp(op) {
 }
 
 /* -------------------------------------------- */
+/*  Squad conditions                            */
+/* -------------------------------------------- */
+
+export function readConditions() {
+    return normalizeConditions(game.settings.get(MODULE_ID, CONDITIONS));
+}
+
+function isActiveGM() {
+    return game.user.isGM && game.user === game.users.activeGM;
+}
+
+/** Change the list (active GM). `op`: {action: "add", condition} | {action: "toggle" | "remove", id}. */
+async function changeConditions(op) {
+    let list = readConditions();
+    if (op.action === "add") list = [...list, { ...op.condition, id: foundry.utils.randomID(), on: true }];
+    else if (op.action === "toggle") list = list.map(c => (c.id === op.id ? { ...c, on: !c.on } : c));
+    else if (op.action === "remove") list = list.filter(c => c.id !== op.id);
+    else return;
+    await game.settings.set(MODULE_ID, CONDITIONS, normalizeConditions(list));
+}
+
+/** Add, switch on/off or remove a squad condition (anyone; players go through the active GM). */
+export async function runConditionOp(op) {
+    if (isActiveGM()) return changeConditions(op);
+    if (!game.users.activeGM) {
+        ui.notifications.warn("Changing squad conditions needs a GM online.");
+        return;
+    }
+    game.socket.emit(SOCKET, { type: "squadCondition", op, userId: game.user.id });
+}
+
+async function conditionEffectData(condition, actor) {
+    const flags = { [MODULE_ID]: { [EFFECT_FLAG]: { condition: condition.id, ...(condition.spec ? { spec: condition.spec } : {}) } } };
+    if (condition.statusId) {
+        const effect = await ActiveEffect.implementation.fromStatusEffect(condition.statusId);
+        const data = effect.toObject();
+        // A condition lasts until it is switched off, not for the next check or this combat.
+        if (data.system) delete data.system.duration;
+        delete data._id;
+        return foundry.utils.mergeObject(data, { flags });
+    }
+    return { name: condition.name, img: condition.img || ICONS[0], changes: effectChanges(condition.spec, skillList(actor)), flags };
+}
+
+let syncing = null;
+let syncAgain = false;
+
+/** Make the squads' members' effects match the conditions (active GM; coalesces bursts). */
+export function syncConditions() {
+    if (!isActiveGM()) return;
+    if (syncing) {
+        syncAgain = true;
+        return;
+    }
+    syncing = (async () => {
+        do {
+            syncAgain = false;
+            await syncOnce().catch(error => console.warn("Azecraft | Squad conditions", error));
+        } while (syncAgain);
+        syncing = null;
+    })();
+}
+
+async function syncOnce() {
+    const conditions = readConditions();
+    const squadMembers = Object.fromEntries(readSquads().map(squad => [squad.id, squad.party.map(slot => slot.actorUuid).filter(Boolean)]));
+    const actorEffects = {};
+    for (const actor of game.actors) {
+        const effects = actor.effects.filter(effect => effect.getFlag(MODULE_ID, EFFECT_FLAG)?.condition)
+            .map(effect => ({ id: effect.id, condition: effect.getFlag(MODULE_ID, EFFECT_FLAG).condition }));
+        if (effects.length) actorEffects[actor.uuid] = effects;
+    }
+    const plan = conditionPlan(conditions, squadMembers, actorEffects);
+    for (const { actorUuid, effectIds } of plan.remove) {
+        const actor = fromUuidSync(actorUuid);
+        const ids = effectIds.filter(id => actor?.effects.has(id));
+        if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+    }
+    const byActor = Map.groupBy(plan.create, entry => entry.actorUuid);
+    for (const [actorUuid, entries] of byActor) {
+        const actor = fromUuidSync(actorUuid);
+        if (actor?.documentName !== "Actor") continue;
+        const data = [];
+        for (const { conditionId } of entries) data.push(await conditionEffectData(conditions.find(c => c.id === conditionId), actor));
+        await actor.createEmbeddedDocuments("ActiveEffect", data);
+    }
+}
+
+/* -------------------------------------------- */
 /*  Presets                                     */
 /* -------------------------------------------- */
 
@@ -104,7 +200,8 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static PARTS = { body: { template: TEMPLATE } };
 
     /**
-     * @param {{actors: Actor[], label: string, squad?: boolean}} target
+     * @param {{actors: Actor[], label: string, squad?: boolean, condition?: string}} target
+     *   `squad`: add to several members at once; `condition`: make a squad condition for that squad id.
      */
     constructor(target, options = {}) {
         super(options);
@@ -119,18 +216,30 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     get title() {
-        return `Add effect: ${this.target.label}`;
+        return this.target.condition ? `Squad condition: ${this.target.label}` : `Add effect: ${this.target.label}`;
+    }
+
+    get #isCondition() {
+        return Boolean(this.target.condition);
     }
 
     async _prepareContext() {
-        const spec = normalizeSpec(this.draft);
+        const condition = this.#isCondition;
+        const spec = normalizeSpec(condition ? { ...this.draft, duration: "permanent" } : this.draft);
         const skills = skillList(this.target.actors[0]);
         return {
+            condition,
             squad: Boolean(this.target.squad),
             members: this.target.actors.map(actor => ({ uuid: actor.uuid, name: actor.name, chosen: this.chosen.has(actor.uuid) })),
+            // A condition lasts until switched off, so not the system's next-check / this-combat statuses.
             statuses: CONFIG.statusEffects.filter(status => status.id !== "starwarsffg-defeated" && status.id !== "dead")
+                .filter(status => !condition || !status.system?.duration)
                 .map(status => ({ id: status.id, img: status.img, name: game.i18n.localize(status.name ?? status.label ?? status.id) })),
-            presets: readPresets().map(preset => ({ ...preset, name: preset.spec.name || "Effect", text: describeSpec(preset.spec) })),
+            presets: readPresets().map(preset => {
+                const presetSpec = condition ? { ...preset.spec, duration: "permanent" } : preset.spec;
+                return { ...preset, name: preset.spec.name || "Effect", text: describeSpec(presetSpec) };
+            }),
+            customOpen: this.customOpen ?? false,
             isGM: game.user.isGM,
             draft: this.draft,
             icons: ICONS.map(src => ({ src, on: src === this.draft.img })),
@@ -140,7 +249,7 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
             chooseSkills: this.draft.scope === "skills",
             skills: skills.map(skill => ({ ...skill, on: this.draft.skills.includes(skill.key) })),
             summary: describeSpec(spec, Object.fromEntries(skills.map(s => [s.key, s.label]))),
-            canApply: Object.keys(spec.dice).length > 0 && this.chosen.size > 0
+            canApply: Object.keys(spec.dice).length > 0 && (condition || this.chosen.size > 0)
         };
     }
 
@@ -154,6 +263,9 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
                 this.render();
             });
         }
+        root.querySelector("details.azfx-custom")?.addEventListener("toggle", event => {
+            this.customOpen = event.target.open;
+        });
         root.querySelector("[data-draft=name]")?.addEventListener("input", event => {
             this.draft.name = event.target.value;
         });
@@ -184,7 +296,15 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return [...this.chosen];
     }
 
+    /** Make a squad condition from a status, preset or the custom effect, then close. */
+    async #addCondition(data) {
+        await runConditionOp({ action: "add", condition: { squadId: this.target.condition, ...data } });
+        ui.notifications.info(`${data.name} is on for ${this.target.label}.`);
+        this.close();
+    }
+
     static async #onStatus(event, target) {
+        if (this.#isCondition) return this.#addCondition({ statusId: target.dataset.status, name: target.dataset.name, img: target.querySelector("img")?.getAttribute("src") });
         if (!this.chosen.size) return ui.notifications.warn("Choose who gets it.");
         await runEffectOp({ kind: "status", statusId: target.dataset.status, actorUuids: this.#targets() });
         ui.notifications.info(`${target.dataset.name} added.`);
@@ -192,7 +312,9 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static async #onPreset(event, target) {
         const preset = readPresets().find(p => p.id === target.dataset.preset);
-        if (!preset || !this.chosen.size) return;
+        if (!preset) return;
+        if (this.#isCondition) return this.#addCondition({ name: preset.spec.name || "Condition", img: preset.img, spec: preset.spec });
+        if (!this.chosen.size) return;
         await runEffectOp({ kind: "custom", spec: preset.spec, img: preset.img, group: this.target.squad ? foundry.utils.randomID() : null, actorUuids: this.#targets() });
         ui.notifications.info(`${preset.spec.name || "Effect"} added.`);
     }
@@ -211,6 +333,7 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #onApply() {
         const spec = normalizeSpec({ ...this.draft, name: this.draft.name || "Effect" });
         if (!Object.keys(spec.dice).length) return ui.notifications.warn("Give the effect at least one die.");
+        if (this.#isCondition) return this.#addCondition({ name: spec.name, img: this.draft.img, spec });
         await runEffectOp({ kind: "custom", spec, img: this.draft.img, group: this.target.squad ? foundry.utils.randomID() : null, actorUuids: this.#targets() });
         ui.notifications.info(`${spec.name} added to ${this.chosen.size === 1 ? "1 character" : `${this.chosen.size} characters`}.`);
         this.close();
@@ -234,11 +357,33 @@ export function initQuickEffects() {
         default: [],
         onChange: () => foundry.applications.instances.get(EffectPickerApp.DEFAULT_OPTIONS.id)?.render()
     });
+    game.settings.register(MODULE_ID, CONDITIONS, {
+        scope: "world",
+        config: false,
+        type: Array,
+        default: [],
+        onChange: () => {
+            syncConditions();
+            Hooks.callAll("azecraftSquadConditions");
+        }
+    });
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE]));
     Hooks.once("ready", () => {
         game.socket.on(SOCKET, message => {
-            if (message?.type !== "quickEffect" || game.user !== game.users.activeGM) return;
-            perform(message.op).catch(error => console.warn("Azecraft | Quick effect failed", error));
+            if (!isActiveGM()) return;
+            if (message?.type === "quickEffect") perform(message.op).catch(error => console.warn("Azecraft | Quick effect failed", error));
+            if (message?.type === "squadCondition") changeConditions(message.op).catch(error => console.warn("Azecraft | Squad condition failed", error));
         });
+        syncConditions();
     });
+    // Squad members changed, someone removed a condition's effect, or another GM took over.
+    const onSetting = setting => {
+        if (setting.key === `${MODULE_ID}.squads`) syncConditions();
+    };
+    Hooks.on("createSetting", onSetting);
+    Hooks.on("updateSetting", onSetting);
+    Hooks.on("deleteActiveEffect", effect => {
+        if (effect.getFlag(MODULE_ID, EFFECT_FLAG)?.condition) syncConditions();
+    });
+    Hooks.on("userConnected", () => syncConditions());
 }

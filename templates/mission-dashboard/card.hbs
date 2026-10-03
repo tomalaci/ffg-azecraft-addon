@@ -29,7 +29,11 @@
             {{#unless (eq card.availability "limited")}}
             <div class="azd-effects">
                 {{#each card.effects as |fx|}}
+                {{#if fx.condition}}
+                <span class="azd-effect azd-effect--condition" data-tooltip="{{fx.name}}: squad condition (switch it off or remove it in the squad strip)" aria-label="{{fx.name}} (squad condition)"><img src="{{fx.img}}" alt=""></span>
+                {{else}}
                 <button type="button" class="azd-effect" data-action="removeEffect" data-effect-id="{{fx.id}}" data-tooltip="{{fx.tooltip}}. Click to remove." aria-label="Remove {{fx.name}}"><img src="{{fx.img}}" alt=""></button>
+                {{/if}}
                 {{/each}}
                 <button type="button" class="azd-effect azd-effect-add" data-action="addEffect" data-tooltip="Add a status or effect (e.g. Disoriented, Boost next check, a custom roll effect)" aria-label="Add effect"><i class="fa-solid fa-plus" inert></i></button>
             </div>

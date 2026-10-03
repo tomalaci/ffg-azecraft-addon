@@ -6,18 +6,26 @@ Buffs and debuffs on characters without finding their tokens.
 
 - **On a character card:** the row of small icons under the name shows the character's statuses and
   quick effects; hover for what each does, click one to remove it. **+** opens *Add effect*.
-- **Squad effects** (the strip under the mission buttons): effects given to the whole squad at once,
-  with how many members have each (e.g. "Smoke 6/6"). **+** adds one to everyone (or the members you
-  tick); **×** removes it from all of them.
+- **Squad effects** (the strip under the mission buttons) has two buttons:
+  - **Squad condition** (cloud icon): an effect that stays on *every* squad member, including anyone
+    who joins the squad later, e.g. a toxic atmosphere or thick smoke while the squad is in it. Its
+    chip has a switch: click the name to switch it off for everyone (it stays in the strip, greyed,
+    to switch back on later); **×** removes it. On the cards it shows with a blue edge and cannot be
+    removed there; if someone deletes it from a sheet it comes back while the condition is on.
+    Conditions last until switched off, so the next-check and this-combat statuses are not offered.
+  - **One-off effect** (wand icon): give an effect to the whole squad or the members you tick, now
+    (e.g. Boost on the next check). Each member keeps their own copy; the strip shows how many still
+    have it (e.g. "Inspired 6/6") and **×** removes it from all of them.
+  - The chips scroll sideways with the mouse wheel when they do not fit.
 - **Add effect** window:
   - **Statuses:** the system's statuses (Boost / Setback / Upgrade / Success next check or this
-    combat, Heavy Cover, Disoriented, Immobilized, Staggered); click to add.
-  - **Presets:** effects a GM saved; click to add.
-  - **Custom effect:** name, icon, dice (Boost, Setback, Remove Setback, Upgrade ability, Success,
+    combat, Heavy Cover, Disoriented, Immobilized, Staggered); click one to add it right away.
+  - **Presets:** effects a GM saved; click one to add it right away.
+  - **Custom effect** (folded, click to open): name, icon, dice (Boost, Setback, Remove Setback, Upgrade ability, Success,
     Advantage, Failure, Threat; −/+ for the count), which checks (all, combat, Biotics and Tech, or
     chosen skills) and how long (until removed, next check, this combat). The line below sums it up.
     *Add effect*; GMs can also *Save as preset*.
-- Anyone can add or remove effects on any squad member. For a character you do not own, the change
+- Anyone can add or remove effects on any squad member, and add, switch or remove squad conditions. For a character you do not own, the change
   is made by the GM's client, so a GM needs to be online.
 
 ## Rules
@@ -38,4 +46,9 @@ Buffs and debuffs on characters without finding their tokens.
   active GM over the module socket (`quickEffect`) for actors the user does not own; presets in the
   world setting `effectPresets`.
 - Custom effects carry `flags.ffg-azecraft-addon.quickEffect = {spec, group}`; squad-wide ones share
-  a `group` id. Chips show effects with statuses or that flag (not item effects or XP purchases).
+  a `group` id.
+- Squad conditions are the world setting `squadConditions` (`{id, squadId, name, img, statusId | spec,
+  on}`); players' changes go to the active GM (`squadCondition` socket message). The active GM's
+  client keeps the members' effects in line (`conditionPlan` in effect-core.js): when the list or the
+  squads change, when a condition effect is deleted, and when a user connects. Their effects carry
+  `quickEffect.condition` (the condition id) and no `system.duration`. Chips show effects with statuses or that flag (not item effects or XP purchases).

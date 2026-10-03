@@ -109,6 +109,7 @@ export function effectChips(effects, moduleId) {
             name: effect.name,
             img: effect.img,
             group: quick?.group ?? null,
+            condition: quick?.condition ?? null,
             tooltip: spec ? `${effect.name}: ${describeSpec(spec)}` : `${effect.name}${duration === "once" ? " (next check)" : duration === "combat" ? " (this combat)" : ""}`
         });
     }
@@ -123,11 +124,84 @@ export function squadGroups(cardChips) {
     const groups = new Map();
     for (const chips of cardChips) {
         for (const chip of chips) {
-            if (!chip.group) continue;
+            if (!chip.group || chip.condition) continue;
             const entry = groups.get(chip.group) ?? { group: chip.group, name: chip.name, img: chip.img, tooltip: chip.tooltip, count: 0 };
             entry.count++;
             groups.set(chip.group, entry);
         }
     }
     return [...groups.values()];
+}
+
+/* -------------------------------------------- */
+/*  Squad conditions                            */
+/* -------------------------------------------- */
+
+const cleanId = value => (typeof value === "string" && /^[\w-]{1,64}$/.test(value) ? value : null);
+
+/**
+ * A squad condition: an effect that stays on every member of a squad while it is on (a hazardous
+ * environment, a squad-wide buff), switched on and off or removed in one place. It is either one of
+ * the system's statuses (`statusId`) or a custom effect (`spec`, always until removed).
+ */
+export function normalizeCondition(raw = {}) {
+    const id = cleanId(raw.id);
+    const squadId = cleanId(raw.squadId);
+    if (!id || !squadId) return null;
+    const statusId = typeof raw.statusId === "string" && raw.statusId ? raw.statusId : null;
+    const spec = statusId ? null : normalizeSpec({ ...raw.spec, duration: "permanent" });
+    if (!statusId && !Object.keys(spec.dice).length) return null;
+    return {
+        id,
+        squadId,
+        name: String(raw.name ?? spec?.name ?? "").trim().slice(0, 60) || "Condition",
+        img: typeof raw.img === "string" && raw.img ? raw.img : null,
+        statusId,
+        spec,
+        on: raw.on !== false
+    };
+}
+
+export function normalizeConditions(raw) {
+    const seen = new Set();
+    return (Array.isArray(raw) ? raw : []).map(normalizeCondition).filter(c => c && !seen.has(c.id) && seen.add(c.id));
+}
+
+/**
+ * What to change so that every member of a squad has each of its conditions that are on, and
+ * nobody keeps one that is off, removed, or from a squad they left.
+ * @param {object[]} conditions  normalized
+ * @param {Record<string, string[]>} squadMembers  squad id → member actor uuids
+ * @param {Record<string, {id: string, condition: string}[]>} actorEffects  actor uuid → its condition effects
+ * @returns {{create: {actorUuid: string, conditionId: string}[], remove: {actorUuid: string, effectIds: string[]}[]}}
+ */
+export function conditionPlan(conditions, squadMembers, actorEffects) {
+    const wanted = new Map();
+    for (const condition of conditions) {
+        if (!condition.on) continue;
+        for (const uuid of squadMembers[condition.squadId] ?? []) {
+            if (!wanted.has(uuid)) wanted.set(uuid, new Set());
+            wanted.get(uuid).add(condition.id);
+        }
+    }
+    const create = [];
+    const remove = [];
+    for (const uuid of new Set([...wanted.keys(), ...Object.keys(actorEffects)])) {
+        const want = wanted.get(uuid) ?? new Set();
+        const have = new Set();
+        const extra = [];
+        for (const effect of actorEffects[uuid] ?? []) {
+            if (want.has(effect.condition) && !have.has(effect.condition)) have.add(effect.condition);
+            else extra.push(effect.id);
+        }
+        for (const conditionId of want) if (!have.has(conditionId)) create.push({ actorUuid: uuid, conditionId });
+        if (extra.length) remove.push({ actorUuid: uuid, effectIds: extra });
+    }
+    return { create, remove };
+}
+
+/** A condition's hover text. */
+export function describeCondition(condition) {
+    const what = condition.spec ? describeSpec(condition.spec).replace(/ · [^·]+$/, "") : "status";
+    return `${condition.name}: ${what}, on every squad member${condition.on ? "" : " (off)"}`;
 }

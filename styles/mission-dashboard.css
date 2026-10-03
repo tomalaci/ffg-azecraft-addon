@@ -591,7 +591,7 @@
     align-items: center;
     gap: 4px;
     min-width: 0;
-    overflow-x: auto;
+    overflow: hidden;
     scrollbar-width: none;
     white-space: nowrap;
 }
@@ -1913,4 +1913,129 @@
 .azecraft-effect-picker .azfx-buttons {
     display: flex;
     gap: 6px;
+}
+
+/* Squad conditions (lasting, switched on/off) and the two add buttons in the squad strip. */
+#azecraft-mission-dashboard .azd-effect--condition {
+    border-color: rgba(114, 212, 255, 0.55);
+    cursor: default;
+}
+
+#azecraft-mission-dashboard .azd-squad-condition {
+    border-color: rgba(114, 212, 255, 0.45);
+}
+
+#azecraft-mission-dashboard .azd-squad-effect .azd-squad-condition-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0;
+    color: inherit;
+    font-size: 11px;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect .azd-squad-condition-toggle:hover {
+    color: var(--azd-accent);
+}
+
+#azecraft-mission-dashboard .azd-squad-condition-toggle .fa-toggle-on {
+    color: var(--azd-accent);
+}
+
+#azecraft-mission-dashboard .azd-squad-condition--off {
+    background: none;
+    border-style: dashed;
+    opacity: 0.6;
+}
+
+#azecraft-mission-dashboard .azd-squad-condition--off img {
+    filter: grayscale(1);
+}
+
+#azecraft-mission-dashboard .azd-squad-effects-chips {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+#azecraft-mission-dashboard .azd-squad-effects-empty {
+    font-size: 10px;
+}
+
+#azecraft-mission-dashboard .azd-squad-add {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 1px;
+    width: auto;
+    height: 22px;
+    margin: 0;
+    padding: 0 4px;
+    border: 1px dashed var(--azd-line-soft);
+    background: none;
+    color: var(--azd-muted);
+    font-size: 10px;
+    line-height: 1;
+}
+
+#azecraft-mission-dashboard .azd-squad-add-plus {
+    font-size: 7px;
+    align-self: flex-start;
+    margin-top: 3px;
+}
+
+#azecraft-mission-dashboard .azd-squad-add:hover {
+    border-color: var(--azd-orange);
+    color: var(--azd-orange);
+}
+
+.azecraft-effect-picker .azfx-intro {
+    margin: 0;
+    padding: 6px 8px;
+    border-left: 3px solid #ff9d42;
+    background: rgba(255, 157, 66, 0.1);
+    font-size: 12px;
+}
+
+.azecraft-effect-picker .azfx h4 .azfx-hint {
+    margin-left: 4px;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.7;
+}
+
+.azecraft-effect-picker .azfx-add {
+    font-size: 9px;
+    opacity: 0.5;
+}
+
+.azecraft-effect-picker .azfx-statuses button:hover .azfx-add,
+.azecraft-effect-picker .azfx-preset button:hover .azfx-add {
+    opacity: 1;
+}
+
+.azecraft-effect-picker .azfx-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.azecraft-effect-picker .azfx-custom > summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.azecraft-effect-picker .azfx-custom[open] > summary {
+    margin-bottom: 4px;
 }

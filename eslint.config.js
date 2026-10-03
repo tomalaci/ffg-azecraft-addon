@@ -6,7 +6,7 @@ import importX from "eslint-plugin-import-x";
 /** Globals provided by the Foundry VTT V13 client and the starwarsffg system at runtime. */
 const foundryGlobals = Object.fromEntries([
     "game", "foundry", "Hooks", "ui", "canvas", "CONFIG", "CONST",
-    "Actor", "Item", "JournalEntry", "JournalEntryPage", "Folder", "User", "Scene", "Roll", "ChatMessage",
+    "Actor", "ActiveEffect", "Item", "JournalEntry", "JournalEntryPage", "Folder", "User", "Scene", "Roll", "ChatMessage",
     "TextEditor", "Handlebars", "loadTemplates", "renderTemplate", "fromUuid", "fromUuidSync"
 ].map(name => [name, "readonly"]));
 

@@ -1,4 +1,10 @@
 <div class="azfx">
+    {{#if condition}}
+    <p class="azfx-intro"><i class="fa-solid fa-smog" inert></i> A squad condition stays on <strong>every squad member</strong> (also anyone who joins the squad) until you switch it off or remove it in the squad strip, e.g. a toxic atmosphere or thick smoke. Click one below, or build your own.</p>
+    {{else}}
+    <p class="azfx-intro"><i class="fa-solid fa-hand-pointer" inert></i> Click a status{{#if presets.length}} or preset{{/if}} to add it right away, or build your own effect at the bottom.</p>
+    {{/if}}
+
     {{#if squad}}
     <fieldset class="azfx-members">
         <legend>Who</legend>
@@ -8,27 +14,27 @@
     </fieldset>
     {{/if}}
 
-    <h4>Statuses</h4>
+    <h4>Statuses <span class="azfx-hint">click to add</span></h4>
     <div class="azfx-statuses">
         {{#each statuses as |s|}}
-        <button type="button" data-action="status" data-status="{{s.id}}" data-name="{{s.name}}" data-tooltip="Add {{s.name}}"><img src="{{s.img}}" alt=""> {{s.name}}</button>
+        <button type="button" data-action="status" data-status="{{s.id}}" data-name="{{s.name}}" data-tooltip="Add {{s.name}}"><img src="{{s.img}}" alt=""> {{s.name}} <i class="fa-solid fa-plus azfx-add" inert></i></button>
         {{/each}}
     </div>
 
     {{#if presets.length}}
-    <h4>Presets</h4>
+    <h4>Presets <span class="azfx-hint">click to add</span></h4>
     <div class="azfx-presets">
         {{#each presets as |p|}}
         <span class="azfx-preset">
-            <button type="button" data-action="preset" data-preset="{{p.id}}" data-tooltip="{{p.text}}"><img src="{{p.img}}" alt=""> {{p.name}}</button>
+            <button type="button" data-action="preset" data-preset="{{p.id}}" data-tooltip="{{p.text}}"><img src="{{p.img}}" alt=""> {{p.name}} <i class="fa-solid fa-plus azfx-add" inert></i></button>
             {{#if @root.isGM}}<button type="button" class="azfx-x" data-action="deletePreset" data-preset="{{p.id}}" data-tooltip="Delete preset" aria-label="Delete preset {{p.name}}"><i class="fa-solid fa-xmark" inert></i></button>{{/if}}
         </span>
         {{/each}}
     </div>
     {{/if}}
 
-    <h4>Custom effect</h4>
-    <div class="azfx-custom">
+    <details class="azfx-custom" {{#if customOpen}}open{{/if}}>
+        <summary>Custom effect: choose dice, checks{{#unless condition}} and how long{{/unless}}</summary>
         <div class="form-group">
             <label>Name</label>
             <div class="form-fields"><input type="text" data-draft="name" value="{{draft.name}}" placeholder="e.g. Inspired, Smoke, Toxic air"></div>
@@ -55,14 +61,16 @@
             {{#each skills as |s|}}<label><input type="checkbox" data-skill="{{s.key}}" {{checked s.on}}> {{s.label}}</label>{{/each}}
         </div>
         {{/if}}
+        {{#unless condition}}
         <div class="form-group">
             <label>Lasts</label>
             <div class="form-fields"><select data-draft="duration">{{#each durations as |d|}}<option value="{{d.id}}" {{#if d.on}}selected{{/if}}>{{d.label}}</option>{{/each}}</select></div>
         </div>
+        {{/unless}}
         <p class="azfx-summary">{{summary}}</p>
         <div class="azfx-buttons">
-            <button type="button" data-action="apply" {{disabled (not canApply)}}><i class="fa-solid fa-check" inert></i> Add effect</button>
+            <button type="button" data-action="apply" {{disabled (not canApply)}}><i class="fa-solid fa-check" inert></i> {{#if condition}}Add condition{{else}}Add effect{{/if}}</button>
             {{#if isGM}}<button type="button" data-action="savePreset" data-tooltip="Keep it in the presets for everyone"><i class="fa-solid fa-bookmark" inert></i> Save as preset</button>{{/if}}
         </div>
-    </div>
+    </details>
 </div>

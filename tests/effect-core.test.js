@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { describeSpec, effectChanges, normalizeSpec, systemDuration, targetSkills } from "../scripts/effects/effect-core.js";
+import { conditionPlan, describeCondition, describeSpec, effectChanges, effectChips, normalizeConditions, normalizeSpec, squadGroups, systemDuration, targetSkills } from "../scripts/effects/effect-core.js";
 
 const SKILLS = [
     { key: "Brawl", type: "Combat" }, { key: "Ranged-Light", type: "Combat" },
@@ -38,8 +38,6 @@ test("describeSpec and systemDuration", () => {
     assert.equal(systemDuration(normalizeSpec({})), undefined);
 });
 
-import { effectChips, squadGroups } from "../scripts/effects/effect-core.js";
-
 test("effectChips: statuses and quick effects, not item effects or XP purchases", () => {
     const effects = [
         { id: "a", name: "Disoriented", img: "d.svg", statuses: new Set(["starwarsffg-disoriented"]) },
@@ -60,4 +58,46 @@ test("squadGroups counts members per squad-wide effect", () => {
     const one = [{ group: "g1", name: "Smoke", img: "s", tooltip: "t" }, { group: null }];
     const two = [{ group: "g1", name: "Smoke", img: "s", tooltip: "t" }];
     assert.deepEqual(squadGroups([one, two, []]), [{ group: "g1", name: "Smoke", img: "s", tooltip: "t", count: 2 }]);
+});
+
+test("normalizeConditions: needs ids, a status or dice; custom ones last until removed", () => {
+    const list = normalizeConditions([
+        { id: "c1", squadId: "s1", name: "Toxic air", spec: { dice: { setback: 1 }, duration: "once" } },
+        { id: "c2", squadId: "s1", statusId: "starwarsffg-disoriented", name: "Disoriented", on: false },
+        { id: "c3", squadId: "s1", spec: { dice: {} } },
+        { id: "c1", squadId: "s1", statusId: "x" },
+        { squadId: "s1", statusId: "x" }
+    ]);
+    assert.deepEqual(list.map(c => [c.id, c.on]), [["c1", true], ["c2", false]]);
+    assert.equal(list[0].spec.duration, "permanent");
+    assert.equal(describeCondition(list[0]), "Toxic air: +1 Setback on all checks, on every squad member");
+    assert.match(describeCondition(list[1]), /\(off\)$/);
+});
+
+test("conditionPlan adds missing effects and removes off, removed, duplicate and left-squad ones", () => {
+    const conditions = normalizeConditions([
+        { id: "fog", squadId: "a", spec: { dice: { setback: 1 } } },
+        { id: "off", squadId: "a", statusId: "s", on: false },
+        { id: "other", squadId: "b", statusId: "s" }
+    ]);
+    const plan = conditionPlan(conditions, { a: ["A1", "A2"], b: ["B1"] }, {
+        A1: [{ id: "e1", condition: "fog" }, { id: "e2", condition: "fog" }, { id: "e3", condition: "off" }],
+        X: [{ id: "e4", condition: "fog" }],
+        B1: [{ id: "e5", condition: "gone" }]
+    });
+    assert.deepEqual(plan.create, [{ actorUuid: "A2", conditionId: "fog" }, { actorUuid: "B1", conditionId: "other" }]);
+    assert.deepEqual(plan.remove, [
+        { actorUuid: "A1", effectIds: ["e2", "e3"] },
+        { actorUuid: "B1", effectIds: ["e5"] },
+        { actorUuid: "X", effectIds: ["e4"] }
+    ]);
+});
+
+test("condition effects are marked on cards and kept out of one-off squad groups", () => {
+    const chips = effectChips([
+        { id: "e1", name: "Fog", img: "f", flags: { m: { quickEffect: { condition: "fog", group: "g" } } } },
+        { id: "e2", name: "Smoke", img: "s", flags: { m: { quickEffect: { spec: { dice: { setback: 1 } }, group: "g2" } } } }
+    ], "m");
+    assert.equal(chips[0].condition, "fog");
+    assert.deepEqual(squadGroups([chips]).map(g => g.group), ["g2"]);
 });
