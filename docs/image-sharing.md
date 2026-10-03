@@ -11,7 +11,7 @@ A toolbar tab for everyone (players and GMs) to show an image to the others quic
 - Optional caption (shown as plain text with the image).
 - **Show to:** *Everyone online* (default), or untick it and pick the people.
 - **Share**: the image opens in Foundry's image viewer for them, titled "Shared by <name>".
-- **This session:** the images shared or received since you loaded the game; click one to open it
+- **Recent (until you reload):** the images shared or received since this page loaded; click one to open it
   again. The list is gone after a reload.
 
 Nothing is saved: no file on the server and nothing in the world. People who join after an image was

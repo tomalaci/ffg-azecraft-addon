@@ -3,7 +3,7 @@
  * online or to chosen people, like Foundry's "Show to players" but without uploading anything. The
  * image is shrunk to a WebP in the browser (see share-core.js) and sent over the module socket inside
  * the message; recipients see it in Foundry's image viewer. Nothing is stored: a strip of this
- * session's images lets people reopen them until they reload.
+ * page's images ("Recent (until you reload)") lets people reopen them until they reload.
  */
 
 import { MAX_BYTES, QUALITY, dataUrlBytes, imageLink, isFor, recipients, scaled, shareTitle, sideSteps } from "./share-core.js";
@@ -15,7 +15,7 @@ const RECENT_MAX = 12;
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/** This session's shared images (sent and received), newest first. */
+/** Images shared or received since this page loaded (sent and received), newest first. */
 const recent = [];
 
 function remember(entry) {

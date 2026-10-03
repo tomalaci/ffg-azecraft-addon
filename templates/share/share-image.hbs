@@ -36,7 +36,7 @@
     <p class="azsh-hint">Nothing is uploaded or saved: the image goes straight to the people you chose and opens for them. People who join later do not get it.</p>
 
     {{#if recent.length}}
-    <h4>This session</h4>
+    <h4 data-tooltip="Images shared with you or by you since this page loaded; cleared on reload">Recent (until you reload)</h4>
     <div class="azsh-recent">
         {{#each recent as |r|}}
         <button type="button" data-action="reopen" data-index="{{@index}}" data-tooltip="{{r.title}}"><img src="{{r.src}}" alt=""></button>
