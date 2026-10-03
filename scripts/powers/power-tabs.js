@@ -9,6 +9,7 @@
  * Stored on the Actor as flags: `powerPresets` (list) and `techLoadout` ({power id: subtype id}).
  */
 
+import { initSteppers } from "./stepper.js";
 import {
     DIFFICULTY_NAMES,
     POWER_MODIFIER_CATALOG,
@@ -157,6 +158,7 @@ async function onClick(app, event) {
 }
 
 export function initPowerTabs() {
+    initSteppers();
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE]));
 
     // ActorSheet is an Application V1 sheet in starwarsffg 2.0: html is a jQuery object.

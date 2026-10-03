@@ -30,7 +30,7 @@
             {{#each group.options as |option|}}
             <label class="azpp-mod">
                 {{#if option.perRank}}
-                <input type="number" data-modifier="{{option.key}}" value="{{option.count}}" min="0" max="{{option.maxRanks}}" step="1" class="azpp-ranks" data-tooltip="Ranks">
+                <span class="az-stepper" data-tooltip="Can be added several times"><button type="button" data-step="-1" aria-label="One less">−</button><input type="number" data-modifier="{{option.key}}" value="{{option.count}}" min="0" max="{{option.maxRanks}}" step="1" class="azpp-ranks"><button type="button" data-step="1" aria-label="One more">+</button></span>
                 {{else}}
                 <input type="checkbox" data-modifier="{{option.key}}" {{checked option.checked}}>
                 {{/if}}

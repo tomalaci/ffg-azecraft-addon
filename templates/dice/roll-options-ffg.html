@@ -131,10 +131,10 @@
           {{#each category.options as |modifier|}}
           <tr class="flex-group-center">
             <td>
+              {{#if modifier.perRank}}<span class="az-stepper" data-tooltip="Can be added several times"><button type="button" data-step="-1" aria-label="One less">−</button>{{/if}}
               <input
-                {{#if modifier.perRank}}type="number" min="0" max="{{modifier.maxRanks}}" step="1" value="{{modifier.count}}" data-tooltip="Ranks"{{else}}type="checkbox"{{/if}}
+                {{#if modifier.perRank}}type="number" min="0" max="{{modifier.maxRanks}}" step="1" value="{{modifier.count}}"{{else}}type="checkbox"{{/if}}
                 class="azecraft-power-modifier{{#if modifier.perRank}} azecraft-power-modifier--ranks{{/if}}"
-                {{#if modifier.perRank}}style="width: 3.2em; text-align: center"{{/if}}
                 id="azecraft-{{category.id}}-{{modifier.id}}"
                 data-modifier-key="{{modifier.key}}"
                 data-modifier-id="{{modifier.id}}"
@@ -146,6 +146,7 @@
                 data-modifier-text="{{modifier.modifierText}}"
                 {{#unless modifier.perRank}}{{checked modifier.checked}}{{/unless}}
               />
+              {{#if modifier.perRank}}<button type="button" data-step="1" aria-label="One more">+</button></span>{{/if}}
             </td>
             <td class="pool-text">
               <label for="azecraft-{{category.id}}-{{modifier.id}}">{{modifier.label}}</label>

@@ -43,7 +43,39 @@
 }
 
 .azecraft-power-preset .azpp-ranks {
-    flex: 0 0 3.2em;
-    width: 3.2em;
+    flex: 0 0 2.6em;
+    width: 2.6em;
     text-align: center;
+}
+
+/* −/+ around the count of modifiers that may be added several times (scripts/powers/stepper.js). */
+.az-stepper {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+
+.az-stepper button {
+    flex: none;
+    width: 20px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    line-height: 20px;
+    font-weight: 700;
+}
+
+.az-stepper input[type="number"] {
+    width: 2.6em;
+    height: 22px;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.az-stepper input[type="number"]::-webkit-inner-spin-button,
+.az-stepper input[type="number"]::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
 }
