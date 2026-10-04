@@ -6,7 +6,7 @@ Buffs and debuffs on characters without finding their tokens.
 
 - **On a character card:** the row of small icons under the name shows the character's statuses and
   quick effects; hover for what each does, click one to remove it. **+** opens *Add effect*.
-- **Squad effects** (the strip under the mission buttons) has two buttons:
+- **Squad effects** (under the mission buttons) has two buttons:
   - **Squad condition** (cloud icon): an effect that stays on *every* squad member, including anyone
     who joins the squad later, e.g. a toxic atmosphere or thick smoke while the squad is in it. Its
     chip has a switch: click the name to switch it off for everyone (it stays in the strip, greyed,
@@ -16,8 +16,9 @@ Buffs and debuffs on characters without finding their tokens.
   - **One-off effect** (wand icon): give an effect to the whole squad or the members you tick, now
     (e.g. Boost on the next check). Each member keeps their own copy; the strip shows how many still
     have it (e.g. "Inspired 6/6") and **×** removes it from all of them.
-  - When the chips do not fit, ‹ › buttons at the ends of the strip (or the mouse wheel over it)
-    scroll through them.
+  - The chips wrap under the two buttons, up to three rows (the portrait rail moves down to make
+    room). When there are more, the last place is an **N+ Effects** button: it opens a list of the
+    rest, where they can be switched or removed the same way.
 - **Add effect** window:
   - **Statuses:** the system's statuses (Boost / Setback / Upgrade / Success next check or this
     combat, Heavy Cover, Disoriented, Immobilized, Staggered); click one to add it right away.

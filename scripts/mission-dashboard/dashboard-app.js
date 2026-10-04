@@ -22,6 +22,8 @@ const DRAG_THRESHOLD = 4;
 const DOUBLE_CLICK_DELAY = 250;
 const ZOOM_BUTTON_STEP = 0.25;
 const ZOOM_WHEEL_STEP = 0.1;
+/** Rows of squad effect chips before the rest go into the "N+ Effects" menu. */
+const SQUAD_ROWS = 3;
 
 // Pan-only positions from an earlier build were made without zoom; drop them once.
 try {
@@ -123,7 +125,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             addSquadEffect: MissionDashboardApp.#onAddSquadEffect,
             removeSquadEffect: MissionDashboardApp.#onRemoveSquadEffect,
             addCondition: MissionDashboardApp.#onAddCondition,
-            scrollSquadChips: MissionDashboardApp.#onScrollSquadChips,
+            toggleSquadMore: MissionDashboardApp.#onToggleSquadMore,
             toggleCondition: MissionDashboardApp.#onToggleCondition,
             removeCondition: MissionDashboardApp.#onRemoveCondition
         }
@@ -194,7 +196,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             ...view,
             ...(people ? { people } : {}),
             cards,
-            squadEffects: { show: members.length > 0, members: members.length, canCondition: Boolean(squadId), conditions, groups: squadGroups(members.map(card => card.effects)) },
+            squadEffects: {
+                show: members.length > 0,
+                members: members.length,
+                canCondition: Boolean(squadId),
+                chips: [...conditions.map(c => ({ ...c, condition: true })), ...squadGroups(members.map(card => card.effects))]
+            },
             visibleCards: cards.filter(card => card.availability !== "empty" || view?.isGM),
             prefs,
             compactLabel: { auto: "Auto", always: "On", never: "Off" }[prefs.compact],
@@ -206,16 +213,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         super._preSyncPartState(partId, newElement, priorElement, state);
         const focus = priorElement.querySelector("textarea:focus, input:focus");
         if (focus && "selectionStart" in focus) state.selection = [focus.selectionStart, focus.selectionEnd];
-        const chips = priorElement.querySelector("[data-squad-chips]");
-        if (chips) state.squadChipsLeft = chips.scrollLeft;
     }
 
     _syncPartState(partId, newElement, priorElement, state) {
         super._syncPartState(partId, newElement, priorElement, state);
         const focus = state.focus ? newElement.querySelector(state.focus) : null;
         if (focus && state.selection) focus.setSelectionRange(...state.selection);
-        const chips = newElement.querySelector("[data-squad-chips]");
-        if (chips && state.squadChipsLeft) chips.scrollLeft = state.squadChipsLeft;
     }
 
     async _onFirstRender(context, options) {
@@ -281,14 +284,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         });
 
         // Shift + wheel over card art zooms it; a plain wheel still scrolls the squad column.
-        // The squad effects strip scrolls sideways with a plain wheel.
         this.element.addEventListener("wheel", event => {
-            const chips = event.target.closest("[data-squad-chips]");
-            if (chips && !event.shiftKey && chips.scrollWidth > chips.clientWidth) {
-                event.preventDefault();
-                chips.scrollLeft += event.deltaY || event.deltaX;
-                return;
-            }
             if (!event.shiftKey) return;
             const img = event.target.closest(".azd-card-art")?.querySelector("img");
             if (!img) return;
@@ -306,9 +302,9 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         // Rail fade edges follow the scroll position (scroll events do not bubble: capture them).
         this.element.addEventListener("scroll", event => {
             if (event.target.classList?.contains("azd-rail-cards")) this.#updateRailEdges();
-            if (event.target.matches?.("[data-squad-chips]")) this.#updateSquadChips();
         }, true);
         document.addEventListener("azecraft:layout", this.#onLayout);
+        document.addEventListener("pointerdown", this.#onPointerOutside, true);
 
         this.#layout.start();
     }
@@ -318,22 +314,73 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         this.#updateSquadChips();
     };
 
-    /** Show the squad strip's ‹ › buttons when its chips do not fit, enabled towards hidden ones. */
+    /** Squad effects menu ("N+ Effects") open: kept across header re-renders. */
+    #squadMoreOpen = false;
+
+    /**
+     * Fit the squad effect chips into at most SQUAD_ROWS rows: when they need more, the last place
+     * goes to an "N+ Effects" button listing the rest. Then the header's height (which places the
+     * portrait rail) follows its content.
+     */
     #updateSquadChips() {
-        const chips = this.element?.querySelector("[data-squad-chips]");
-        if (!chips) return;
-        const overflow = chips.scrollWidth > chips.clientWidth + 1;
-        const strip = chips.closest(".azd-squad-effects");
-        strip.toggleAttribute("data-overflow", overflow);
-        const before = strip.querySelector("[data-action=scrollSquadChips][data-dir='-1']");
-        const after = strip.querySelector("[data-action=scrollSquadChips][data-dir='1']");
-        if (before) before.disabled = chips.scrollLeft <= 1;
-        if (after) after.disabled = chips.scrollLeft + chips.clientWidth >= chips.scrollWidth - 1;
+        const root = this.element;
+        const header = root?.querySelector(".azd-header");
+        if (!header) return;
+        const chips = header.querySelector("[data-squad-chips]");
+        if (chips) {
+            const items = [...chips.querySelectorAll(":scope > [data-squad-chip]")];
+            const more = chips.querySelector("[data-squad-more]");
+            const rows = () => new Set([...items, more].filter(el => !el.hidden).map(el => el.offsetTop)).size;
+            for (const item of items) item.hidden = false;
+            more.hidden = true;
+            let shown = items.length;
+            if (rows() > SQUAD_ROWS) {
+                more.hidden = false;
+                const label = more.querySelector("[data-squad-more-label]");
+                while (shown > 0) {
+                    items[--shown].hidden = true;
+                    label.textContent = `${items.length - shown}+ Effects`;
+                    if (rows() <= SQUAD_ROWS) break;
+                }
+            }
+            more.querySelectorAll("[data-squad-chip]").forEach((item, index) => { item.hidden = index < shown; });
+        }
+        root.style.setProperty("--azd-header-height", `${Math.ceil(header.offsetHeight)}px`);
+        this.#placeSquadMenu();
     }
 
-    static #onScrollSquadChips(event, target) {
-        const chips = this.element.querySelector("[data-squad-chips]");
-        if (chips) chips.scrollBy({ left: Number(target.dataset.dir) * Math.max(80, chips.clientWidth * 0.7), behavior: "smooth" });
+    /**
+     * The open "N+ Effects" menu: copies of the chips that did not fit, floating on the dashboard
+     * root under its button (the header's clipped corners would cut it off inside the header).
+     */
+    #placeSquadMenu() {
+        const root = this.element;
+        root.querySelector(":scope > .azd-squad-more-menu")?.remove();
+        const more = root.querySelector(".azd-header [data-squad-more]");
+        const open = this.#squadMoreOpen && more && !more.hidden;
+        more?.querySelector("button").setAttribute("aria-expanded", String(Boolean(open)));
+        if (!open) return;
+        const menu = document.createElement("div");
+        menu.className = "azd-squad-more-menu";
+        menu.setAttribute("role", "menu");
+        menu.append(...[...more.querySelectorAll("[data-squad-more-menu] [data-squad-chip]:not([hidden])")].map(item => item.cloneNode(true)));
+        const button = more.querySelector("button").getBoundingClientRect();
+        const base = root.getBoundingClientRect();
+        menu.style.left = `${button.left - base.left}px`;
+        menu.style.top = `${button.bottom - base.top + 3}px`;
+        root.append(menu);
+    }
+
+    /** A click outside the "N+ Effects" menu closes it. */
+    #onPointerOutside = event => {
+        if (!this.#squadMoreOpen || event.target.closest?.("[data-squad-more], .azd-squad-more-menu")) return;
+        this.#squadMoreOpen = false;
+        this.#updateSquadChips();
+    };
+
+    static #onToggleSquadMore() {
+        this.#squadMoreOpen = !this.#squadMoreOpen;
+        this.#updateSquadChips();
     }
 
     /** Show the rail's top / bottom fade only where cards are scrolled out of view. */
@@ -364,6 +411,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     _onClose(options) {
         document.removeEventListener("azecraft:layout", this.#onLayout);
+        document.removeEventListener("pointerdown", this.#onPointerOutside, true);
         this.#layout?.stop();
         this.#layout = null;
         super._onClose(options);

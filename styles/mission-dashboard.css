@@ -48,7 +48,8 @@
     font-size: 14px;
     line-height: 1.35;
 
-    /* Title, controls, and the squad effects strip. */
+    /* Title, controls, and the squad effects strip; set from the header's real height (it grows with
+       up to three rows of squad effects) by dashboard-app.js #updateSquadChips. */
     --azd-header-height: 94px;
     --azd-panels-left: calc(var(--azd-left, 100px) + var(--azd-rail-width, 330px) + 12px);
     --azd-panels-width: calc(100vw - var(--azd-panels-left) - var(--azd-right, 360px));
@@ -157,13 +158,13 @@
     left: var(--azd-left, 100px);
     top: var(--azd-top, 12px);
     width: var(--azd-rail-width, 330px);
-    height: var(--azd-header-height);
+    min-height: 66px;
     display: flex;
     flex-wrap: wrap;
     align-content: center;
     align-items: center;
     gap: 4px 8px;
-    padding: 0 8px 0 12px;
+    padding: 5px 8px 6px 12px;
     box-sizing: border-box;
 }
 
@@ -588,22 +589,26 @@
 #azecraft-mission-dashboard .azd-squad-effects {
     display: flex;
     flex: 1 1 100%;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+#azecraft-mission-dashboard .azd-squad-effects-bar {
+    display: flex;
     align-items: center;
     gap: 4px;
-    min-width: 0;
-    overflow: hidden;
-    scrollbar-width: none;
-    white-space: nowrap;
 }
 
 #azecraft-mission-dashboard .azd-squad-effects-label {
-    flex: none;
+    flex: 1 1 auto;
     color: var(--azd-accent);
     font-family: var(--azd-font-heading);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 #azecraft-mission-dashboard .azd-squad-effect {
@@ -1952,40 +1957,20 @@
     filter: grayscale(1);
 }
 
-#azecraft-mission-dashboard .azd-squad-effects-chips {
-    display: flex;
-    flex: 1 1 auto;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-#azecraft-mission-dashboard .azd-squad-effects-empty {
-    font-size: 10px;
-}
-
 #azecraft-mission-dashboard .azd-squad-add {
     display: inline-flex;
     flex: none;
     align-items: center;
-    gap: 1px;
+    gap: 3px;
     width: auto;
     height: 22px;
     margin: 0;
-    padding: 0 4px;
+    padding: 0 6px;
     border: 1px dashed var(--azd-line-soft);
     background: none;
     color: var(--azd-muted);
     font-size: 10px;
     line-height: 1;
-}
-
-#azecraft-mission-dashboard .azd-squad-add-plus {
-    font-size: 7px;
-    align-self: flex-start;
-    margin-top: 3px;
 }
 
 #azecraft-mission-dashboard .azd-squad-add:hover {
@@ -2040,33 +2025,66 @@
     margin-bottom: 4px;
 }
 
-/* ‹ › buttons when the squad effect chips do not fit (dashboard-app.js #updateSquadChips). */
-#azecraft-mission-dashboard .azd-squad-scroll {
-    display: none;
-    flex: none;
-    width: 16px;
-    height: 22px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--azd-accent);
-    font-size: 10px;
-    line-height: 1;
+/* Squad effect chips: up to three wrapped rows, the rest in the "N+ Effects" menu. */
+#azecraft-mission-dashboard .azd-squad-effects-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px 4px;
+    min-width: 0;
 }
 
-#azecraft-mission-dashboard .azd-squad-effects[data-overflow] .azd-squad-scroll {
+#azecraft-mission-dashboard .azd-squad-effects-chips [hidden] {
+    display: none !important;
+}
+
+#azecraft-mission-dashboard .azd-squad-effect {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+#azecraft-mission-dashboard .azd-squad-more {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+}
+
+#azecraft-mission-dashboard .azd-squad-more-button {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 3px;
+    width: auto;
+    height: 22px;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--azd-accent);
+    background: rgba(114, 212, 255, 0.12);
+    color: var(--azd-accent);
+    font-size: 11px;
+    line-height: 1;
+    white-space: nowrap;
 }
 
-#azecraft-mission-dashboard .azd-squad-scroll:disabled {
-    color: var(--azd-muted);
-    opacity: 0.35;
-    cursor: default;
-}
-
-#azecraft-mission-dashboard .azd-squad-scroll:not(:disabled):hover {
+#azecraft-mission-dashboard .azd-squad-more-button:hover,
+#azecraft-mission-dashboard .azd-squad-more-button[aria-expanded="true"] {
+    border-color: var(--azd-orange);
     color: var(--azd-orange);
+}
+
+#azecraft-mission-dashboard .azd-squad-more-menu {
+    position: absolute;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 160px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid var(--azd-line-soft);
+    background: rgba(8, 12, 20, 0.96);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+    white-space: nowrap;
 }
