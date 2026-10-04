@@ -299,7 +299,6 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     /** Make a squad condition from a status, preset or the custom effect, then close. */
     async #addCondition(data) {
         await runConditionOp({ action: "add", condition: { squadId: this.target.condition, ...data } });
-        ui.notifications.info(`${data.name} is on for ${this.target.label}.`);
         this.close();
     }
 
@@ -307,7 +306,6 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this.#isCondition) return this.#addCondition({ statusId: target.dataset.status, name: target.dataset.name, img: target.querySelector("img")?.getAttribute("src") });
         if (!this.chosen.size) return ui.notifications.warn("Choose who gets it.");
         await runEffectOp({ kind: "status", statusId: target.dataset.status, actorUuids: this.#targets() });
-        ui.notifications.info(`${target.dataset.name} added.`);
     }
 
     static async #onPreset(event, target) {
@@ -316,7 +314,6 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (this.#isCondition) return this.#addCondition({ name: preset.spec.name || "Condition", img: preset.img, spec: preset.spec });
         if (!this.chosen.size) return;
         await runEffectOp({ kind: "custom", spec: preset.spec, img: preset.img, group: this.target.squad ? foundry.utils.randomID() : null, actorUuids: this.#targets() });
-        ui.notifications.info(`${preset.spec.name || "Effect"} added.`);
     }
 
     static async #onDeletePreset(event, target) {
@@ -335,7 +332,6 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!Object.keys(spec.dice).length) return ui.notifications.warn("Give the effect at least one die.");
         if (this.#isCondition) return this.#addCondition({ name: spec.name, img: this.draft.img, spec });
         await runEffectOp({ kind: "custom", spec, img: this.draft.img, group: this.target.squad ? foundry.utils.randomID() : null, actorUuids: this.#targets() });
-        ui.notifications.info(`${spec.name} added to ${this.chosen.size === 1 ? "1 character" : `${this.chosen.size} characters`}.`);
         this.close();
     }
 

@@ -468,14 +468,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     static async #onRemoveCondition(event, target) {
-        const condition = readConditions().find(c => c.id === target.dataset.condition);
-        if (!condition) return;
-        const ok = await foundry.applications.api.DialogV2.confirm({
-            window: { title: "Remove squad condition" },
-            content: `<p>Remove <strong>${foundry.utils.escapeHTML(condition.name)}</strong> from the squad? To keep it for later, switch it off instead (click its name).</p>`,
-            rejectClose: false
-        });
-        if (ok) await runConditionOp({ action: "remove", id: condition.id });
+        await runConditionOp({ action: "remove", id: target.dataset.condition });
     }
 
     static async #onRemoveSquadEffect(event, target) {
