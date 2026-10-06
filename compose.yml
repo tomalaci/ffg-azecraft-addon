@@ -19,7 +19,8 @@ services:
           exit 1
         fi
         ln -sfn /module-src /data/Data/modules/ffg-azecraft-addon
-        exec ./entrypoint.sh resources/app/main.mjs --port=30000 --headless --noupdate --dataPath=/data
+        # --world: launch the local test world on start (options.json is preserved, so FOUNDRY_WORLD would not apply).
+        exec ./entrypoint.sh resources/app/main.mjs --port=30000 --headless --noupdate --dataPath=/data --world=test
     environment:
       CONTAINER_PRESERVE_CONFIG: "true"
       FOUNDRY_HOT_RELOAD: "true"
