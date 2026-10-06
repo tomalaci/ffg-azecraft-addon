@@ -28,7 +28,8 @@ services:
       FOUNDRY_VERSION: "13.351"
       TZ: Europe/Stockholm
     ports:
-      - "30000:30000"
+      # Localhost only; tailnet access goes through `tailscale serve` (azelab).
+      - "127.0.0.1:30000:30000"
     volumes:
       - type: bind
         source: ${HOME}/.local/share/foundry-vtt/Data
