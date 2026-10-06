@@ -14,7 +14,7 @@
  * clears it from everybody, and new members get it.
  */
 
-import { DICE_FIELDS, DURATIONS, EFFECT_FLAG, SCOPES, conditionPlan, describeSpec, effectChanges, normalizeConditions, normalizeSpec, systemDuration } from "./effect-core.js";
+import { DICE_FIELDS, DURATIONS, EFFECT_FLAG, SCOPES, conditionPlan, describeSpec, effectChanges, imagePath, isRemovableEffect, normalizeConditions, nextCheckUsedBy, normalizeSpec, relayedConditionOp, rolledSkillKey, relayedEffectOp, systemDuration } from "./effect-core.js";
 import { readSquads } from "../mission-dashboard/squads.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -40,24 +40,51 @@ function skillList(actor) {
 /*  Operations (run by an owner or the GM)      */
 /* -------------------------------------------- */
 
+const statusIds = () => new Set(CONFIG.statusEffects.map(status => status.id));
+
+/** Actor uuids of every squad's members (what the dashboard can change through the GM). */
+function squadMemberUuids() {
+    return new Set(readSquads().flatMap(squad => squad.party.map(slot => slot.actorUuid)).filter(Boolean));
+}
+
+/**
+ * A status as a quick effect: made from the system's status (its duration included), marked with the
+ * squad group when added to several members, and never a duplicate of one the actor already has.
+ * (Not toggleStatusEffect: that sees a squad condition with the same status as "already on", and adds
+ * no group.)
+ */
+async function addStatus(actor, statusId, group) {
+    const present = actor.effects.some(effect => effect.statuses.has(statusId) && !effect.getFlag(MODULE_ID, EFFECT_FLAG)?.condition);
+    if (present) return;
+    const data = (await ActiveEffect.implementation.fromStatusEffect(statusId)).toObject();
+    delete data._id;
+    foundry.utils.mergeObject(data, { flags: { [MODULE_ID]: { [EFFECT_FLAG]: { status: statusId, group: group ?? null } } } });
+    await actor.createEmbeddedDocuments("ActiveEffect", [data]);
+}
+
 async function perform(op) {
     const actors = (op.actorUuids ?? []).map(uuid => fromUuidSync(uuid)).filter(actor => actor?.documentName === "Actor");
     for (const actor of actors) {
         if (op.kind === "status") {
-            await actor.toggleStatusEffect(op.statusId, { active: true });
+            await addStatus(actor, op.statusId, op.group);
         } else if (op.kind === "custom") {
             const spec = normalizeSpec(op.spec);
+            const changes = effectChanges(spec, skillList(actor));
+            // None of its checks among this character's skills: nothing to add (and nothing would use it up).
+            if (!changes.length) continue;
             const data = {
                 name: spec.name || "Effect",
-                img: op.img || ICONS[0],
-                changes: effectChanges(spec, skillList(actor)),
+                img: imagePath(op.img) ?? ICONS[0],
+                changes,
                 flags: { [MODULE_ID]: { [EFFECT_FLAG]: { spec, group: op.group ?? null } } }
             };
             const duration = systemDuration(spec);
             if (duration) data.system = { duration };
             await actor.createEmbeddedDocuments("ActiveEffect", [data]);
         } else if (op.kind === "remove") {
-            if (actor.effects.has(op.effectId)) await actor.deleteEmbeddedDocuments("ActiveEffect", [op.effectId]);
+            // Only what the cards offer to remove: statuses and quick effects, not conditions or purchases.
+            const effect = actor.effects.get(op.effectId);
+            if (effect && isRemovableEffect(effect, MODULE_ID)) await actor.deleteEmbeddedDocuments("ActiveEffect", [op.effectId]);
         } else if (op.kind === "removeGroup") {
             const ids = actor.effects.filter(effect => effect.getFlag(MODULE_ID, EFFECT_FLAG)?.group === op.group).map(effect => effect.id);
             if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
@@ -65,18 +92,46 @@ async function perform(op) {
     }
 }
 
-/** Run an operation: directly on actors this user owns, through the active GM for the others. */
+/**
+ * Run an operation: directly on actors this user owns, through the active GM for the others
+ * (including squad members this user cannot see at all, which are not on this client).
+ */
 export async function runEffectOp(op) {
-    const actors = op.actorUuids.map(uuid => fromUuidSync(uuid)).filter(Boolean);
-    const mine = actors.filter(actor => actor.isOwner).map(actor => actor.uuid);
-    const others = actors.filter(actor => !actor.isOwner).map(actor => actor.uuid);
-    if (mine.length) await perform({ ...op, actorUuids: mine });
+    const owned = uuid => fromUuidSync(uuid, { strict: false })?.isOwner === true;
+    const mine = op.actorUuids.filter(owned);
+    const others = op.actorUuids.filter(uuid => !owned(uuid));
+    // The active GM's own changes queue behind the ones relayed to it.
+    if (mine.length) {
+        const task = () => perform({ ...op, actorUuids: mine });
+        await (isActiveGM() ? queueGM(task, "Quick effect") : task());
+    }
     if (!others.length) return;
     if (!game.users.activeGM) {
         ui.notifications.warn("Changing effects on someone else's character needs a GM online.");
         return;
     }
-    game.socket.emit(SOCKET, { type: "quickEffect", op: { ...op, actorUuids: others }, userId: game.user.id });
+    game.socket.emit(SOCKET, { type: "quickEffect", op: { ...op, actorUuids: others } });
+}
+
+/** A check was rolled (roll builder): use up the next-check quick effects on that skill. */
+function useUpNextCheck({ actor, skillName }) {
+    if (actor?.documentName !== "Actor") return;
+    const skills = Object.entries(actor.system?.skills ?? {}).map(([key, skill]) => ({
+        key, rawLabel: skill.label, label: game.i18n.localize(skill.label ?? key)
+    }));
+    const skillKey = rolledSkillKey([skillName, game.i18n.localize(skillName ?? "")], skills);
+    for (const effect of actor.effects.filter(effect => nextCheckUsedBy(effect, skillKey, MODULE_ID))) {
+        runEffectOp({ kind: "remove", actorUuids: [actor.uuid], effectId: effect.id })
+            .catch(error => console.warn("Azecraft | Could not use up a next-check effect", error));
+    }
+}
+
+/** The active GM's changes to effects and conditions run one at a time (no lost updates). */
+let gmQueue = Promise.resolve();
+
+function queueGM(task, label) {
+    gmQueue = gmQueue.then(task).catch(error => console.warn(`Azecraft | ${label} failed`, error));
+    return gmQueue;
 }
 
 /* -------------------------------------------- */
@@ -103,17 +158,19 @@ async function changeConditions(op) {
 
 /** Add, switch on/off or remove a squad condition (anyone; players go through the active GM). */
 export async function runConditionOp(op) {
-    if (isActiveGM()) return changeConditions(op);
+    if (isActiveGM()) return queueGM(() => changeConditions(op), "Squad condition");
     if (!game.users.activeGM) {
         ui.notifications.warn("Changing squad conditions needs a GM online.");
         return;
     }
-    game.socket.emit(SOCKET, { type: "squadCondition", op, userId: game.user.id });
+    game.socket.emit(SOCKET, { type: "squadCondition", op });
 }
 
 async function conditionEffectData(condition, actor) {
     const flags = { [MODULE_ID]: { [EFFECT_FLAG]: { condition: condition.id, ...(condition.spec ? { spec: condition.spec } : {}) } } };
     if (condition.statusId) {
+        // A status removed from the system's list since the condition was made: skip it.
+        if (!statusIds().has(condition.statusId)) return null;
         const effect = await ActiveEffect.implementation.fromStatusEffect(condition.statusId);
         const data = effect.toObject();
         // A condition lasts until it is switched off, not for the next check or this combat.
@@ -153,18 +210,33 @@ async function syncOnce() {
         if (effects.length) actorEffects[actor.uuid] = effects;
     }
     const plan = conditionPlan(conditions, squadMembers, actorEffects);
+    // One actor failing (deleted meanwhile, a bad status) must not stop the others.
     for (const { actorUuid, effectIds } of plan.remove) {
-        const actor = fromUuidSync(actorUuid);
-        const ids = effectIds.filter(id => actor?.effects.has(id));
-        if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+        try {
+            const actor = fromUuidSync(actorUuid, { strict: false });
+            const ids = effectIds.filter(id => actor?.effects.has(id));
+            if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+        } catch (error) {
+            console.warn(`Azecraft | Squad conditions: could not update ${actorUuid}`, error);
+        }
     }
     const byActor = Map.groupBy(plan.create, entry => entry.actorUuid);
     for (const [actorUuid, entries] of byActor) {
-        const actor = fromUuidSync(actorUuid);
-        if (actor?.documentName !== "Actor") continue;
-        const data = [];
-        for (const { conditionId } of entries) data.push(await conditionEffectData(conditions.find(c => c.id === conditionId), actor));
-        await actor.createEmbeddedDocuments("ActiveEffect", data);
+        try {
+            const actor = fromUuidSync(actorUuid, { strict: false });
+            if (actor?.documentName !== "Actor") continue;
+            // One by one: a condition Foundry refuses must not keep the member's other conditions away.
+            for (const { conditionId } of entries) {
+                try {
+                    const data = await conditionEffectData(conditions.find(c => c.id === conditionId), actor);
+                    if (data) await actor.createEmbeddedDocuments("ActiveEffect", [data]);
+                } catch (error) {
+                    console.warn(`Azecraft | Squad conditions: could not add ${conditionId} to ${actorUuid}`, error);
+                }
+            }
+        } catch (error) {
+            console.warn(`Azecraft | Squad conditions: could not update ${actorUuid}`, error);
+        }
     }
 }
 
@@ -200,13 +272,14 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static PARTS = { body: { template: TEMPLATE } };
 
     /**
-     * @param {{actors: Actor[], label: string, squad?: boolean, condition?: string}} target
-     *   `squad`: add to several members at once; `condition`: make a squad condition for that squad id.
+     * @param {{actors: Actor[], hidden?: string[], label: string, squad?: boolean, condition?: string}} target
+     *   `squad`: add to several members at once; `hidden`: uuids of squad members this user cannot
+     *   see (the GM adds the effect for them); `condition`: make a squad condition for that squad id.
      */
     constructor(target, options = {}) {
         super(options);
         this.target = target;
-        this.chosen = new Set(target.actors.map(actor => actor.uuid));
+        this.chosen = new Set([...target.actors.map(actor => actor.uuid), ...(target.hidden ?? [])]);
         this.draft = { name: "", img: ICONS[0], dice: {}, scope: "all", skills: [], duration: "permanent" };
     }
 
@@ -230,7 +303,10 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             condition,
             squad: Boolean(this.target.squad),
-            members: this.target.actors.map(actor => ({ uuid: actor.uuid, name: actor.name, chosen: this.chosen.has(actor.uuid) })),
+            members: [
+                ...this.target.actors.map(actor => ({ uuid: actor.uuid, name: actor.name, chosen: this.chosen.has(actor.uuid) })),
+                ...(this.target.hidden ?? []).map(uuid => ({ uuid, name: "Hidden member", chosen: this.chosen.has(uuid) }))
+            ],
             // A condition lasts until switched off, so not the system's next-check / this-combat statuses.
             statuses: CONFIG.statusEffects.filter(status => status.id !== "starwarsffg-defeated" && status.id !== "dead")
                 .filter(status => !condition || !status.system?.duration)
@@ -305,7 +381,7 @@ export class EffectPickerApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static async #onStatus(event, target) {
         if (this.#isCondition) return this.#addCondition({ statusId: target.dataset.status, name: target.dataset.name, img: target.querySelector("img")?.getAttribute("src") });
         if (!this.chosen.size) return ui.notifications.warn("Choose who gets it.");
-        await runEffectOp({ kind: "status", statusId: target.dataset.status, actorUuids: this.#targets() });
+        await runEffectOp({ kind: "status", statusId: target.dataset.status, group: this.target.squad ? foundry.utils.randomID() : null, actorUuids: this.#targets() });
     }
 
     static async #onPreset(event, target) {
@@ -365,10 +441,17 @@ export function initQuickEffects() {
     });
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE]));
     Hooks.once("ready", () => {
-        game.socket.on(SOCKET, message => {
-            if (!isActiveGM()) return;
-            if (message?.type === "quickEffect") perform(message.op).catch(error => console.warn("Azecraft | Quick effect failed", error));
-            if (message?.type === "squadCondition") changeConditions(message.op).catch(error => console.warn("Azecraft | Squad condition failed", error));
+        // Foundry passes the real sender's id; requests are limited to what the dashboard can do.
+        game.socket.on(SOCKET, (message, senderId) => {
+            if (!isActiveGM() || !game.users.get(senderId)) return;
+            if (message?.type === "quickEffect") {
+                const op = relayedEffectOp(message.op, { members: squadMemberUuids(), statusIds: statusIds() });
+                if (op) queueGM(() => perform(op), "Quick effect");
+            }
+            if (message?.type === "squadCondition") {
+                const op = relayedConditionOp(message.op, { squadIds: new Set(readSquads().map(squad => squad.id)), statusIds: statusIds() });
+                if (op) queueGM(() => changeConditions(op), "Squad condition");
+            }
         });
         syncConditions();
     });
@@ -382,4 +465,5 @@ export function initQuickEffects() {
         if (effect.getFlag(MODULE_ID, EFFECT_FLAG)?.condition) syncConditions();
     });
     Hooks.on("userConnected", () => syncConditions());
+    Hooks.on("azecraftCheckRolled", useUpNextCheck);
 }

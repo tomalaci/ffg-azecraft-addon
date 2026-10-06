@@ -306,8 +306,9 @@ export class DashboardController {
         // Effects also change the squad effects strip in the header.
         const onEffect = effect => {
             const actor = effect.parent?.documentName === "Item" ? effect.parent.parent : effect.parent;
-            if (actor && this.#refs.actors.has(actor.uuid)) this.refresh("rail", "header");
-            else onActor(actor);
+            if (!actor || actor.isToken) return;
+            if (this.#refs.actors.has(actor.uuid)) this.refresh("rail", "header");
+            if (this.#refs.people.has(actor.uuid)) this.refresh("intel");
         };
         for (const hook of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(hook, onEffect);
         Hooks.on("azecraftSquadConditions", () => this.refresh("rail", "header"));

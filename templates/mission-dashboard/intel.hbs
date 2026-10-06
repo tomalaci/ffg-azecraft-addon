@@ -28,7 +28,7 @@
         {{/if}}
         <div class="azd-journal-content">
             {{#unless (and people.length (eq intel.access "unassigned"))}}
-            {{> "azd-page-state" panel=intel}}
+            {{~> "azd-page-state" panel=intel}}
             {{/unless}}
         </div>
     </div>

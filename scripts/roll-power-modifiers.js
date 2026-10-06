@@ -282,6 +282,7 @@ function patchActivateListeners(RollBuilderFFG) {
 
         html.find(".btn").on("click", () => {
             appendModifierFlavor(this, html);
+            Hooks.callAll("azecraftCheckRolled", { actor: this.roll?.data?.document, skillName: this.roll?.skillName });
         });
 
         originalActivateListeners.call(this, html);

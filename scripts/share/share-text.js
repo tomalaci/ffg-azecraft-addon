@@ -7,6 +7,7 @@
 
 import { isFor, recipients, shareTitle, shareToLabel } from "./share-core.js";
 import { keepShare } from "./share-archive.js";
+import { hasSecrets, stripSecrets } from "./secrets.js";
 import { ARCHIVE_PARTIAL, archiveContext, archivedItem, bindArchiveBrowse, onDeleteArchived, onNewArchive, onSetCurrentArchive } from "./archive-ui.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
@@ -155,7 +156,10 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
             ui.notifications.warn("Drop a journal text page (or a journal entry) here.");
             return;
         }
-        this.#replace(page.name, page.text?.content ?? "");
+        const html = page.text?.content ?? "";
+        // Unrevealed GM secrets of the page are never shared (nor kept in the archive players can read).
+        if (hasSecrets(html)) ui.notifications.info("The page's secret sections were left out; reveal them in the journal first to share them.");
+        this.#replace(page.name, stripSecrets(html));
     }
 
     static #onShare() {
@@ -166,10 +170,11 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /** Send text to the Show-to choice and keep it (unless unticked). */
-    #send(name, html) {
+    #send(name, rawHtml) {
+        const html = stripSecrets(rawHtml);
         const to = recipients(this.everyone, [...this.chosen], game.user.id);
         if (Array.isArray(to) && !to.length) return ui.notifications.warn("Choose who should see the text.");
-        game.socket.emit(SOCKET, { type: "shareText", from: game.user.id, to, title: shareTitle(game.user.name, name), html });
+        game.socket.emit(SOCKET, { type: "shareText", from: game.user.id, to, heading: name, title: shareTitle(game.user.name, name), html });
         if (this.keep) keepShare({ kind: "text", title: name || "Text", html });
         ui.notifications.info(`Text shown to ${to === null ? "everyone online" : `${to.length} player(s)`}.`);
     }
@@ -200,9 +205,11 @@ export class ShareTextApp extends HandlebarsApplicationMixin(ApplicationV2) {
 export function initShareText() {
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE, ARCHIVE_PARTIAL]));
     Hooks.once("ready", () => {
-        game.socket.on(SOCKET, message => {
-            if (message?.type !== "shareText" || !isFor(message, game.user.id) || typeof message.html !== "string") return;
-            showText({ title: String(message.title ?? "Shared text"), html: message.html });
+        // The sender is who Foundry says sent the message (its title is rebuilt with their real name).
+        game.socket.on(SOCKET, (message, senderId) => {
+            const sender = game.users.get(senderId);
+            if (message?.type !== "shareText" || !sender || !isFor({ ...message, from: senderId }, game.user.id) || typeof message.html !== "string") return;
+            showText({ title: shareTitle(sender.name, String(message.heading ?? "")), html: message.html });
         });
     });
     Hooks.on("userConnected", () => foundry.applications.instances.get(ShareTextApp.DEFAULT_OPTIONS.id)?.render());

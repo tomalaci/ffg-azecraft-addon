@@ -78,7 +78,7 @@ export function htmlToText(html) {
         .replace(/<\/(p|div|li|h[1-6])>/gi, "\n\n")
         .replace(/<[^>]*>/g, "")
         .replace(/&(#39|[a-z]+);/gi, (match, name) => ENTITIES[name.toLowerCase()] ?? match)
-        .replace(/[ \t]+\n/g, "\n")
+        .replace(/[ \t]*\n[ \t]*/g, "\n")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
 }

@@ -7,7 +7,7 @@
 
 import { DESIRE_MAX_LENGTH, MISSION_PANELS, MODULE_ID, PLACEHOLDER_ART, SETTINGS, TEMPLATE_ROOT } from "./constants.js";
 import { displaySrc } from "../thumbnails/thumbnails.js";
-import { setActiveSquad, setSquadDefaultLedger } from "./squads.js";
+import { readSquads, setActiveSquad, setSquadDefaultLedger } from "./squads.js";
 import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
@@ -154,6 +154,86 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const existing = document.getElementById(element.id);
         if (existing) existing.replaceWith(element);
         else document.getElementById("interface").prepend(element);
+    }
+
+    /** Each card's HTML as last rendered, by slot id (to keep unchanged cards on a re-render). */
+    #cardHTML = new Map();
+
+    /**
+     * Re-rendering the rail patches it instead of replacing it: only the cards whose HTML changed are
+     * swapped, so the rail's animated edges, its scroll position and the other cards stay as they are
+     * (a whole new rail restarted the edge animations and redrew every portrait: a visible flicker
+     * on every equip, sheet edit or effect). Listeners are delegated on the root, so swapped cards
+     * need no wiring.
+     */
+    _replaceHTML(result, content, options) {
+        const fresh = result.rail;
+        const prior = fresh ? content.querySelector('[data-application-part="rail"]') : null;
+        if (prior && this.#patchRail(prior, fresh)) {
+            delete result.rail;
+            super._replaceHTML(result, content, options);
+            return;
+        }
+        super._replaceHTML(result, content, options);
+        if (fresh) this.#rememberCards(fresh);
+    }
+
+    #rememberCards(rail) {
+        this.#cardHTML = new Map([...rail.querySelectorAll(".azd-rail-cards > .azd-card")].map(card => [card.dataset.slotId, card.outerHTML]));
+    }
+
+    /** @returns {boolean} whether the rail was patched in place */
+    #patchRail(prior, fresh) {
+        const oldList = prior.querySelector(".azd-rail-cards");
+        const newList = fresh.querySelector(".azd-rail-cards");
+        if (!oldList || !newList) return false;
+        const oldCards = [...oldList.querySelectorAll(":scope > .azd-card")];
+        const newCards = [...newList.querySelectorAll(":scope > .azd-card")];
+        const sameSlots = oldCards.length === newCards.length && oldCards.length > 0
+            && newCards.every((card, i) => card.dataset.slotId === oldCards[i].dataset.slotId);
+        const htmls = newCards.map(card => card.outerHTML);
+        if (sameSlots) {
+            newCards.forEach((card, i) => {
+                if (this.#cardHTML.get(card.dataset.slotId) === htmls[i]) return;
+                MissionDashboardApp.#keepImages(oldCards[i], card);
+                MissionDashboardApp.#swapKeepingFocus(oldCards[i], card);
+            });
+        } else {
+            // Cards added, removed or reordered: new list, same rail (edges and scroll position kept).
+            const scroll = oldList.scrollTop;
+            MissionDashboardApp.#swapKeepingFocus(oldList, newList);
+            newList.scrollTop = scroll;
+        }
+        this.#cardHTML = new Map(newCards.map((card, i) => [card.dataset.slotId, htmls[i]]));
+        return true;
+    }
+
+    /**
+     * Replace an element, giving focus and caret back to the field being typed in (e.g. a Desire
+     * draft while someone else's change refreshes the rail), as Foundry does for a replaced part.
+     */
+    static #swapKeepingFocus(oldElement, newElement) {
+        const focus = document.activeElement;
+        const typing = focus?.id && oldElement.contains(focus) ? focus : null;
+        const selection = typing && "selectionStart" in typing ? [typing.selectionStart, typing.selectionEnd] : null;
+        oldElement.replaceWith(newElement);
+        if (!typing) return;
+        const field = newElement.querySelector(`#${CSS.escape(typing.id)}`);
+        if (!field) return;
+        field.focus({ preventScroll: true });
+        if (selection && "setSelectionRange" in field) field.setSelectionRange(...selection);
+    }
+
+    /** Move a card's already loaded images into its replacement when they show the same picture. */
+    static #keepImages(oldCard, newCard) {
+        const loaded = [...oldCard.querySelectorAll("img")];
+        for (const img of newCard.querySelectorAll("img")) {
+            const index = loaded.findIndex(old => old.getAttribute("src") === img.getAttribute("src")
+                && old.getAttribute("style") === img.getAttribute("style") && old.dataset.artSrc === img.dataset.artSrc);
+            if (index === -1) continue;
+            img.replaceWith(loaded[index]);
+            loaded.splice(index, 1);
+        }
     }
 
     async _prepareContext() {
@@ -442,6 +522,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             .map(card => fromUuidSync(card.uuid)).filter(Boolean);
     }
 
+    /** Every member of the active squad (from the squad setting), including ones this user cannot see. */
+    #squadUuids() {
+        const squad = readSquads().find(s => s.id === this.controller.view?.squad?.id);
+        return [...new Set((squad?.party ?? []).map(slot => slot.actorUuid).filter(Boolean))];
+    }
+
     static #onAddEffect(event, target) {
         const actor = fromUuidSync(target.closest("[data-uuid]")?.dataset.uuid ?? "");
         if (actor) EffectPickerApp.open({ actors: [actor], label: actor.name });
@@ -454,7 +540,9 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     static #onAddSquadEffect() {
         const actors = this.#squadActors();
-        if (actors.length) EffectPickerApp.open({ actors, label: "Squad", squad: true });
+        const seen = new Set(actors.map(actor => actor.uuid));
+        const hidden = this.#squadUuids().filter(uuid => !seen.has(uuid));
+        if (actors.length || hidden.length) EffectPickerApp.open({ actors, hidden, label: "Squad", squad: true });
     }
 
     static #onAddCondition() {
@@ -472,7 +560,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     static async #onRemoveSquadEffect(event, target) {
-        await runEffectOp({ kind: "removeGroup", group: target.dataset.group, actorUuids: this.#squadActors().map(actor => actor.uuid) });
+        await runEffectOp({ kind: "removeGroup", group: target.dataset.group, actorUuids: this.#squadUuids() });
     }
 
     static async #onEndConcentration(event, target) {

@@ -34,19 +34,25 @@ Buffs and debuffs on characters without finding their tokens.
 
 - The effects change the dice of the character's own rolls: every skill roll (including powers)
   gets them in its dice pool automatically, as with the system's statuses.
-- *Next check* effects disappear after the character's next roll; *this combat* effects when the
-  character leaves combat (both done by the system).
+- *Next check* effects disappear after the character's next roll; one on some checks (combat,
+  Biotics and Tech, chosen skills) only after a roll of one of those skills. *This combat* effects
+  disappear when the character leaves combat (done by the system).
 
 ## How it works (developers)
 
 - `scripts/effects/effect-core.js` (pure, unit-tested): an effect `{name, dice, scope, skills,
   duration}` becomes Active Effect changes like the system's statuses
   (`system.skills.<skill>.boost` etc., mode ADD) with `system.duration` `"once"` / `"combat"`; card
-  chips and squad groups.
-- `scripts/effects/quick-effects.js`: the *Add effect* window, the operations (add status via
-  `actor.toggleStatusEffect`, add custom effect, remove, remove a squad group) and their relay to the
+  chips and squad groups. The system deletes every `"once"` effect after any roll, so only a
+  next-check effect on all checks gets it: one on some skills has no `system.duration`, and the
+  roll builder's Roll button (`roll-power-modifiers.js`, hook `azecraftCheckRolled`) makes
+  `quick-effects.js` delete it after a roll of one of its skills (`rolledSkillKey`,
+  `nextCheckUsedBy`).
+- `scripts/effects/quick-effects.js`: the *Add effect* window, the operations (add status made from
+  the system's status effect, add custom effect, remove, remove a squad group) and their relay to the
   active GM over the module socket (`quickEffect`) for actors the user does not own; presets in the
-  world setting `effectPresets`.
+  world setting `effectPresets`. The GM runs relayed requests one at a time, and only those the
+  dashboard can make (`relayedEffectOp` / `relayedConditionOp`: squad members, known statuses).
 - Custom effects carry `flags.ffg-azecraft-addon.quickEffect = {spec, group}`; squad-wide ones share
   a `group` id.
 - Squad conditions are the world setting `squadConditions` (`{id, squadId, name, img, statusId | spec,

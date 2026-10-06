@@ -201,7 +201,7 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
         // Players cannot write world settings: the active GM applies the spend (see initStoryPoints).
-        game.socket.emit(SOCKET, { type: "useStoryPoint", side, userId: game.user.id });
+        game.socket.emit(SOCKET, { type: "useStoryPoint", side });
     }
 
     /** GM: move a point to or from one side (the other side gives or takes it). */
@@ -274,9 +274,10 @@ export function initStoryPoints() {
     Hooks.once("ready", () => {
         if (!game.settings.get(MODULE_ID, SETTINGS.enabled)) return;
         // Player spends: applied by the active GM only (other GMs ignore them).
-        game.socket.on(SOCKET, data => {
+        // The chat card names who Foundry says sent the request, not a user id inside the message.
+        game.socket.on(SOCKET, (data, senderId) => {
             if (data?.type !== "useStoryPoint" || game.user !== game.users.activeGM) return;
-            const player = game.users.get(data.userId);
+            const player = game.users.get(senderId);
             if (!player || data.side !== SIDES.squad) return;
             applyUse(SIDES.squad, player.id);
         });

@@ -6,8 +6,12 @@
  * session) or switch, and everyone can browse any archive.
  *
  * Players can read the archives but not write them, so pages are created and deleted by the active
- * GM's client (module socket), as the story points are. Deleting is allowed to the author and GMs.
+ * GM's client (module socket), as the story points are, one request at a time. The sender is the user
+ * Foundry reports for the socket message (not a field of the message). Deleting is allowed to the
+ * author and GMs.
  */
+
+import { stripSecrets } from "./secrets.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SOCKET = `module.${MODULE_ID}`;
@@ -91,7 +95,8 @@ async function createArchive(name) {
 
 function pageContent({ kind, src, caption, html }) {
     if (kind === "image") return `<p><img src="${esc(src)}"></p>${caption ? `<p>${esc(caption)}</p>` : ""}`;
-    return String(html ?? "");
+    // Players can read the archive: never keep a journal page's unrevealed GM secrets.
+    return stripSecrets(String(html ?? ""));
 }
 
 /** A kept share with the same image or text (sharing it again moves it up instead of copying it). */
@@ -110,6 +115,8 @@ function findSame(archive, share) {
 }
 
 async function store(share) {
+    if (!["image", "text"].includes(share?.kind)) return;
+    if (share.kind === "image" && typeof share.src !== "string") return;
     const archive = currentArchive() ?? await createArchive("Shared");
     const name = share.title || (share.kind === "image" ? "Image" : "Text");
     const same = findSame(archive, share);
@@ -146,20 +153,29 @@ async function remove(uuid, userId) {
 /*  Requests (any user)                         */
 /* -------------------------------------------- */
 
+/** The active GM's archive writes run one at a time (no duplicate folders, archives or pages). */
+let queue = Promise.resolve();
+
+function queued(message, userId) {
+    queue = queue.then(() => handle(message, userId)).catch(error => console.warn("Azecraft | Share archive", error));
+    return queue;
+}
+
 function relay(type, data) {
-    if (isActiveGM()) return handle({ type, ...data, userId: game.user.id });
+    if (isActiveGM()) return queued({ type, ...data }, game.user.id);
     if (!game.users.activeGM) {
         ui.notifications.warn("Keeping shares needs a GM online; this one was not kept.");
         return null;
     }
-    game.socket.emit(SOCKET, { type, ...data, userId: game.user.id });
+    game.socket.emit(SOCKET, { type, ...data });
     return null;
 }
 
-function handle(message) {
-    if (message.type === "shareStore") return store({ ...message.share, author: message.userId });
-    if (message.type === "shareDelete") return remove(message.uuid, message.userId);
-    if (message.type === "shareNewArchive") return game.users.get(message.userId)?.isGM ? createArchive(message.name) : null;
+/** @param {string} userId  who asked (Foundry's sender id for socket messages) */
+function handle(message, userId) {
+    if (message.type === "shareStore") return store({ ...message.share, author: userId });
+    if (message.type === "shareDelete") return remove(message.uuid, userId);
+    if (message.type === "shareNewArchive") return game.users.get(userId)?.isGM ? createArchive(message.name) : null;
     return null;
 }
 
@@ -193,9 +209,9 @@ function refreshWindows() {
 export function initShareArchive() {
     game.settings.register(MODULE_ID, CURRENT, { scope: "world", config: false, type: String, default: "", onChange: refreshWindows });
     Hooks.once("ready", () => {
-        game.socket.on(SOCKET, message => {
+        game.socket.on(SOCKET, (message, senderId) => {
             if (!["shareStore", "shareDelete", "shareNewArchive"].includes(message?.type) || !isActiveGM()) return;
-            Promise.resolve(handle(message)).catch(error => console.warn("Azecraft | Share archive", error));
+            if (game.users.get(senderId)) queued(message, senderId);
         });
     });
     const onPage = page => {

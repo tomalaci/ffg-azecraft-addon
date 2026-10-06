@@ -33,6 +33,12 @@ export const SCOPES = [
 
 const int = value => Math.max(0, Math.min(9, Math.trunc(Number(value) || 0)));
 
+/** An effect icon path Foundry accepts (an image file), or null. */
+export function imagePath(value) {
+    if (typeof value !== "string" || value.length > 500 || value.trim() !== value) return null;
+    return /^[^<>"\n\r\t]+\.(apng|avif|bmp|gif|jpe?g|png|svg|tiff?|webp)(\?[^<>"\s]*)?$/i.test(value) ? value : null;
+}
+
 /** A clean effect description: known dice fields with counts 1-9, a known scope and duration. */
 export function normalizeSpec(raw = {}) {
     const dice = {};
@@ -81,9 +87,35 @@ export function describeSpec(spec, skillLabels = {}) {
     return `${dice.length ? dice.join(", ") : "no dice"} on ${scope} · ${duration}`;
 }
 
-/** The system's `system.duration` for an effect ("once" / "combat"), or undefined. */
+/**
+ * The system's `system.duration` for an effect ("once" / "combat"), or undefined. The system deletes
+ * every "once" effect after any roll, so only a next-check effect on all checks gets it; one on some
+ * skills is used up by this module after a roll of one of them (see nextCheckUsedBy).
+ */
 export function systemDuration(spec) {
+    if (spec.duration === "once") return spec.scope === "all" ? "once" : undefined;
     return spec.duration === "permanent" ? undefined : spec.duration;
+}
+
+/**
+ * The key of the skill a roll is for: the roll builder knows only its name, which is the skill's key
+ * or its label (as stored or translated).
+ * @param {string[]} names  the roll's skill name, raw and translated
+ * @param {{key: string, label: string, rawLabel?: string}[]} skills
+ */
+export function rolledSkillKey(names, skills) {
+    const wanted = names.filter(name => typeof name === "string" && name);
+    return skills.find(s => wanted.includes(s.key))?.key
+        ?? skills.find(s => wanted.includes(s.label) || (s.rawLabel && wanted.includes(s.rawLabel)))?.key
+        ?? null;
+}
+
+/** Whether a roll of a skill uses up a quick effect: a next-check effect on some skills, that one among them. */
+export function nextCheckUsedBy(effect, skillKey, moduleId) {
+    const spec = effect.flags?.[moduleId]?.[EFFECT_FLAG]?.spec;
+    // 0.6.0 made them with the system's "once" (removed by the system after any roll).
+    if (!skillKey || spec?.duration !== "once" || spec.scope === "all" || effect.system?.duration === "once") return false;
+    return (effect.changes ?? []).some(change => String(change.key).startsWith(`system.skills.${skillKey}.`));
 }
 
 export const EFFECT_FLAG = "quickEffect";
@@ -155,7 +187,7 @@ export function normalizeCondition(raw = {}) {
         id,
         squadId,
         name: String(raw.name ?? spec?.name ?? "").trim().slice(0, 60) || "Condition",
-        img: typeof raw.img === "string" && raw.img ? raw.img : null,
+        img: imagePath(raw.img),
         statusId,
         spec,
         on: raw.on !== false
@@ -204,4 +236,61 @@ export function conditionPlan(conditions, squadMembers, actorEffects) {
 export function describeCondition(condition) {
     const what = condition.spec ? describeSpec(condition.spec).replace(/ · [^·]+$/, "") : "status";
     return `${condition.name}: ${what}, on every squad member${condition.on ? "" : " (off)"}`;
+}
+
+/* -------------------------------------------- */
+/*  What the GM accepts from other users        */
+/* -------------------------------------------- */
+
+/**
+ * Whether an effect may be removed through the dashboard: a status or a quick effect shown on a
+ * card, but not a squad condition's effect (switched off or removed in the squad strip) and not an
+ * item effect or XP purchase (no status, no quick-effect flag).
+ */
+export function isRemovableEffect(effect, moduleId) {
+    const quick = effect?.flags?.[moduleId]?.[EFFECT_FLAG];
+    if (quick?.condition) return false;
+    return Boolean(quick) || [...(effect?.statuses ?? [])].length > 0;
+}
+
+const EFFECT_KINDS = new Set(["status", "custom", "remove", "removeGroup"]);
+
+/**
+ * A quick-effect operation another user asked the active GM to run, limited to what the dashboard
+ * can do: squad members only, known statuses, known kinds. Returns the operation to run, or null.
+ * @param {object} op
+ * @param {{members: Set<string>, statusIds: Set<string>}} allowed  squad member actor uuids, status ids
+ */
+export function relayedEffectOp(op, { members, statusIds }) {
+    if (!op || !EFFECT_KINDS.has(op.kind)) return null;
+    const actorUuids = [...new Set(Array.isArray(op.actorUuids) ? op.actorUuids : [])].filter(uuid => typeof uuid === "string" && members.has(uuid));
+    if (!actorUuids.length) return null;
+    const group = cleanId(op.group);
+    switch (op.kind) {
+        case "status":
+            return statusIds.has(op.statusId) ? { kind: "status", statusId: op.statusId, group, actorUuids } : null;
+        case "custom":
+            return { kind: "custom", spec: normalizeSpec(op.spec), img: typeof op.img === "string" ? op.img : null, group, actorUuids };
+        case "remove":
+            return cleanId(op.effectId) ? { kind: "remove", effectId: op.effectId, actorUuids } : null;
+        default:
+            return group ? { kind: "removeGroup", group, actorUuids } : null;
+    }
+}
+
+const CONDITION_ACTIONS = new Set(["add", "toggle", "remove"]);
+
+/**
+ * A squad-condition change another user asked for: a known action, an existing squad, a known status
+ * (or a custom effect). Returns the change to make, or null.
+ * @param {{squadIds: Set<string>, statusIds: Set<string>}} allowed
+ */
+export function relayedConditionOp(op, { squadIds, statusIds }) {
+    if (!op || !CONDITION_ACTIONS.has(op.action)) return null;
+    if (op.action !== "add") return cleanId(op.id) ? { action: op.action, id: op.id } : null;
+    const condition = normalizeCondition({ ...op.condition, id: "pending" });
+    if (!condition || !squadIds.has(condition.squadId)) return null;
+    if (condition.statusId && !statusIds.has(condition.statusId)) return null;
+    const { id: _id, on: _on, ...rest } = condition;
+    return { action: "add", condition: rest };
 }

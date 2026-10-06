@@ -267,9 +267,12 @@ export class ShareImageApp extends HandlebarsApplicationMixin(ApplicationV2) {
 export function initImageShare() {
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([ARCHIVE_PARTIAL]));
     Hooks.once("ready", () => {
-        game.socket.on(SOCKET, message => {
-            if (message?.type !== "shareImage" || !isFor(message, game.user.id) || typeof message.src !== "string") return;
-            const entry = { src: message.src, title: String(message.title ?? "Shared image"), caption: String(message.caption ?? "") };
+        // The sender is who Foundry says sent the message (its title is rebuilt with their real name).
+        game.socket.on(SOCKET, (message, senderId) => {
+            const sender = game.users.get(senderId);
+            if (message?.type !== "shareImage" || !sender || !isFor({ ...message, from: senderId }, game.user.id) || typeof message.src !== "string") return;
+            const caption = String(message.caption ?? "");
+            const entry = { src: message.src, title: shareTitle(sender.name, caption), caption };
             remember(entry);
             show(entry);
         });

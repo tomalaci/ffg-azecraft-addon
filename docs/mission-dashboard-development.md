@@ -206,13 +206,18 @@ and is only read by the migration.
 - Parts are `frame`, `header`, `rail`, `mission`, `intel` and `dividers`. The controller builds a view model, awaiting
   UUID resolution and `TextEditor.enrichHTML`, and then renders only the affected parts. Cards and
   the header render immediately; the first mount waits for mission content.
+- A rail re-render does not replace the rail (`_replaceHTML` in `dashboard-app.js`): only cards whose
+  HTML changed are swapped (matched by `data-slot-id`), unchanged images move into the new card, and
+  the rail, its edge fades and its scroll position stay. If the slots change, only the card list is
+  replaced. Without this, every sheet or effect change restarted the edge fade and redrew every
+  portrait (visible flicker).
 - Stale results are dropped using a scene generation counter (bumped on sync and unmount) and a
   mission sequence number. The sequence number is bumped as soon as a mission refresh is *queued*,
   not when it runs. So an enrichment already in flight when access is revoked can never render, and
   one in flight during an unmount can never remount the HUD (see `tests/controller.test.js`).
 - Hook routing:
-  - `update/create/deleteActor`, `...Item` and `...ActiveEffect` refresh the rail, and only for
-    referenced Actors.
+  - `update/create/deleteActor`, `...Item` and `...ActiveEffect` refresh the rail (effects also the
+    header's squad effects), and the intel tab for people of note; only for referenced Actors.
   - `...JournalEntryPage` and `...JournalEntry` refresh the mission tabs (any mission ledger) or
     the campaign view (ledger).
   - `updateScene` resyncs when the module flag, ownership or name changes.

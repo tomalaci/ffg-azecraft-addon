@@ -134,6 +134,8 @@ test("plain-text Desire edits round-trip through the sheet's HTML safely", () =>
     const html = textToHtml("Fly <fast> & loud\nno brakes\n\n\n\nSecond");
     assert.equal(html, "<p>Fly &lt;fast&gt; &amp; loud<br>no brakes</p><p>Second</p>");
     assert.equal(htmlToText(html), "Fly <fast> & loud\nno brakes\n\nSecond");
+    // Indentation from formatted HTML (or from an earlier draft) is not part of the text.
+    assert.equal(htmlToText("<p>One!</p>\n        <p>  Two\n        lines</p>"), "One!\n\nTwo\nlines");
     assert.equal(hasRichFormatting(html), false);
     assert.equal(hasRichFormatting("<p><strong>bold</strong></p>"), true);
     assert.equal(hasRichFormatting("<p><a href=\"x\">link</a></p>"), true);

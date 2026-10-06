@@ -7,7 +7,7 @@
         {{> "azd-ledger-bar" panel=mission.objective key="objective" label="Current objective"}}
         <div class="azd-objective-collapsed">{{mission.objectiveText}}</div>
         <div class="azd-panel-body azd-objective-body azd-journal-content">
-            {{> "azd-page-state" panel=mission.objective}}
+            {{~> "azd-page-state" panel=mission.objective}}
         </div>
     </div>
     <div class="azd-summary">
@@ -17,7 +17,7 @@
         </div>
         {{> "azd-ledger-bar" panel=mission.summary key="summary" label="Mission summary"}}
         <div class="azd-panel-body azd-summary-body azd-journal-content">
-            {{> "azd-page-state" panel=mission.summary}}
+            {{~> "azd-page-state" panel=mission.summary}}
         </div>
     </div>
 </section>

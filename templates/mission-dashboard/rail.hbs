@@ -2,7 +2,8 @@
     <div class="azd-rail-edge azd-rail-edge--top" aria-hidden="true"><span class="azd-rail-beams azd-rail-beams--a"></span><span class="azd-rail-beams azd-rail-beams--b"></span><span class="azd-rail-glint"></span></div>
     <div class="azd-rail-cards">
         {{#each visibleCards as |card|}}
-        {{> "modules/ffg-azecraft-addon/templates/mission-dashboard/card.hbs" card=card placeholderArt=@root.placeholderArt}}
+        {{!-- ~ keeps Handlebars from indenting the partial (it would indent the lines of a Desire draft too) --}}
+        {{~> "modules/ffg-azecraft-addon/templates/mission-dashboard/card.hbs" card=card placeholderArt=@root.placeholderArt}}
         {{else}}
         <p class="azd-muted azd-rail-empty">No squad assigned.</p>
         {{/each}}

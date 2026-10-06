@@ -20,7 +20,7 @@ unless the sharer unticks **Keep in the archive**.
 - **Share Text** in the toolbar opens a window with an optional title and a text editor (formatting,
   links, images, as in journal pages).
 - Write the text, or drop a journal text page (or a journal entry: its first text page) on the window
-  to share its title and text.
+  to share its title and text. GM secrets in it that are not revealed are left out.
 - **Show to** and **Share** work as for images: the text opens for them in a read-only window titled
   "Shared by <name>". Links to documents (`@UUID[…]`) work for those who can see the document.
 
@@ -52,10 +52,14 @@ unless the sharer unticks **Keep in the archive**.
   (`module.ffg-azecraft-addon`), with `to: null` (everyone) or the chosen user ids. Links are sent as
   they are. Recipients open `foundry.applications.apps.ImagePopout` with the data URL or link.
 - Text is sent as HTML in a `shareText` message; recipients clean it with `foundry.utils.cleanHTML`
-  (no scripts or event handlers) and enrich it before showing it.
+  (no scripts or event handlers) and enrich it before showing it. Unrevealed journal secrets
+  (`section.secret` without `revealed`) are removed before sending and before keeping
+  (`scripts/share/secrets.js`).
+- Every handler takes the sender from Foundry (the socket's sender id), not from the message:
+  window titles ("Shared by …") and archive authors are rebuilt from it.
 - Keeping, deleting and new archives go to the active GM as `shareStore`, `shareDelete` and
   `shareNewArchive` messages (a GM handles their own directly). The GM checks that a delete comes from
-  the author or a GM. Archive journals carry the flag `shareArchive`, their pages `share`
+  the author or a GM, and handles the requests one at a time. Archive journals carry the flag `shareArchive`, their pages `share`
   (kind, author, time, caption), the folder `shareFolder`; the current archive is the world setting
   `shareArchiveCurrent`.
 - Messages of several MB pass Foundry's socket locally; the 600 KB cap leaves room for the proxies in
