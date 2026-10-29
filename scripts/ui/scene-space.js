@@ -26,14 +26,13 @@ export function sceneSpaceRect() {
     let right = (sidebar?.left ?? window.innerWidth) - GAP;
     let bottom = (hotbar?.top ?? window.innerHeight) - GAP;
 
+    // The space of the dashboard's normal layout (normal rail, normal panels), published by its
+    // layout: windows open over an expanded rail or panels without moving or shrinking.
     const dashboard = document.querySelector("#azecraft-mission-dashboard:not(.azd--hidden)");
-    if (dashboard) {
-        const rail = visibleRect("#azecraft-mission-dashboard .azd-rail");
-        const panels = ["#azecraft-mission-dashboard .azd-mission", "#azecraft-mission-dashboard .azd-intel"].map(visibleRect).filter(Boolean);
-        if (rail) left = Math.max(left, rail.right + 12 + GAP);
-
-        if (panels.length) bottom = Math.min(bottom, Math.min(...panels.map(panel => panel.top)) - 12 - GAP);
-    }
+    const spaceLeft = Number.parseFloat(dashboard?.style.getPropertyValue("--azd-space-left"));
+    const spaceBottom = Number.parseFloat(dashboard?.style.getPropertyValue("--azd-space-bottom"));
+    if (Number.isFinite(spaceLeft)) left = Math.max(left, spaceLeft + GAP);
+    if (Number.isFinite(spaceBottom)) bottom = Math.min(bottom, window.innerHeight - spaceBottom - GAP);
     return {
         left: Math.round(left),
         top: Math.round(top),

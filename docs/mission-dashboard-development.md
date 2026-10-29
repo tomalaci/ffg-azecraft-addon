@@ -150,7 +150,9 @@ and is only read by the migration.
 
 ### Client settings (per browser)
 
-`dashboardHidden`, `dashboardCompact` (`auto`/`always`/`never`), `dashboardMissionCollapsed`,
+`dashboardHidden`, `dashboardRailLevel` (0 auto, 1–4), `dashboardLedgerLevel` (1–3),
+`dashboardMissionCollapsed` (panel level 0), `dashboardCompact` (legacy; `migrateCompact` turns
+Always/Never into rail level 2/3 once),
 `dashboardStyle`, `dashboardColumns` and `dashboardLedgerChoices`. The card art views are in
 `localStorage` (see below).
 
@@ -197,6 +199,14 @@ and is only read by the migration.
   around the map window. `frameWindow()` computes that window. `fitSceneToFrame()` pans and zooms
   (`canvas.animatePan`) so `canvas.dimensions.sceneRect` fits inside it. That runs only on the
   header button, or once on mount when the Scene flag `fitOnOpen` is set.
+- **Size levels.** `effectiveLevels` resolves auto (rail 2 on small screens, else 3) and keeps the
+  panels at level 1 while the rail is 4. `computeLayout` sets the rail width (level 1 is two thirds
+  of compact; level 4 keeps the normal column width for the header, toolbar and story points and
+  adds `--azd-strip-width/-bottom` for the horizontal strip) and the panel height (level 2 to mid
+  screen, 3 to below the toolbar). `LayoutWatcher.apply` toggles `azd--rail-N` / `azd--ledger-N`.
+  The arrow handlers in `dashboard-app.js` write the settings and do the knock-back between rail 4 and
+  panels above 1. `--azd-space-left/-bottom` describe the normal layout; `scene-space.js` fits the
+  toolbar windows to it, so they never move when something is expanded.
 - **Mission bar.** `computeLayout` returns the bar geometry and two column widths
   (`--azd-bar-left`, `--azd-col-1..2`). The widths come from the client setting `dashboardColumns`
   (fractions) through `clampColumns`, which keeps each tab at least 180px. `moveDivider` moves the

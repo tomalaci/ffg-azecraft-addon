@@ -37,14 +37,37 @@ function registerSettings() {
         }
     });
 
+    // Superseded by the rail level; read once to carry a choice over (see migrateCompact).
     game.settings.register(MODULE_ID, SETTINGS.compact, {
-        name: "Mission dashboard compact cards",
-        hint: "Auto uses compact character cards on small screens.",
+        name: "Mission dashboard compact cards (legacy)",
+        scope: "client",
+        config: false,
+        type: String,
+        default: "auto"
+    });
+
+    // The squad rail's size, changed with the arrows at the top of the rail.
+    game.settings.register(MODULE_ID, SETTINGS.railLevel, {
+        name: "Squad rail size",
+        hint: "Also changed with the arrows at the top of the squad rail. Auto uses compact cards on small screens.",
         scope: "client",
         config: true,
-        type: String,
-        choices: { auto: "Auto", always: "Always", never: "Never" },
-        default: "auto",
+        type: Number,
+        choices: { 0: "Auto", 1: "Smallest", 2: "Compact", 3: "Normal", 4: "Large (horizontal)" },
+        default: 0,
+        onChange: () => {
+            controller?.app?.applyPreferences();
+            controller?.refresh("header", "rail");
+        }
+    });
+
+    // The mission panels' size (1 normal, 2 half the screen, 3 up to the top bar).
+    game.settings.register(MODULE_ID, SETTINGS.ledgerLevel, {
+        name: "Mission panel size",
+        scope: "client",
+        config: false,
+        type: Number,
+        default: 1,
         onChange: () => {
             controller?.app?.applyPreferences();
             controller?.refresh("header", "rail");
@@ -196,6 +219,16 @@ function registerIntegrations() {
     });
 }
 
+/** The earlier compact cards choice (Always / Never) becomes the rail level, once per browser. */
+async function migrateCompact() {
+    const compact = game.settings.get(MODULE_ID, SETTINGS.compact);
+    if (compact === "auto") return;
+    if (game.settings.get(MODULE_ID, SETTINGS.railLevel) === 0) {
+        await game.settings.set(MODULE_ID, SETTINGS.railLevel, compact === "always" ? 2 : 3);
+    }
+    await game.settings.set(MODULE_ID, SETTINGS.compact, "auto");
+}
+
 export function initMissionDashboard() {
     registerSettings();
     registerKeybindings();
@@ -205,6 +238,8 @@ export function initMissionDashboard() {
     controller.registerHooks();
 
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates(TEMPLATES));
+
+    Hooks.once("ready", migrateCompact);
 
     // First-run setup, by the active GM only: Journal folders, the first squad, and the trackers.
     Hooks.once("ready", async () => {

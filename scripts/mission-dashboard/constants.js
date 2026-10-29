@@ -34,6 +34,8 @@ export const PLACEHOLDER_ART = `modules/${MODULE_ID}/assets/mission-dashboard/pl
 export const SETTINGS = {
     hidden: "dashboardHidden",
     compact: "dashboardCompact",
+    railLevel: "dashboardRailLevel",
+    ledgerLevel: "dashboardLedgerLevel",
     missionCollapsed: "dashboardMissionCollapsed",
     style: "dashboardStyle",
     columns: "dashboardColumns",

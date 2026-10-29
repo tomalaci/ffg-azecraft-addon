@@ -66,7 +66,8 @@ export class DashboardController {
     preferences() {
         return {
             hidden: game.settings.get(MODULE_ID, SETTINGS.hidden),
-            compact: game.settings.get(MODULE_ID, SETTINGS.compact),
+            railLevel: game.settings.get(MODULE_ID, SETTINGS.railLevel),
+            ledgerLevel: game.settings.get(MODULE_ID, SETTINGS.ledgerLevel),
             missionCollapsed: game.settings.get(MODULE_ID, SETTINGS.missionCollapsed),
             style: game.settings.get(MODULE_ID, SETTINGS.style),
             columns: game.settings.get(MODULE_ID, SETTINGS.columns)

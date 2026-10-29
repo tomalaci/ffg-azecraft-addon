@@ -13,7 +13,8 @@ const WATCHED_SELECTORS = [
     "#hotbar",
     "#sidebar",
     "#destiny-tracker",
-    "#azecraft-story-points"
+    "#azecraft-story-points",
+    "#azecraft-toolbar"
 ];
 
 const GAP = 12;
@@ -68,11 +69,27 @@ function visibleRect(selector) {
     return rect;
 }
 
+/** Squad rail sizes: 1 smallest compact, 2 compact, 3 normal, 4 a horizontal strip of large cards. */
+export const RAIL_LEVELS = [1, 2, 3, 4];
+/** Mission panel sizes: 1 normal, 2 half the screen, 3 up to the top bar. */
+export const LEDGER_LEVELS = [1, 2, 3];
+
+/**
+ * The rail and panel levels actually used. Pure. `railLevel` 0 (or anything unknown) means auto:
+ * compact on small screens or when the sidebar leaves little room, normal otherwise. The horizontal
+ * rail and expanded panels would overlap, so rail level 4 keeps the panels at level 1.
+ */
+export function effectiveLevels({ railLevel = 0, ledgerLevel = 1, autoCompact = false } = {}) {
+    const rail = RAIL_LEVELS.includes(railLevel) ? railLevel : autoCompact ? 2 : 3;
+    const ledger = rail === 4 ? 1 : LEDGER_LEVELS.includes(ledgerLevel) ? ledgerLevel : 1;
+    return { rail, ledger };
+}
+
 /**
  * Pure sizing rules. `ui` holds measured rects (or null) and the viewport size.
  * @returns {object} CSS pixel values and layout mode
  */
-export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar }, { compactPreference = "auto", missionCollapsed = false, framed = true, columns = DEFAULT_COLUMNS } = {}) {
+export function computeLayout({ width, height, controls, navActive, navExpand, players, destiny, hotbar, sidebar, toolbar }, { railLevel = 0, ledgerLevel = 1, missionCollapsed = false, framed = true, columns = DEFAULT_COLUMNS } = {}) {
     const left = Math.round((controls?.right ?? 0) + GAP);
     const top = Math.round(Math.max(GAP, (navActive?.bottom ?? 0) + 8));
     // The SWFFG destiny tracker is a movable window; it only constrains the rail while docked low.
@@ -87,14 +104,24 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     const toggleTop = Math.round(controls?.top ?? navActive?.top ?? GAP);
 
     const autoCompact = height < 900 || width - left - right < 1100;
-    const compact = compactPreference === "always" || (compactPreference === "auto" && autoCompact);
+    const levels = effectiveLevels({ railLevel, ledgerLevel, autoCompact });
+    const compact = levels.rail <= 2;
 
-    // Wide enough that character art is a real feature of the frame, not a thumbnail.
-    let railWidth = width >= 2200 ? 480 : width >= 1600 ? 420 : 340;
-    if (compact) railWidth = Math.min(railWidth, 280);
+    // Wide enough that character art is a real feature of the frame, not a thumbnail. The
+    // horizontal rail (4) keeps the normal column for the header, toolbar and story points.
+    const normalWidth = width >= 2200 ? 480 : width >= 1600 ? 420 : 340;
+    const compactWidth = Math.min(normalWidth, 280);
+    const railWidth = { 1: Math.round(compactWidth * 2 / 3), 2: compactWidth }[levels.rail] ?? normalWidth;
 
-    let missionHeight = height >= 1300 ? 260 : height >= 1000 ? 220 : 180;
-    if (missionCollapsed) missionHeight = 34;
+    const normalHeight = height >= 1300 ? 260 : height >= 1000 ? 220 : 180;
+    // Level 2 reaches the middle of the screen, level 3 the top bar.
+    const ledgerHeight = {
+        1: normalHeight,
+        2: Math.max(normalHeight, Math.round(height / 2 - bottom)),
+        // Clear of the toolbar tabs, with room for the size arrows on the panels' top edge.
+        3: Math.max(normalHeight, height - bottom - Math.max(top, Math.round((toolbar?.bottom ?? 0) + 14)))
+    }[levels.ledger];
+    const missionHeight = missionCollapsed ? 34 : ledgerHeight;
 
     // Framed: the squad column runs down to the story point bar in the bottom-left corner (or, with
     // nothing docked there, to where the mission tabs begin).
@@ -109,8 +136,19 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     // The second tab takes whatever rounding leaves, so the two always add up to the bar width.
     const [col1] = clampColumns(columns, barWidth).map(Math.round);
 
+    // The horizontal rail (4): from the squad column's left edge to the sidebar, above the panels.
+    const stripRight = width - (framed ? Math.max(GAP, right) : right);
+    const stripBottom = bottom + missionHeight + GAP;
+
+    // Where toolbar windows go (scene-space.js): the space of the normal layout (normal rail, level
+    // 1 panels), so expanding the rail or the panels never moves or shrinks them.
+    const spaceLeft = left + (levels.rail === 4 ? normalWidth : railWidth) + GAP;
+    const spaceBottom = bottom + (missionCollapsed ? 34 : normalHeight) + GAP;
+
     return {
         compact,
+        railLevel: levels.rail,
+        ledgerLevel: levels.ledger,
         values: {
             "--azd-left": `${left}px`,
             "--azd-top": `${top}px`,
@@ -124,7 +162,11 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
             "--azd-bar-left": `${barLeft}px`,
             "--azd-bar-width": `${barWidth}px`,
             "--azd-col-1": `${col1}px`,
-            "--azd-col-2": `${barWidth - col1}px`
+            "--azd-col-2": `${barWidth - col1}px`,
+            "--azd-strip-width": `${Math.max(0, stripRight - left)}px`,
+            "--azd-strip-bottom": `${stripBottom}px`,
+            "--azd-space-left": `${spaceLeft}px`,
+            "--azd-space-bottom": `${spaceBottom}px`
         },
         bar: { left: barLeft, width: barWidth }
     };
@@ -145,7 +187,8 @@ export function measureUI() {
         // destiny tracker when the bar is off.
         destiny: visibleRect("#azecraft-story-points") ?? visibleRect("#destiny-tracker"),
         hotbar: visibleRect("#hotbar"),
-        sidebar: visibleRect("#sidebar")
+        sidebar: visibleRect("#sidebar"),
+        toolbar: visibleRect("#azecraft-toolbar")
     };
 }
 
@@ -210,7 +253,7 @@ export class LayoutWatcher {
         if (!this.#element?.isConnected) return;
 
         const result = computeLayout(measureUI(), this.#getOptions());
-        const { compact, values } = result;
+        const { compact, values, railLevel, ledgerLevel } = result;
         this.last = result;
 
         for (const [name, value] of Object.entries(values)) {
@@ -218,6 +261,8 @@ export class LayoutWatcher {
         }
 
         this.#element.classList.toggle("azd--compact", compact);
+        for (const level of RAIL_LEVELS) this.#element.classList.toggle(`azd--rail-${level}`, railLevel === level);
+        for (const level of LEDGER_LEVELS) this.#element.classList.toggle(`azd--ledger-${level}`, ledgerLevel === level);
         // The story point bar fits itself into the corner left under the rail.
         document.dispatchEvent(new CustomEvent("azecraft:layout"));
     }

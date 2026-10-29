@@ -183,12 +183,23 @@ These buttons in the dashboard header only affect **your** screen:
 - **Dashboard** (in the toolbar just right of the Scene list, with an ON/OFF indicator): shows or
   hides the dashboard. You can also bind a key to *Toggle mission dashboard* in Configure Controls.
   **Players** next to it shows Foundry's player list, which is otherwise hidden.
-- **List**: compact cards. The button cycles between Auto, On and Off. *Auto* turns compact mode on
-  for small screens or when the sidebar leaves little room. In compact mode, the expand button on a
-  card shows its details.
-  Compact cards give the portrait a third of the card's width and its full height, with the
-  stats beside it. Fame and Credits become icon buttons (their values are in the tooltips).
-- **Chevron**: collapses the mission panels to one bar that still shows the current objective.
+- **Card size** (◂ ▸ arrows on the top edge of the squad column): four sizes.
+  1. *Smallest*: two thirds of compact; name, wounds, strain, soak and defense only.
+  2. *Compact*: the portrait takes a third of the card's width and its full height, with the stats
+     beside it. The expand button on a card shows its details. Fame, Credits and Funds become icon
+     buttons (their values are in the tooltips).
+  3. *Normal*.
+  4. *Large*: the cards line up side by side across the screen, from the squad column to the
+     sidebar and above the mission panels; scroll sideways for more.
+
+  Until you choose, compact is used on small screens or when the sidebar leaves little room (and
+  normal otherwise). The same choice is *Squad rail size* in Configure Settings.
+- **Panel size** (▾ ▴ arrows on the top edge of the mission panels): one collapsed bar that still
+  shows the current mission, normal, half the screen, or up to the toolbar. Large cards and expanded
+  panels would cover each other: choosing large cards returns the panels to normal, and expanding
+  the panels returns the cards to normal.
+- Toolbar windows (UI Performance, Admin Panel and the like) always open where they would with
+  normal cards and panels, over anything expanded.
 
 The same options are in **Game Settings → Configure Settings → FFG Azecraft Addon**.
 
