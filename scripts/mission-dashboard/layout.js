@@ -20,45 +20,41 @@ const GAP = 12;
 
 /** Narrowest a mission tab may become, in CSS pixels. */
 export const MIN_COLUMN_WIDTH = 180;
-export const DEFAULT_COLUMNS = [1 / 3, 1 / 3, 1 / 3];
+export const DEFAULT_COLUMNS = [1 / 2, 1 / 2];
 
 function validColumns(fractions) {
-    return Array.isArray(fractions) && fractions.length === 3 && fractions.every(f => Number.isFinite(f) && f > 0)
+    return Array.isArray(fractions) && fractions.length === DEFAULT_COLUMNS.length && fractions.every(f => Number.isFinite(f) && f > 0)
         ? fractions
         : DEFAULT_COLUMNS;
 }
 
 /**
- * Pixel widths of the three mission tabs for a bar of `total` pixels. Pure.
+ * Pixel widths of the mission tabs (Current mission, Key intel) for a bar of `total` pixels. Pure.
  * Every tab keeps at least `min` pixels; the rest is shared in proportion to the saved fractions.
+ * Saved fractions of another length (the earlier three tabs) fall back to equal widths.
  */
 export function clampColumns(fractions, total, min = MIN_COLUMN_WIDTH) {
     const f = validColumns(fractions);
+    const n = f.length;
     const sum = f.reduce((a, b) => a + b, 0);
 
-    if (total <= 3 * min) return [total / 3, total / 3, total / 3];
+    if (total <= n * min) return f.map(() => total / n);
 
     const excess = f.map(x => Math.max(0, (x / sum) * total - min));
     const excessSum = excess.reduce((a, b) => a + b, 0);
-    const spare = total - 3 * min;
+    const spare = total - n * min;
 
-    return excess.map(e => min + (excessSum ? (e / excessSum) * spare : spare / 3));
+    return excess.map(e => min + (excessSum ? (e / excessSum) * spare : spare / n));
 }
 
 /**
- * Move one divider (0: objective|summary, 1: summary|intel) to `x` pixels from the bar's left edge.
- * Only the two tabs next to the divider change. Returns new fractions. Pure.
+ * Move the divider between the two tabs to `x` pixels from the bar's left edge, keeping both at
+ * least `min` wide. Returns new fractions. Pure.
  */
-export function moveDivider(fractions, divider, x, total, min = MIN_COLUMN_WIDTH) {
-    const [a, b, c] = clampColumns(fractions, total, min);
-
-    if (divider === 0) {
-        const first = Math.min(Math.max(x, min), a + b - min);
-        return [first / total, (a + b - first) / total, c / total];
-    }
-
-    const boundary = Math.min(Math.max(x, a + min), total - min);
-    return [a / total, (boundary - a) / total, (total - boundary) / total];
+export function moveDivider(fractions, x, total, min = MIN_COLUMN_WIDTH) {
+    const [a, b] = clampColumns(fractions, total, min);
+    const first = Math.min(Math.max(x, min), a + b - min);
+    return [first / total, (a + b - first) / total];
 }
 
 function visibleRect(selector) {
@@ -106,12 +102,12 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
         ? (destiny && destiny.top >= height * 0.6 ? railBottom : Math.max(railBottom, bottom + missionHeight))
         : railBottom;
 
-    // The mission bar: one strip split into three resizable tabs.
+    // The mission bar: one strip split into two resizable tabs.
     const barLeft = left + railWidth + GAP + (framed ? GAP : 0);
     const barRight = width - (framed ? Math.max(GAP, right) : right);
     const barWidth = Math.max(0, barRight - barLeft);
-    // The third tab takes whatever rounding leaves, so the three always add up to the bar width.
-    const [col1, col2] = clampColumns(columns, barWidth).map(Math.round);
+    // The second tab takes whatever rounding leaves, so the two always add up to the bar width.
+    const [col1] = clampColumns(columns, barWidth).map(Math.round);
 
     return {
         compact,
@@ -128,8 +124,7 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
             "--azd-bar-left": `${barLeft}px`,
             "--azd-bar-width": `${barWidth}px`,
             "--azd-col-1": `${col1}px`,
-            "--azd-col-2": `${col2}px`,
-            "--azd-col-3": `${barWidth - col1 - col2}px`
+            "--azd-col-2": `${barWidth - col1}px`
         },
         bar: { left: barLeft, width: barWidth }
     };

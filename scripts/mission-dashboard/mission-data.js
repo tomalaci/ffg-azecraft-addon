@@ -1,5 +1,5 @@
 /**
- * Mission tabs (current objective, mission summary, key intel) and People of Note.
+ * Mission tabs (current mission, key intel) and People of Note.
  *
  * Each tab shows one ledger (a module-managed Journal) at a time: the viewer's own choice, else the
  * configured default, else the most recent ledger. Its pages are the entries, oldest first, and the
@@ -142,11 +142,11 @@ export async function buildPanel(kind, defaultLedger, user, { ledger: choice = n
 }
 
 /**
- * Mission title: the name of the objective ledger being shown (else the summary ledger), otherwise
- * the Scene's navigation name.
+ * Mission title: the name of the Current mission ledger being shown, otherwise the Scene's
+ * navigation name.
  */
 export function missionTitle(panels, scene) {
-    const name = panels.objective?.ledgerName ?? panels.summary?.ledgerName;
+    const name = panels.objective?.ledgerName;
     // The header already says "Mission", so drop a "Mission: " prefix.
     if (name) return name.replace(/^mission\s*[:\-–—]\s*/i, "") || name;
     return scene?.navName || scene?.name || "";

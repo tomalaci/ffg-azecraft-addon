@@ -19,7 +19,7 @@
         <section data-section="overview">
             <h2>Overview</h2>
             <p>The mission dashboard is on <strong>every Scene</strong> and shows the <strong>active squad</strong>: its
-                members on the left, and the current objective, mission summary and key intel along the bottom. The map in
+                members on the left, and the current mission and key intel along the bottom. The map in
                 the middle stays a normal, playable map. To see the Scene art without it, anyone can minimize it on their
                 own screen.</p>
             <p>The dashboard only <em>shows</em> information that lives elsewhere, so it is always up to date:</p>
@@ -41,7 +41,7 @@
                 <li>Under <strong>Squads</strong>, rename “Main Squad” or create more squads with <strong>New</strong>.
                     For each squad, pick its <strong>members</strong> (the <em>Player Characters</em> folder is listed
                     first), its <strong>default ledgers</strong> and any <strong>People of Note</strong>. Save.</li>
-                <li>On each tab (objective, summary, intel), click <i class="fa-solid fa-book-medical" inert></i>
+                <li>On each tab (Current mission, Key intel), click <i class="fa-solid fa-book-medical" inert></i>
                     <strong>New ledger</strong> and name it after the operation. It is filed under the <em>Mission
                     Dashboard</em> Journal folder, can become the active squad's default, and opens its first entry for
                     writing. Untick <em>Players can read it</em> to prepare it privately.</li>
@@ -66,7 +66,7 @@
                     what you'd like your character to pursue or experience. The GM reads these for plot hooks.</li>
                 <li>Click a name to open the sheet. Click a portrait to view the art full size, or double-click it to open the sheet.
                     Click a critical injury to open its details. Orange chips under a name are powers the character is concentrating on (set on the sheet's Biotics / Tech tabs).</li>
-                <li>Use ‹ and › on the mission panels to read earlier objectives and summaries.</li>
+                <li>Use ‹ and › on the mission panels to read earlier entries.</li>
                 <li>Need the whole map? Click <strong>Dashboard</strong> in the toolbar next to the Scene list (it shows
                     ON or OFF). It only hides the dashboard on your screen; click it again to bring it back.
                     <strong>Players</strong> next to it shows who is online.</li>
@@ -124,9 +124,8 @@
         <section data-section="mission">
             <h2><i class="fa-solid fa-crosshairs" inert></i> Mission panels</h2>
             <ul>
-                <li><strong>Current objective</strong> (orange) answers “what do we do next?” Keep it short. It stays
+                <li><strong>Current mission</strong> (orange) answers “what do we do next?” Keep it short. It stays
                     visible even when the panels are collapsed.</li>
-                <li><strong>Mission summary</strong> answers “why are we here?”</li>
                 <li><strong>Key intel</strong> holds people, places and clues, with People of Note cards at the top.</li>
                 <li>Everything is normal Journal content: links to Actors and Journals, images and formatting all work.
                     Secret blocks are only shown to GMs.</li>
@@ -149,9 +148,10 @@
                     operation or a side job. <i class="fa-regular fa-star" inert></i> makes the ledger you're viewing the
                     active squad's default, which sends everyone's view of that tab to it. With no default set, the most
                     recently created ledger is shown.</li>
-                <li>Ledgers live in <em>Mission Dashboard › Objectives / Mission Summaries / Key Intel</em> in the
-                    Journal sidebar; rename, reorder or edit their pages there as usual. Your other Journals are never
-                    touched.</li>
+                <li>Ledgers live in <em>Mission Dashboard › Objectives / Key Intel</em> in the
+                    Journal sidebar (Current mission uses <em>Objectives</em>); rename, reorder or edit their pages there
+                    as usual. Your other Journals are never touched. Ledgers of the former Mission summary tab stay in
+                    <em>Mission Summaries</em> but are no longer shown.</li>
                 <li>Players only see ledgers and entries they can read. A ledger created with <em>Players can read
                     it</em> unticked is hidden until you change its ownership.</li>
             </ul>
@@ -203,8 +203,8 @@
                     On and Off. Auto turns compact mode on for small screens.</li>
                 <li><i class="fa-solid fa-chevron-down" inert></i> <strong>Collapse panels</strong>: shrinks the mission
                     panels to one bar that still shows the objective.</li>
-                <li><strong>Tab widths</strong>: drag the line between Objective and Summary, or Summary and Intel, to
-                    resize the tabs; double-click a line to make them equal again. Saved in this browser.</li>
+                <li><strong>Tab widths</strong>: drag the line between Current mission and Key intel to resize the
+                    tabs; double-click it to make them equal again. Saved in this browser.</li>
                 <li><strong>Card art</strong>: drag a character's art to choose which part shows; a plain click shows
                     the art full size and a double click opens the sheet. Zoom with the <i class="fa-solid fa-magnifying-glass-plus" inert></i> /
                     <i class="fa-solid fa-magnifying-glass-minus" inert></i> buttons that appear on hover, or

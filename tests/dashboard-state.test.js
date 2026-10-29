@@ -26,7 +26,7 @@ test("normalization does not mutate its input", () => {
 
     assert.deepEqual(raw, copy);
     assert.equal(config.party[0].actorUuid, "Actor.x");
-    assert.deepEqual(config.ledgers, { objective: null, summary: null, intel: null });
+    assert.deepEqual(config.ledgers, { objective: null, intel: null });
 });
 
 test("each tab has an optional default ledger; superseded page lists are ignored", () => {
@@ -35,7 +35,7 @@ test("each tab has an optional default ledger; superseded page lists are ignored
         mission: { objective: ["P.1"] }
     });
 
-    assert.deepEqual(config.ledgers, { objective: "JournalEntry.a", summary: null, intel: null });
+    assert.deepEqual(config.ledgers, { objective: "JournalEntry.a", intel: null });
     assert.equal("mission" in config, false);
 });
 
@@ -81,7 +81,7 @@ test("fingerprint detects a concurrent change", () => {
 test("referenced uuids for hook relevance", () => {
     const refs = referencedUuids(normalizeDashboardConfig({
         party: [{ id: "s1", actorUuid: "Actor.1" }, { id: "s2", actorUuid: null }],
-        ledgers: { summary: "JournalEntry.s", objective: "JournalEntry.o" },
+        ledgers: { intel: "JournalEntry.s", objective: "JournalEntry.o" },
         people: [{ id: "p", actorUuid: "Actor.9" }]
     }));
 

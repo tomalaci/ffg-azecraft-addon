@@ -16,18 +16,18 @@ let DashboardController;
 const world = { squads: { squads: [] }, activeSquadId: "" };
 
 /**
- * View a Scene whose active squad's default summary ledger is `ledgerUuid`. Each call makes a
+ * View a Scene whose active squad's default Current mission ledger is `ledgerUuid`. Each call makes a
  * different squad active (as when a GM switches squads or Scenes).
  */
 function makeScene(id, ledgerUuid) {
     const squadId = `squad-${id}`;
-    world.squads = { squads: [{ id: squadId, name: `Squad ${id}`, party: [], ledgers: { summary: ledgerUuid } }] };
+    world.squads = { squads: [{ id: squadId, name: `Squad ${id}`, party: [], ledgers: { objective: ledgerUuid } }] };
     world.activeSquadId = squadId;
     return { id, name: id, navName: "", flags: { "ffg-azecraft-addon": { dashboard: { enabled: true } } } };
 }
 
 before(async () => {
-    // One summary ledger per Scene, each with a single entry page.
+    // One Current mission ledger per Scene, each with a single entry page.
     const ledgers = [];
     for (const scene of ["A", "B"]) {
         const page = makePage({ name: `Summary ${scene}` });
@@ -41,7 +41,7 @@ before(async () => {
             uuid: `JournalEntry.${scene}`,
             name: `Ledger ${scene}`,
             _stats: { createdTime: scene === "A" ? 1 : 2 },
-            flags: { "ffg-azecraft-addon": { missionLedger: { panel: "summary" } } },
+            flags: { "ffg-azecraft-addon": { missionLedger: { panel: "objective" } } },
             pages: { contents: [page] }
         };
         page.parent = ledger;
@@ -52,7 +52,7 @@ before(async () => {
         constructor(controller) { this.controller = controller; this.rendered = false; }
         async render(options) {
             this.rendered = true;
-            renders.push({ options, summary: this.controller.view?.mission?.summary?.html });
+            renders.push({ options, summary: this.controller.view?.mission?.objective?.html });
         }
         async close() { this.rendered = false; }
         applyPreferences() {}
@@ -135,7 +135,7 @@ test("a slow render for Scene A is dropped after switching to Scene B", async ()
     const summaries = renders.map(r => r.summary).filter(Boolean);
     assert.ok(summaries.length > 0, "Scene B rendered");
     assert.ok(summaries.every(html => html === "<p>B</p>"), `only Scene B content rendered, got ${JSON.stringify(summaries)}`);
-    assert.equal(controller.view.mission.summary.html, "<p>B</p>");
+    assert.equal(controller.view.mission.objective.html, "<p>B</p>");
 });
 
 test("disabling the dashboard unmounts it", async () => {

@@ -161,7 +161,7 @@ export class DashboardController {
         }
 
         if (parts.has("header")) {
-            view.title = missionTitle({ objective: view.mission?.objective, summary: view.mission?.summary }, scene);
+            view.title = missionTitle({ objective: view.mission?.objective }, scene);
             view.standing = this.#standingSummary();
         }
 
@@ -177,8 +177,8 @@ export class DashboardController {
         if (this.app && quickParts.length) await this.#render(quickParts);
 
         const seq = this.#missionSeq;
-        const [summary, objective, intel] = await Promise.all(
-            ["summary", "objective", "intel"].map(key => buildPanel(key, config.ledgers[key], user, {
+        const [objective, intel] = await Promise.all(
+            ["objective", "intel"].map(key => buildPanel(key, config.ledgers[key], user, {
                 ledger: squad ? rememberedLedger(choices, squad, key) : null,
                 index: this.#panelView[key]?.index ?? null,
                 indexLedger: this.#panelView[key]?.ledger ?? null
@@ -188,10 +188,10 @@ export class DashboardController {
         // Dropped if the Scene changed, the HUD unmounted, or a newer mission refresh was queued.
         if (generation !== this.#sceneGeneration || seq !== this.#missionSeq || !this.#sceneId) return;
 
-        view.mission = { summary, objective, objectiveText: plainText(objective.html) };
+        view.mission = { objective, objectiveText: plainText(objective.html) };
         view.intel = intel;
         view.people = buildPeople(config, user);
-        view.title = missionTitle({ objective, summary }, scene);
+        view.title = missionTitle({ objective }, scene);
         // The first mount waits for mission content so no placeholder text flashes.
         await this.#render(this.app ? ["mission", "intel", "header"] : ALL_PARTS);
     }

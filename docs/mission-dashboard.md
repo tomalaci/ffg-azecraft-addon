@@ -1,8 +1,8 @@
 # Mission Dashboard: GM and player guide
 
 The mission dashboard is a heads-up display shown on **every** Foundry Scene. On the left is a column of
-squad cards. At the bottom are the mission panels: the current objective, a mission summary, and key
-intel with People of Note. The map in the middle stays a normal, playable canvas. Panning and zooming
+squad cards. At the bottom are the mission panels: the current mission, and key intel with People of
+Note. The map in the middle stays a normal, playable canvas. Panning and zooming
 move the map, not the dashboard.
 
 The dashboard only shows information that lives elsewhere:
@@ -12,7 +12,7 @@ The dashboard only shows information that lives elsewhere:
 | Name, portrait, wounds, strain, soak, defense, species, career, critical injuries | The character's Actor (the normal character sheet) |
 | Desire | The character sheet's **Motivations → Desire** field (Basic Information tab) |
 | Full-body art | The character's Actor (saved with the character, shared across missions) |
-| Mission summary, current objective, key intel | Journal pages you choose |
+| Current mission, key intel | Journal pages you choose |
 | Which characters, People of Note and default ledgers are shown | The active squad (world setting) |
 | Reputation (Fame, factions) and Resources (Credits, materials) | Tracker Journals in *Mission Dashboard › Trackers* (shared by all GMs, squads and Scenes) |
 | Hidden, compact or collapsed | Each person's own browser |
@@ -28,7 +28,7 @@ a group of characters with its own:
 
 - **members**, shown as the character cards;
 - **People of Note**;
-- **default ledgers**, one per tab (Current Objective, Mission Summary, Key Intel).
+- **default ledgers**, one per tab (Current Mission, Key Intel).
 
 GMs can create as many squads as they need, for example a ground team and a ship crew. The first
 time the module runs, it creates **Main Squad** from the earlier dashboard setup.
@@ -69,9 +69,10 @@ look at the Scene art, and brings it back with the **Dashboard** button.
 
 ### Ledgers and entries
 
-Each tab (Current Objective, Mission Summary, Key Intel) shows a **ledger**: a Journal whose pages
+Each tab (Current Mission, Key Intel) shows a **ledger**: a Journal whose pages
 are that tab's entries, oldest first. The module keeps ledgers in its own Journal folder,
-**Mission Dashboard**, with the subfolders **Objectives**, **Mission Summaries** and **Key Intel**.
+**Mission Dashboard**, with the subfolders **Objectives** (Current Mission) and **Key Intel**. The
+former Mission Summary tab is gone: its ledgers stay in **Mission Summaries** but are no longer shown.
 The active GM's client creates these folders automatically. Your other Journals are never touched.
 You can rename or move the folders and ledgers; they're recognized by a hidden tag, not by name.
 
@@ -91,8 +92,7 @@ You can rename or move the folders and ledgers; they're recognized by a hidden t
 
 Use the tabs like this:
 
-- **Summary** answers “why are we here?”
-- **Current Objective** answers “what do we do next?” Keep it short. It is highlighted in orange and
+- **Current Mission** answers “what do we do next?” Keep it short. It is highlighted in orange and
   stays visible even when the mission panels are collapsed.
 - **Key Intel** holds People, Places and Clues. Normal Actor, Item and Journal links work there.
 

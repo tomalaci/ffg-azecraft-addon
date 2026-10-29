@@ -87,8 +87,8 @@ Scene shows (`pickActiveSquad` falls back to the first squad). Each squad looks 
   name: "Main Squad",
   party: [{ id: "slot-1", actorUuid: "Actor.<id>" | null }, ...],   // 1..12 slots, 6 by default
   people: [{ id, actorUuid, role, status, relationship, note }],     // player-visible text only
-  ledgers: { objective: uuid | null, summary: uuid | null, intel: uuid | null },  // default ledger per tab
-  revisions: { objective: 0, summary: 0, intel: 0 }
+  ledgers: { objective: uuid | null, intel: uuid | null },  // default ledger per tab
+  revisions: { objective: 0, intel: 0 }
 }
 ```
 
@@ -96,7 +96,7 @@ Scene shows (`pickActiveSquad` falls back to the first squad). Each squad looks 
   `{ [squadId]: { [tab]: { uuid, revision } } }`. `rememberedLedger` only honours a choice whose
   `revision` equals the squad's current revision for that tab.
 - **Resets.** `setSquadDefaultLedger`, a default changed in `saveSquads`, and `setActiveSquad` bump
-  revisions (one tab, or all three for activation). That sends every client back to the default
+  revisions (one tab, or all of them for activation). That sends every client back to the default
   without anyone writing to other users' storage.
 - **Writes.** All squad writes are GM-only read-modify-writes of the current setting. `saveSquads`
   checks a fingerprint that ignores revisions, so a concurrent edit is detected and the GM chooses
@@ -120,7 +120,8 @@ Scene shows (`pickActiveSquad` falls back to the first squad). Each squad looks 
 
 - **Ledgers.** A ledger is a JournalEntry with `flags["ffg-azecraft-addon"].missionLedger = { panel }`.
   Ledgers live in module folders tagged `flags["ffg-azecraft-addon"].dashboardFolder` (`root`,
-  `objective`, `summary`, `intel`). `ensureLedgerFolders` creates the folders on the active GM's
+  `objective`, `intel`; earlier builds also made `summary`, for the former Mission Summary tab, whose
+  ledgers are now unused). The Current Mission tab uses the `objective` key. `ensureLedgerFolders` creates the folders on the active GM's
   `ready`, and whenever a ledger is created. A ledger's pages, sorted by `sort`, are its entries;
   the last one is the newest.
 - **Which ledger shows.** `chooseLedger(visible, default, choice)` picks the viewer's choice, then
@@ -191,10 +192,10 @@ and is only read by the migration.
   around the map window. `frameWindow()` computes that window. `fitSceneToFrame()` pans and zooms
   (`canvas.animatePan`) so `canvas.dimensions.sceneRect` fits inside it. That runs only on the
   header button, or once on mount when the Scene flag `fitOnOpen` is set.
-- **Mission bar.** `computeLayout` returns the bar geometry and three column widths
-  (`--azd-bar-left`, `--azd-col-1..3`). The widths come from the client setting `dashboardColumns`
-  (fractions) through `clampColumns`, which keeps each tab at least 180px. `moveDivider` changes only
-  the two neighbouring tabs. The `dividers` part renders last, so its handles sit above the tabs.
+- **Mission bar.** `computeLayout` returns the bar geometry and two column widths
+  (`--azd-bar-left`, `--azd-col-1..2`). The widths come from the client setting `dashboardColumns`
+  (fractions) through `clampColumns`, which keeps each tab at least 180px. `moveDivider` moves the
+  one divider; saved widths from the earlier three tabs fall back to equal widths. The `dividers` part renders last, so its handles sit above the tabs.
 - **Card art.** The art box has a fixed height (0.55 × rail width). A view `{x, y, z}` (`art-view.js`,
   pure) sets CSS variables. The `<img>` is sized to z × the box with `object-fit: cover`, and offset
   by the same fraction as its `object-position`, which places the picture at x%/y% of its overflow

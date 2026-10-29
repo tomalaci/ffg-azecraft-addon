@@ -136,7 +136,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         frame: { template: `${TEMPLATE_ROOT}/frame.hbs` },
         header: { template: `${TEMPLATE_ROOT}/header.hbs` },
         rail: { template: `${TEMPLATE_ROOT}/rail.hbs`, scrollable: [".azd-rail-cards"] },
-        mission: { template: `${TEMPLATE_ROOT}/mission.hbs`, scrollable: [".azd-objective-body", ".azd-summary-body"] },
+        mission: { template: `${TEMPLATE_ROOT}/mission.hbs`, scrollable: [".azd-objective-body"] },
         intel: { template: `${TEMPLATE_ROOT}/intel.hbs`, scrollable: [".azd-intel-scroll"] },
         // Last, so the resize handles sit above the tabs they separate.
         dividers: { template: `${TEMPLATE_ROOT}/dividers.hbs` }
@@ -830,13 +830,12 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         if (!bar?.width) return;
 
         event.preventDefault();
-        const index = Number(divider.dataset.divider);
         const start = this.controller.preferences().columns;
         divider.setPointerCapture(event.pointerId);
         divider.classList.add("azd-divider--active");
 
         const move = moveEvent => {
-            this.#dragColumns = moveDivider(start, index, moveEvent.clientX - bar.left, bar.width);
+            this.#dragColumns = moveDivider(start, moveEvent.clientX - bar.left, bar.width);
             this.#layout.apply();
         };
         const end = () => {
@@ -971,7 +970,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const confirmed = await DialogV2.confirm({
             window: { title: "Change active squad" },
             content: `<p>Make <strong>${escape(next.name)}</strong> the active squad for <strong>everyone</strong>?</p>
-                <p class="hint">Every player's dashboard switches to this squad's members, and every Objective, Summary and Intel tab jumps to this squad's default ledger at its newest entry. Anything people were reading in other ledgers is replaced.</p>`
+                <p class="hint">Every player's dashboard switches to this squad's members, and the Current mission and Key intel tabs jump to this squad's default ledger at its newest entry. Anything people were reading in other ledgers is replaced.</p>`
         });
 
         if (!confirmed) {

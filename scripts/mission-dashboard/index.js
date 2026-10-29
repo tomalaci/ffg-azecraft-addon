@@ -62,13 +62,13 @@ function registerSettings() {
         onChange: () => controller?.app?.applyPreferences()
     });
 
-    // Relative widths of the objective / summary / intel tabs, set by dragging the dividers.
+    // Relative widths of the Current mission / Key intel tabs, set by dragging the divider.
     game.settings.register(MODULE_ID, SETTINGS.columns, {
         name: "Mission tab widths",
         scope: "client",
         config: false,
         type: Array,
-        default: [1 / 3, 1 / 3, 1 / 3],
+        default: [1 / 2, 1 / 2],
         onChange: () => controller?.app?.applyPreferences()
     });
 

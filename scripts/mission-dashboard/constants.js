@@ -9,10 +9,13 @@ export const MAX_SLOT_COUNT = 12;
  * Mission panels (tabs) in display order. Each tab shows one ledger at a time: a module-managed
  * Journal whose pages are the tab's entries, oldest first. `pageName` names new entries and
  * `folderName` is the tab's subfolder under the "Mission Dashboard" Journal folder.
+ *
+ * "Current mission" keeps the key and folder of the former Current Objective tab, so its ledgers
+ * carry over. The former Mission Summary tab ("summary") is gone; its ledgers stay in their Journal
+ * folder, unused.
  */
 export const MISSION_PANELS = [
-    { key: "objective", label: "Current objective", pageName: "Objective", folderName: "Objectives" },
-    { key: "summary", label: "Mission summary", pageName: "Summary", folderName: "Mission Summaries" },
+    { key: "objective", label: "Current mission", pageName: "Objective", folderName: "Objectives" },
     { key: "intel", label: "Key intel", pageName: "Intel", folderName: "Key Intel" }
 ];
 

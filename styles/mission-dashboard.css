@@ -1009,8 +1009,8 @@
 /*  Mission and intel panels                    */
 /* -------------------------------------------- */
 
-/* One merged bar: objective | summary (the mission part) and intel sit edge to edge, sized by the
- * column widths the layout computes from this client's saved divider positions. */
+/* One merged bar: Current mission and Key intel sit edge to edge, sized by the column widths the
+ * layout computes from this client's saved divider position. */
 #azecraft-mission-dashboard .azd-panel {
     position: absolute;
     bottom: var(--azd-bottom, 84px);
@@ -1022,14 +1022,14 @@
 
 #azecraft-mission-dashboard .azd-mission {
     left: var(--azd-bar-left);
-    width: calc(var(--azd-col-1) + var(--azd-col-2));
+    width: var(--azd-col-1);
     flex-direction: row;
     clip-path: polygon(0 0, 100% 0, 100% 100%, var(--azd-chamfer) 100%, 0 calc(100% - var(--azd-chamfer)));
 }
 
 #azecraft-mission-dashboard .azd-intel {
-    left: calc(var(--azd-bar-left) + var(--azd-col-1) + var(--azd-col-2));
-    width: var(--azd-col-3);
+    left: calc(var(--azd-bar-left) + var(--azd-col-1));
+    width: var(--azd-col-2);
     border-left: 1px solid var(--azd-line-soft);
     clip-path: polygon(0 0, calc(100% - var(--azd-chamfer)) 0, 100% var(--azd-chamfer), 100% 100%, 0 100%);
 }
@@ -1051,7 +1051,6 @@
 }
 
 #azecraft-mission-dashboard .azd-divider[data-divider="0"] { left: calc(var(--azd-bar-left) + var(--azd-col-1)); }
-#azecraft-mission-dashboard .azd-divider[data-divider="1"] { left: calc(var(--azd-bar-left) + var(--azd-col-1) + var(--azd-col-2)); }
 
 #azecraft-mission-dashboard .azd-divider::after {
     content: "";
@@ -1074,8 +1073,7 @@
     display: none;
 }
 
-#azecraft-mission-dashboard .azd-objective,
-#azecraft-mission-dashboard .azd-summary {
+#azecraft-mission-dashboard .azd-objective {
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -1083,13 +1081,9 @@
 }
 
 #azecraft-mission-dashboard .azd-objective {
-    flex: 0 0 var(--azd-col-1);
+    flex: 1;
     background: linear-gradient(180deg, rgba(255, 157, 66, 0.13), rgba(255, 157, 66, 0.03));
     box-shadow: inset 3px 0 0 var(--azd-orange);
-}
-
-#azecraft-mission-dashboard .azd-summary {
-    flex: 1;
 }
 
 #azecraft-mission-dashboard .azd-panel-head {
@@ -1305,13 +1299,8 @@
     white-space: nowrap;
 }
 
-#azecraft-mission-dashboard.azd--mission-collapsed .azd-summary,
 #azecraft-mission-dashboard.azd--mission-collapsed .azd-intel .azd-panel-head {
     border-bottom: none;
-}
-
-#azecraft-mission-dashboard.azd--mission-collapsed .azd-summary {
-    display: none;
 }
 
 /* People of Note */
