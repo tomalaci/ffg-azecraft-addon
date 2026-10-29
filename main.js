@@ -20,6 +20,7 @@ import { ShareImageApp, initImageShare } from "./scripts/share/image-share.js";
 import { ShareTextApp, initShareText } from "./scripts/share/share-text.js";
 import { initShareArchive } from "./scripts/share/share-archive.js";
 import { initQuickEffects } from "./scripts/effects/quick-effects.js";
+import { ItemMakerApp, initItemMaker } from "./scripts/item-maker/item-maker.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -64,6 +65,19 @@ Hooks.once("init", () => {
         isActive: () => Boolean(foundry.applications.instances.get("azecraft-share-text")),
         onClick: async () => {
             await ShareTextApp.toggle();
+            refreshToolbar();
+        }
+    });
+    initItemMaker();
+    registerToolbarButton({
+        id: "item-maker",
+        order: 27,
+        label: "Item Maker",
+        icon: "fa-solid fa-hammer",
+        tooltip: "Make an item (weapon, armour, gear, attachment, property, talent, ability) with properties and an icon",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-item-maker")),
+        onClick: async () => {
+            await ItemMakerApp.toggle();
             refreshToolbar();
         }
     });

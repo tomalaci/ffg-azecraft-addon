@@ -1,0 +1,194 @@
+<div class="azim">
+    <form class="azim-form" autocomplete="off">
+        <div class="azim-types" role="radiogroup" aria-label="Item type">
+            {{#each types as |t|}}
+            <button type="button" class="azim-type {{#if t.selected}}azim-type--on{{/if}}" data-action="setType" data-type="{{t.key}}" role="radio" aria-checked="{{t.selected}}"><i class="{{t.icon}}" inert></i> {{t.label}}</button>
+            {{/each}}
+        </div>
+
+        <div class="azim-head">
+            <button type="button" class="azim-icon-preview" data-action="togglePicker" data-tooltip="Choose an icon" aria-label="Choose an icon">
+                <img src="{{img}}" alt="">
+            </button>
+            <div class="azim-name">
+                <label for="azim-name-{{appId}}">Name</label>
+                <input type="text" id="azim-name-{{appId}}" name="name" value="{{draft.name}}" maxlength="{{limits.name}}" placeholder="e.g. Kassa Fabrication Locust" required>
+            </div>
+        </div>
+
+        <div class="azim-similar" data-azim-similar hidden>
+            <span class="azim-label"><i class="fa-solid fa-clone" inert></i> Similar items</span>
+            <ul data-azim-similar-list></ul>
+        </div>
+
+        {{#if hasGroups}}
+        <div class="azim-grid">
+            {{#if groups.weapon}}
+            <label>Skill
+                <select name="skill">{{#each skills as |s|}}<option value="{{s}}" {{#if (eq s @root.draft.skill)}}selected{{/if}}>{{s}}</option>{{/each}}</select>
+            </label>
+            <label>Damage <input type="number" name="damage" min="0" value="{{draft.damage}}"></label>
+            <label>Critical <input type="number" name="crit" min="0" value="{{draft.crit}}"></label>
+            <label>Range
+                <select name="range">{{#each ranges as |r|}}<option value="{{r}}" {{#if (eq r @root.draft.range)}}selected{{/if}}>{{r}}</option>{{/each}}</select>
+            </label>
+            {{/if}}
+            {{#if groups.armour}}
+            <label>Soak <input type="number" name="soak" min="0" value="{{draft.soak}}"></label>
+            <label>Defense <input type="number" name="defence" min="0" value="{{draft.defence}}"></label>
+            {{/if}}
+            {{#if groups.basic}}
+            <label>Price <input type="number" name="price" min="0" value="{{draft.price}}"></label>
+            <label>Rarity <input type="number" name="rarity" min="0" max="20" value="{{draft.rarity}}"></label>
+            <label>Encumbrance <input type="number" name="encumbrance" min="0" value="{{draft.encumbrance}}"></label>
+            {{/if}}
+            {{#if groups.hardpoints}}
+            <label>Hard points <input type="number" name="hardpoints" min="0" value="{{draft.hardpoints}}"></label>
+            {{/if}}
+            {{#if groups.quantity}}
+            <label>Quantity <input type="number" name="quantity" min="1" value="{{draft.quantity}}"></label>
+            {{/if}}
+            {{#if groups.attachment}}
+            <label>Fits
+                <select name="attachmentType">{{#each attachmentTypes as |t|}}<option value="{{t.value}}" {{#if (eq t.value @root.draft.attachmentType)}}selected{{/if}}>{{t.label}}</option>{{/each}}</select>
+            </label>
+            {{/if}}
+            {{#if groups.modifier}}
+            <label>Applies to
+                <select name="modifierType">{{#each modifierTypes as |t|}}<option value="{{t.value}}" {{#if (eq t.value @root.draft.modifierType)}}selected{{/if}}>{{t.label}}</option>{{/each}}</select>
+            </label>
+            <label>Rank <input type="number" name="rank" min="0" value="{{draft.rank}}"></label>
+            {{/if}}
+            {{#if groups.talent}}
+            <label class="azim-wide">Activation
+                <select name="activation">{{#each activations as |a|}}<option value="{{a}}" {{#if (eq a @root.draft.activation)}}selected{{/if}}>{{a}}</option>{{/each}}</select>
+            </label>
+            <label>Tier <input type="number" name="tier" min="1" max="5" value="{{draft.tier}}"></label>
+            <label class="azim-check"><input type="checkbox" name="ranked" {{checked draft.ranked}}> Ranked</label>
+            {{/if}}
+            {{#if groups.basic}}
+            <label class="azim-check"><input type="checkbox" name="restricted" {{checked draft.restricted}}> Restricted</label>
+            {{/if}}
+            {{#if groups.weapon}}
+            <label class="azim-full">Special <input type="text" name="special" maxlength="{{limits.special}}" value="{{draft.special}}" placeholder="Anything the stats don't cover"></label>
+            {{/if}}
+        </div>
+        {{/if}}
+
+        {{#if hasProperties}}
+        <div class="azim-props">
+            <span class="azim-label"><i class="fa-solid fa-tags" inert></i> Item properties</span>
+            {{#if properties.length}}
+            <ul class="azim-prop-list">
+                {{#each properties as |p|}}
+                <li>
+                    <span class="azim-prop-name" data-tooltip="{{p.tooltip}}">{{p.name}}</span>
+                    <label class="azim-prop-rank">Rank <input type="number" id="azim-rank-{{p.id}}" min="1" max="99" value="{{p.rank}}" data-azim-rank="{{p.id}}"></label>
+                    <button type="button" data-action="removeProperty" data-id="{{p.id}}" data-tooltip="Remove" aria-label="Remove {{p.name}}"><i class="fa-solid fa-xmark" inert></i></button>
+                </li>
+                {{/each}}
+            </ul>
+            {{/if}}
+            <div class="azim-prop-search">
+                <input type="search" id="azim-prop-search-{{appId}}" data-azim-prop-search placeholder="Search properties to add (e.g. Blast, Pierce, Accurate)" aria-label="Search item properties">
+                <ul class="azim-prop-results" data-azim-prop-results hidden></ul>
+            </div>
+        </div>
+        {{/if}}
+
+        <div class="azim-cost">
+            <span class="azim-label"><i class="fa-solid fa-coins" inert></i> Crafting cost</span>
+            {{#if costs.length}}
+            <ul class="azim-cost-list">
+                {{#each costs as |c|}}
+                <li>
+                    <input type="number" min="0" value="{{c.amount}}" data-azim-cost="{{c.index}}" data-field="amount" aria-label="Amount">
+                    <select data-azim-cost="{{c.index}}" data-field="resource" aria-label="Paid with">
+                        {{#each c.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
+                    </select>
+                    <button type="button" data-action="removeCost" data-index="{{c.index}}" data-tooltip="Remove" aria-label="Remove this cost"><i class="fa-solid fa-xmark" inert></i></button>
+                </li>
+                {{/each}}
+            </ul>
+            {{/if}}
+            <div class="azim-cost-tools">
+                {{#if canAddCost}}<button type="button" data-action="addCost"><i class="fa-solid fa-plus" inert></i> Add cost</button>{{/if}}
+                {{#if suggestion}}<button type="button" data-action="useSuggestion" data-tooltip="Materials: {{suggestion.percent}}% of the price (set by the GMs)"><i class="fa-solid fa-wand-magic-sparkles" inert></i> Suggested: {{suggestion.label}} credits</button>{{/if}}
+            </div>
+            {{#if costs.length}}
+            <div class="azim-cost-pay">
+                <label class="azim-check"><input type="checkbox" name="pay" {{checked draft.pay}}> Pay now</label>
+                {{#if usesCredits}}
+                <label>Credits from
+                    <select name="payer">
+                        {{#each payers as |a|}}<option value="{{a.id}}" {{#if a.selected}}selected{{/if}}>{{a.name}} ({{a.credits}} cr)</option>{{else}}<option value="">No character of yours</option>{{/each}}
+                    </select>
+                </label>
+                {{/if}}
+                <span class="azim-muted">Paying takes the credits from the character's sheet and records the resources in the Resources tracker. Either way the cost is written into the item.</span>
+            </div>
+            {{/if}}
+        </div>
+
+        <label class="azim-desc">Description
+            <textarea name="description" rows="6" maxlength="{{limits.description}}" placeholder="What it is, what it does. Plain text; empty lines start a new paragraph.">{{draft.description}}</textarea>
+        </label>
+
+        <div class="azim-actions">
+            <span class="azim-hint"><i class="fa-solid fa-folder" inert></i> Saved to <strong>Item Maker › {{userName}}</strong>; drag it out like any item.</span>
+            {{#if busy}}<span class="azim-busy"><i class="fa-solid fa-spinner fa-spin" inert></i> {{busy}}</span>{{/if}}
+            <button type="button" data-action="reset" data-tooltip="Clear the form"><i class="fa-solid fa-eraser" inert></i> Clear</button>
+            <button type="button" class="azim-create" data-action="create" {{disabled busy}}><i class="fa-solid fa-hammer" inert></i> Create {{typeLabel}}</button>
+        </div>
+    </form>
+
+    <aside class="azim-side">
+        <div class="azim-picker">
+            <div class="azim-picker-head">
+                <span class="azim-label"><i class="fa-solid fa-icons" inert></i> Icons</span>
+                <select data-azim-root aria-label="Icon folder">
+                    {{#each iconRoots as |root|}}<option value="{{root}}" {{#if (eq root @root.picker.root)}}selected{{/if}}>{{root}}</option>{{/each}}
+                </select>
+            </div>
+            <div class="azim-crumbs">
+                {{#each crumbs as |c|}}{{#unless @first}}<span class="azim-crumb-sep">/</span>{{/unless}}<button type="button" class="azim-crumb" data-action="openFolder" data-path="{{c.path}}">{{c.name}}</button>{{/each}}
+                <input type="search" data-azim-icon-filter value="{{picker.filter}}" placeholder="Filter" aria-label="Filter icons">
+            </div>
+            {{#if picker.dirs.length}}
+            <div class="azim-dirs">
+                {{#each picker.dirs as |d|}}<button type="button" data-action="openFolder" data-path="{{d.path}}"><i class="fa-solid fa-folder" inert></i> {{d.name}}</button>{{/each}}
+            </div>
+            {{/if}}
+            <div class="azim-icons" data-azim-icons>
+                {{#if picker.loading}}<p class="azim-muted"><i class="fa-solid fa-spinner fa-spin" inert></i> Loading…</p>
+                {{else if picker.error}}<p class="azim-muted">{{picker.error}}</p>
+                {{else}}
+                {{#each picker.files as |f|}}<button type="button" class="azim-icon {{#if f.selected}}azim-icon--on{{/if}}" data-action="pickIcon" data-path="{{f.path}}" data-name="{{f.name}}" data-tooltip="{{f.name}}"><img src="{{f.path}}" alt="" loading="lazy"></button>{{/each}}
+                {{#unless picker.files.length}}<p class="azim-muted">No images here{{#if picker.dirs.length}}; open a folder above{{/if}}.</p>{{/unless}}
+                {{#if picker.more}}<p class="azim-muted">{{picker.more}} more; use the filter.</p>{{/if}}
+                {{/if}}
+            </div>
+        </div>
+
+        {{#if isGM}}
+        <details class="azim-roots" {{#if rootsOpen}}open{{/if}}>
+            <summary><i class="fa-solid fa-folder-tree" inert></i> Icon folders (GM)</summary>
+            <ul>
+                {{#each iconRoots as |root|}}
+                <li><span>{{root}}</span><button type="button" data-action="removeRoot" data-path="{{root}}" data-tooltip="Remove from the list" aria-label="Remove {{root}}"><i class="fa-solid fa-xmark" inert></i></button></li>
+                {{/each}}
+            </ul>
+            <div class="azim-root-add">
+                <input type="text" data-azim-root-input placeholder="e.g. worlds/{{worldId}}/icons" aria-label="Folder to add">
+                <button type="button" data-action="browseRoot" data-tooltip="Browse for a folder"><i class="fa-solid fa-folder-open" inert></i></button>
+                <button type="button" data-action="addRoot"><i class="fa-solid fa-plus" inert></i> Add</button>
+            </div>
+            <p class="azim-muted">Everyone picks icons from these folders (and their subfolders). Players' requests go through a GM's client, so a GM must be online.</p>
+            <div class="azim-root-add azim-percent">
+                <label>Suggested materials cost <input type="number" name="percent" min="0" max="1000" value="{{percent}}"> % of the price</label>
+                <button type="button" data-action="savePercent">Save</button>
+            </div>
+        </details>
+        {{/if}}
+    </aside>
+</div>
