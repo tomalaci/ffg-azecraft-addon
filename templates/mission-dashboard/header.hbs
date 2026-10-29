@@ -22,13 +22,18 @@
             <i class="fa-solid fa-ranking-star" inert></i>
         </button>
         {{/if}}
+        {{#if credits}}
+        <button type="button" class="azd-chip" data-action="showCredits" data-tooltip="{{credits.tooltip}}" aria-label="Squad credits: {{credits.label}}">
+            <i class="fa-solid fa-coins" inert></i><span class="azd-chip-label"> {{credits.label}} cr</span>
+        </button>
+        {{/if}}
         {{#if standing.resources.ready}}
-        <button type="button" class="azd-chip" data-action="openTracker" data-kind="resources" data-tooltip="Resources: {{standing.resources.value}} cr and materials" aria-label="Resources: {{standing.resources.value}} credits">
-            <i class="fa-solid fa-coins" inert></i><span class="azd-chip-label"> {{standing.resources.value}} cr</span>
+        <button type="button" class="azd-chip" data-action="openTracker" data-kind="resources" data-tooltip="Resources: Helping Hands funds {{standing.resources.value}} and materials" aria-label="Resources: funds {{standing.resources.value}}">
+            <i class="fa-solid fa-building-columns" inert></i><span class="azd-chip-label"> Funds {{standing.resources.value}}</span>
         </button>
         {{else if isGM}}
         <button type="button" class="azd-icon-button" data-action="openTracker" data-kind="resources" data-tooltip="Resources (not set up yet)" aria-label="Resources">
-            <i class="fa-solid fa-coins" inert></i>
+            <i class="fa-solid fa-building-columns" inert></i>
         </button>
         {{/if}}
         <button type="button" class="azd-icon-button" data-action="cycleCompact" data-tooltip="Compact cards: {{compactLabel}}" aria-label="Compact cards: {{compactLabel}}">

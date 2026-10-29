@@ -14,7 +14,8 @@ The dashboard only shows information that lives elsewhere:
 | Full-body art | The character's Actor (saved with the character, shared across missions) |
 | Current mission, key intel | Journal pages you choose |
 | Which characters, People of Note and default ledgers are shown | The active squad (world setting) |
-| Reputation (Fame, factions) and Resources (Credits, materials) | Tracker Journals in *Mission Dashboard › Trackers* (shared by all GMs, squads and Scenes) |
+| Reputation (Fame, factions) and Resources (Funds, materials) | Tracker Journals in *Mission Dashboard › Trackers* (shared by all GMs, squads and Scenes) |
+| Squad credits (the cr chip) | The Credits field on each member's character sheet |
 | Hidden, compact or collapsed | Each person's own browser |
 
 In the game, the **(?)** button in the dashboard header opens a help window with a GM quick start, a
@@ -201,12 +202,16 @@ Dashboard › Trackers**:
   major Mass Effect factions: Systems Alliance, Citadel Council, C-Sec, the Asari, Turian, Salarian
   and Krogan governments, the Quarian Migrant Fleet, the Volus, the Batarian Hegemony, Cerberus,
   the Shadow Broker, the Terminus Systems, Blue Suns, Eclipse, Blood Pack and the Geth.
-- **Resources**: **Credits** plus raw materials (Element Zero, Platinum, Palladium, Iridium,
+- **Resources**: **Funds** (the Helping Hands company's money; called Credits before) plus raw materials (Element Zero, Platinum, Palladium, Iridium,
   Aluminum, Titanium, Iron, Copper, Nickel, Lithium, Omni-gel). GMs can add custom resources.
 
 All values are plain whole numbers that start at 0. There are no caps and no automatic effects on
-rolls. Open the trackers with the Fame and credits chips in the dashboard header. Everyone can see
+rolls. Open the trackers with the Fame and Funds chips in the dashboard header. Everyone can see
 the totals and the history.
+
+Players keep their own money too: the **cr** chip in the header is the squad's credits, the sum of
+the Credits field on the members' character sheets (only members you can see). Click it for each
+member's amount. Credits are changed on the character sheet, not in a tracker.
 
 The first time the module runs, the active GM's client creates both trackers. If a tracker Journal
 is later deleted, it is not recreated silently: its window offers to create a new one or to select
@@ -217,7 +222,7 @@ an existing tracker Journal.
 - Use **−** or **+** on a row (or on Fame). A dialog opens where you set the amount and must enter
   a **reason**. Players see the reason, so keep it player-safe. The session label is optional.
 - For an existing campaign, record the current values as opening entries, for example
-  "+3 Systems Alliance: Opening balance" or "+12,000 Credits: Starting funds".
+  "+3 Systems Alliance: Opening balance" or "+12,000 Funds: Starting funds".
 - Mistakes are fixed with **Correct** (the ↺ button in History). It records a new entry that
   reverses the original. The original stays in the history, marked *corrected*.
 - **Archive** hides an entry from the list without losing its history, and **Rename** keeps its

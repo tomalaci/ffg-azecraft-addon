@@ -112,6 +112,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             cycleCompact: MissionDashboardApp.#onCycleCompact,
             toggleMission: MissionDashboardApp.#onToggleMission,
             openTracker: MissionDashboardApp.#onOpenTracker,
+            showCredits: MissionDashboardApp.#onShowCredits,
             pageEntry: MissionDashboardApp.#onPageEntry,
             openHelp: () => DashboardHelpApp.open(),
             fitScene: MissionDashboardApp.#onFitScene,
@@ -958,6 +959,27 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
 
     static #onOpenTracker(event, target) {
         this.controller.openTracker(target.dataset.kind);
+    }
+
+    /** The squad's credits per member (from their sheets); a name opens the sheet. */
+    static async #onShowCredits() {
+        const credits = this.controller.view?.credits;
+        if (!credits) return;
+        const escape = foundry.utils.escapeHTML;
+        const rows = credits.members.map(m => `<tr><td><a class="azd-credits-member" data-uuid="${escape(m.uuid)}">${escape(m.name)}</a></td><td class="azd-credits-amount">${escape(m.label)}</td></tr>`).join("");
+        await DialogV2.prompt({
+            window: { title: "Squad credits", icon: "fa-solid fa-coins" },
+            classes: ["azd-credits-dialog"],
+            content: `<p class="hint">Each character's own credits, from their sheet. The company's money is <strong>Funds</strong> in Resources.</p>
+                <table class="azd-credits-table"><tbody>${rows}</tbody><tfoot><tr><th>Total</th><th class="azd-credits-amount">${escape(credits.label)}</th></tr></tfoot></table>`,
+            ok: { label: "Close" },
+            render: (_event, dialog) => {
+                dialog.element.querySelectorAll("[data-uuid]").forEach(link => link.addEventListener("click", () => {
+                    const actor = MissionDashboardApp.#resolve(link.dataset.uuid);
+                    if (actor?.testUserPermission(game.user, "LIMITED")) actor.sheet?.render(true);
+                }));
+            }
+        });
     }
 
     /** GM: make another squad active for everyone, after a warning (it resets everyone's tabs). */

@@ -201,6 +201,8 @@ export function buildCharacterCard(slot, actor, user) {
             ranged: formatNumber(toNumber(stats?.defence?.ranged))
         },
         criticalInjuries,
+        // The character's own money (sheet: Credits); the header sums it for the squad.
+        credits: toNumber(stats?.credits?.value),
         concentrating: readConcentration(actor),
         canEditConcentration: canEdit,
         // Statuses and quick effects; anyone may change them (the GM relays for non-owners).
@@ -212,4 +214,21 @@ export function buildCharacterCard(slot, actor, user) {
     };
 
     return card;
+}
+
+/**
+ * The squad's credits: the sum of the credits on the sheets of the members this user can see
+ * (Observer or higher), with each member's amount. Null when no card shows credits.
+ */
+export function squadCredits(cards) {
+    const members = (cards ?? []).filter(card => card.availability === "available" && card.credits !== null && card.credits !== undefined)
+        .map(card => ({ uuid: card.uuid, name: card.name, credits: card.credits }));
+    if (!members.length) return null;
+    const total = members.reduce((sum, member) => sum + member.credits, 0);
+    return {
+        total,
+        label: total.toLocaleString(),
+        members: members.map(member => ({ ...member, label: member.credits.toLocaleString() })),
+        tooltip: `Squad credits (from the character sheets): ${members.map(m => `${m.name} ${m.credits.toLocaleString()}`).join(", ")}`
+    };
 }

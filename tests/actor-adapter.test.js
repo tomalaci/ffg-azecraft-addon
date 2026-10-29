@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildCharacterCard, hasRichFormatting, htmlToText, textToHtml, toNumber } from "../scripts/mission-dashboard/actor-adapter.js";
+import { buildCharacterCard, hasRichFormatting, htmlToText, squadCredits, textToHtml, toNumber } from "../scripts/mission-dashboard/actor-adapter.js";
 import { LEVELS, makeActor, makeItem, makeUser } from "./fixtures.js";
 
 const slot = { id: "slot-1", actorUuid: "Actor.a1" };
@@ -139,4 +139,18 @@ test("plain-text Desire edits round-trip through the sheet's HTML safely", () =>
     assert.equal(hasRichFormatting(html), false);
     assert.equal(hasRichFormatting("<p><strong>bold</strong></p>"), true);
     assert.equal(hasRichFormatting("<p><a href=\"x\">link</a></p>"), true);
+});
+
+test("squad credits sum the sheets of the members the viewer can see", () => {
+    const cards = [
+        { availability: "available", uuid: "Actor.a", name: "Aaron", credits: 306 },
+        { availability: "available", uuid: "Actor.b", name: "Dredd", credits: 72 },
+        { availability: "available", uuid: "Actor.c", name: "Blank", credits: null },
+        { availability: "limited", uuid: "Actor.d", name: "Hidden" },
+        { availability: "empty" }
+    ];
+    const credits = squadCredits(cards);
+    assert.equal(credits.total, 378);
+    assert.deepEqual(credits.members.map(m => m.name), ["Aaron", "Dredd"]);
+    assert.equal(squadCredits([{ availability: "limited" }]), null);
 });

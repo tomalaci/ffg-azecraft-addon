@@ -1,5 +1,9 @@
 /**
- * Campaign trackers: Reputation (Fame + factions) and Resources (Credits + raw materials).
+ * Campaign trackers: Reputation (Fame + factions) and Resources (Funds + raw materials).
+ *
+ * Funds are the Helping Hands company's money. Each character's own credits stay on their sheet
+ * (the dashboard header sums them for the squad). The Funds entry keeps the id `credits` it had
+ * when it was called Credits, so its history carries over.
  *
  * Storage per tracker: one JournalEntry in "Mission Dashboard › Trackers", referenced by a world
  * setting. Entry definitions (factions / resources) live in the Journal's flags. Every adjustment is
@@ -17,7 +21,11 @@ export const FAME_TARGET = Object.freeze({ kind: "fame", id: "fame" });
 export const FAME_LABEL = "Fame";
 
 const slug = name => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const defaults = names => names.map(name => ({ id: slug(name), name, archived: false }));
+const defaults = names => names.map(name => (typeof name === "string" ? { id: slug(name), name, archived: false } : { ...name, archived: false }));
+
+/** The Resources entry for the company's money; called Credits before, hence the id. */
+export const FUNDS_ID = "credits";
+export const FUNDS_LABEL = "Funds";
 
 /** Tracker definitions. Default entries get stable ids derived from their names. */
 export const TRACKERS = {
@@ -45,7 +53,7 @@ export const TRACKERS = {
         entriesLabel: "Resources",
         icon: "fa-solid fa-coins",
         defaults: defaults([
-            "Credits", "Element Zero", "Platinum", "Palladium", "Iridium", "Aluminum", "Titanium", "Iron",
+            { id: FUNDS_ID, name: FUNDS_LABEL }, "Element Zero", "Platinum", "Palladium", "Iridium", "Aluminum", "Titanium", "Iron",
             "Copper", "Nickel", "Lithium", "Omni-gel"
         ])
     }
@@ -67,6 +75,16 @@ export function normalizeTrackerData(raw, kind = "reputation") {
             .filter(e => typeof e?.id === "string" && e.id && !seen.has(e.id) && seen.add(e.id))
             .map(e => ({ id: e.id, name: String(e.name ?? e.id).trim() || e.id, archived: e.archived === true }))
     };
+}
+
+/**
+ * Rename the Resources entry "Credits" (its old default name) to "Funds". Other names, e.g. one a GM
+ * chose, are kept. Pure. Returns null when nothing changes.
+ */
+export function renameCreditsToFunds(entries) {
+    const index = entries.findIndex(e => e.id === FUNDS_ID && e.name.trim().toLowerCase() === "credits");
+    if (index === -1) return null;
+    return entries.map((e, i) => (i === index ? { ...e, name: FUNDS_LABEL } : e));
 }
 
 /** Adjustment flag data. `faction` targets (older pages) are read as entries. */
@@ -264,6 +282,20 @@ export async function ensureTrackers() {
         if (!getTrackerUuid(kind)) await createTracker(kind);
         else if (entry && entry.folder?.id !== folders.trackers.id) await entry.update({ folder: folders.trackers.id });
     }
+
+    await renameFundsOnce();
+}
+
+/** Once per Resources tracker: its "Credits" entry becomes "Funds" (a GM may rename it back). */
+async function renameFundsOnce() {
+    const entry = getTracker("resources");
+    if (!entry || entry.getFlag(MODULE_ID, "fundsRenamed")) return;
+    const data = normalizeTrackerData(entry.flags[MODULE_ID]?.[LEDGER_FLAG], "resources");
+    const entries = renameCreditsToFunds(data.entries);
+    await entry.update({
+        ...(entries ? { [`flags.${MODULE_ID}.${LEDGER_FLAG}`]: { schemaVersion: SCHEMA_VERSION, kind: "resources", entries } } : {}),
+        [`flags.${MODULE_ID}.fundsRenamed`]: true
+    });
 }
 
 function requireTracker(kind) {

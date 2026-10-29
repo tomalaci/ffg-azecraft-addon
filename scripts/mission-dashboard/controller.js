@@ -6,10 +6,10 @@
 import { MISSION_PANELS, MODULE_ID, SETTINGS } from "./constants.js";
 import { isDashboardEnabled, normalizeDashboardConfig, referencedUuids } from "./dashboard-state.js";
 import { readActiveSquad, readSquads, rememberLedgerChoice, rememberedLedger } from "./squads.js";
-import { buildCharacterCard } from "./actor-adapter.js";
+import { buildCharacterCard, squadCredits } from "./actor-adapter.js";
 import { buildPanel, buildPeople, missionTitle } from "./mission-data.js";
 import { ledgerPanel } from "./ledgers.js";
-import { TRACKERS, buildStanding, getTrackerUuid } from "./trackers.js";
+import { FUNDS_ID, TRACKERS, buildStanding, getTrackerUuid } from "./trackers.js";
 import { MissionDashboardApp } from "./dashboard-app.js";
 import { DashboardConfigApp } from "./dashboard-config.js";
 import { TrackerApp } from "./tracker-app.js";
@@ -163,6 +163,7 @@ export class DashboardController {
         if (parts.has("header")) {
             view.title = missionTitle({ objective: view.mission?.objective }, scene);
             view.standing = this.#standingSummary();
+            view.credits = squadCredits(view.cards);
         }
 
         this.view = view;
@@ -220,7 +221,7 @@ export class DashboardController {
                 summary[kind] = { ready: standing.state === "ready", state: standing.state };
                 if (standing.state !== "ready") continue;
                 if (kind === "reputation") summary[kind].value = standing.fame;
-                else summary[kind].value = (standing.entries.find(e => e.id === "credits")?.total ?? 0).toLocaleString();
+                else summary[kind].value = (standing.entries.find(e => e.id === FUNDS_ID)?.total ?? 0).toLocaleString();
             } catch (error) {
                 console.warn(`Azecraft | Could not read the ${kind} tracker`, error);
                 summary[kind] = { ready: false, state: "error" };
@@ -292,7 +293,8 @@ export class DashboardController {
 
         const onActor = actor => {
             if (!actor || actor.isToken) return;
-            if (this.#refs.actors.has(actor.uuid)) this.refresh("rail");
+            // The header sums the members' credits.
+            if (this.#refs.actors.has(actor.uuid)) this.refresh("rail", "header");
             if (this.#refs.people.has(actor.uuid)) this.refresh("intel");
         };
 

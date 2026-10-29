@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { TRACKERS, computeStanding, normalizeAdjustment, validateAdjustment } from "../scripts/mission-dashboard/trackers.js";
+import { TRACKERS, computeStanding, normalizeAdjustment, renameCreditsToFunds, validateAdjustment } from "../scripts/mission-dashboard/trackers.js";
 
 const ledger = {
     factions: [
@@ -78,10 +78,10 @@ test("validation requires a reason, a non-zero integer and an active target", ()
     assert.equal(validateAdjustment({ target: { kind: "fame" }, delta: 5, reason: "x" }, ledger).length, 0);
 });
 
-test("resources: no Fame target, entries are resources, defaults include Credits", () => {
+test("resources: no Fame target, entries are resources, defaults include Funds (id credits)", () => {
     const resources = TRACKERS.resources;
     const data = { kind: "resources", entries: resources.defaults };
-    assert.ok(resources.defaults.some(e => e.id === "credits" && e.name === "Credits"));
+    assert.ok(resources.defaults.some(e => e.id === "credits" && e.name === "Funds"));
     assert.ok(resources.defaults.some(e => e.name === "Element Zero"));
     assert.ok(TRACKERS.reputation.defaults.some(e => e.name === "Systems Alliance"));
 
@@ -94,4 +94,11 @@ test("resources: no Fame target, entries are resources, defaults include Credits
         event("c2", { kind: "entry", id: "credits" }, -2500, "2026-06-02")
     ], resources);
     assert.equal(standing.entries.find(e => e.id === "credits").total, 7500);
+});
+
+test("the old Credits resource is renamed to Funds once; a GM's own name is kept", () => {
+    const entries = [{ id: "credits", name: "Credits", archived: false }, { id: "iron", name: "Iron", archived: false }];
+    assert.deepEqual(renameCreditsToFunds(entries).map(e => e.name), ["Funds", "Iron"]);
+    assert.equal(renameCreditsToFunds([{ id: "credits", name: "Company Account", archived: false }]), null);
+    assert.equal(renameCreditsToFunds([{ id: "other", name: "Credits", archived: false }]), null);
 });

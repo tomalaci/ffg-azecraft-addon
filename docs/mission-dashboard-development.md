@@ -162,7 +162,12 @@ and is only read by the migration.
   rather than recreated. A deleted one is never recreated silently.
 - The entry flag is `ledger = { schemaVersion, kind: "reputation" | "resources", entries: [{ id,
   name, archived }] }`. Older reputation ledgers used `factions` and had no `kind`; they are read as
-  reputation. Default entries have ids derived from their names (for example `credits`).
+  reputation. Default entries have ids derived from their names, except Funds, which keeps the id
+  `credits` from when it was called Credits. `ensureTrackers` renames a "Credits" entry to "Funds" once
+  per Resources Journal (flag `fundsRenamed`), so a GM's own name later is kept.
+- The header's **cr** chip is not a tracker: `squadCredits` (actor-adapter) sums
+  `system.stats.credits.value` of the cards the viewer sees at Observer or higher. Actor updates of
+  members refresh the header as well as the rail.
 - Each adjustment is its own JournalEntryPage whose `_id` is the `eventId`, with flag
   `adjustment = { schemaVersion, eventId, target: {kind: "fame"|"entry", id}, delta, reason,
   authorUserId, createdAt, sessionLabel, sceneUuid, correctsEventId }`. Older pages used

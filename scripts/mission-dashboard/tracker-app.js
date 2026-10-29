@@ -1,5 +1,5 @@
 /**
- * Tracker window for Reputation (Fame + factions) or Resources (Credits + materials): totals and the
+ * Tracker window for Reputation (Fame + factions) or Resources (Funds + materials): totals and the
  * adjustment history. Everyone with read access sees them; only GMs adjust or manage entries.
  */
 
