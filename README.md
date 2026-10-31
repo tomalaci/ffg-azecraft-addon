@@ -36,7 +36,7 @@ The module:
 - A **toolbar** next to the Scene list: Dashboard on/off, Players, **Share Image** and **Share
   Text** (show an image or text to everyone or chosen people, kept in share archives under the
   *Shared Content* journal folder; see [docs/sharing.md](docs/sharing.md)), **Item Maker** (everyone makes
-  weapons, armour, gear, attachments, properties, talents and abilities with properties and icons; see
+  weapons, armour, gear and attachments with properties and icons, priced from a GM-editable price table; see
   [docs/item-maker.md](docs/item-maker.md)), **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
   Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs)

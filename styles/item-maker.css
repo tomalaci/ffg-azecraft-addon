@@ -383,46 +383,102 @@
 .azim-root-add input { flex: 1; }
 .azim-root-add button { flex: none; height: 28px; }
 
-/* Crafting cost */
-.azim-cost {
+/* Price (worked out from the price table) */
+.azim-price {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    padding: 6px 8px;
+    border: 1px solid rgba(116, 200, 255, 0.25);
+    background: rgba(114, 212, 255, 0.04);
 }
 
-.azim-cost-list {
+.azim-price-lines {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 1px;
     margin: 0;
     padding: 0;
     list-style: none;
-}
-
-.azim-cost-list li {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.azim-cost-list input { flex: none; width: 8em; }
-.azim-cost-list select { flex: 1; min-width: 0; }
-.azim-cost-list button { width: 26px; height: 26px; padding: 0; }
-
-.azim-cost-tools { display: flex; flex-wrap: wrap; gap: 6px; }
-.azim-cost-tools button { height: 28px; padding: 0 10px; }
-
-.azim-cost-pay {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 14px;
     font-size: 12px;
 }
 
-.azim-cost-pay .azim-check { display: flex; align-items: center; gap: 6px; font-weight: 700; }
-.azim-cost-pay label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.azim-cost-pay .azim-muted { flex-basis: 100%; }
+.azim-price-lines li,
+.azim-price-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
 
-.azim-percent label { display: flex; flex: 1; align-items: center; gap: 6px; }
-.azim-percent input { width: 5em; flex: none; }
+.azim-price-lines li > span:last-child { font-variant-numeric: tabular-nums; }
+
+.azim-price-total {
+    padding-top: 4px;
+    border-top: 1px solid rgba(116, 200, 255, 0.25);
+    font-size: 14px;
+}
+
+.azim-price-total strong { color: #ffd2a8; font-variant-numeric: tabular-nums; }
+.azim-price > .azim-muted { font-size: 11px; }
+
+.azim-prices-button { margin-left: auto; }
+
+/* Price table view */
+.azim-prices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+    padding: 10px 12px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.azim-prices-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    font-size: 12px;
+}
+
+.azim-prices-head button { height: 30px; padding: 0 12px; }
+
+.azim-price-table {
+    width: 100%;
+    max-width: 720px;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.azim-price-table caption {
+    padding: 0 0 4px;
+    color: #72d4ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+.azim-price-table :is(th, td) {
+    padding: 2px 6px;
+    border-bottom: 1px solid rgba(116, 200, 255, 0.12);
+    text-align: left;
+}
+
+.azim-price-table thead th,
+.azim-price-subhead th {
+    color: #95a6ba;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.azim-price-table tbody th { font-weight: 400; }
+.azim-price-table td { width: 8em; font-variant-numeric: tabular-nums; }
+.azim-price-table input { width: 100%; height: 26px; }
+.azim-price-table .azim-changed th { color: #ffd2a8; }
+.azim-price-table .azim-changed th::before { content: "● "; color: #ff9d42; }
+
+.azim-prices .azim-actions { margin: auto -12px -10px; }

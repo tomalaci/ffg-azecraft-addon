@@ -1,7 +1,7 @@
 /**
  * Item Maker rules (pure, unit-tested): which item types can be made and with which fields, turning
  * the form into Item data, finding similarly named items, and keeping icon paths inside the icon
- * folders GMs allow.
+ * folders GMs allow. Prices come from the price table (item-prices.js).
  *
  * Players' items are created by the active GM's client from a draft (plain values only), so the
  * draft is normalized here and the Item data is always built by this code, never taken from a client.
@@ -11,9 +11,6 @@ export const NAME_MAX = 120;
 export const DESCRIPTION_MAX = 4000;
 export const SPECIAL_MAX = 300;
 export const MAX_PROPERTIES = 20;
-export const MAX_COSTS = 10;
-/** Cost line paid from a character's own credits (their sheet); other lines are `entry:<id>` of the Resources tracker. */
-export const SHEET_CREDITS = "sheet";
 const NUMBER_MAX = 9999999;
 
 /** Item types the maker offers, with the stat groups each one has (starwarsffg 2.0 data). */
@@ -21,14 +18,11 @@ export const MAKER_TYPES = {
     weapon: { label: "Weapon", icon: "fa-solid fa-gun", groups: ["basic", "hardpoints", "weapon"], properties: true },
     armour: { label: "Armour", icon: "fa-solid fa-shield-halved", groups: ["basic", "hardpoints", "armour"], properties: true },
     gear: { label: "Gear", icon: "fa-solid fa-toolbox", groups: ["basic", "quantity"], properties: true },
-    itemattachment: { label: "Attachment", icon: "fa-solid fa-puzzle-piece", groups: ["basic", "hardpoints", "attachment"], properties: true },
-    itemmodifier: { label: "Item property", icon: "fa-solid fa-tag", groups: ["modifier"], properties: false },
-    talent: { label: "Talent", icon: "fa-solid fa-star", groups: ["talent"], properties: false },
-    ability: { label: "Ability", icon: "fa-solid fa-bolt", groups: [], properties: false }
+    itemattachment: { label: "Attachment", icon: "fa-solid fa-puzzle-piece", groups: ["basic", "hardpoints", "attachment"], properties: true }
 };
 
 /** The system's own default image per type (as on its new items); Foundry's item bag otherwise. */
-const DEFAULT_IMAGES = { weapon: "weapon", armour: "armor", gear: "gear", itemattachment: "attachment", itemmodifier: "itemmodifier" };
+const DEFAULT_IMAGES = { weapon: "weapon", armour: "armor", gear: "gear", itemattachment: "attachment" };
 
 export function defaultImage(type) {
     return DEFAULT_IMAGES[type] ? `systems/starwarsffg/images/defaults/items/${DEFAULT_IMAGES[type]}.png` : "icons/svg/item-bag.svg";
@@ -36,7 +30,6 @@ export function defaultImage(type) {
 
 export const WEAPON_SKILLS = ["Ranged-Light", "Ranged-Heavy", "Gunnery", "Melee", "Brawl", "Biotics", "Tech", "Mechanics"];
 export const RANGES = ["Engaged", "Short", "Medium", "Long", "Extreme"];
-export const ACTIVATIONS = ["Passive", "Active (Incidental)", "Active (Incidental, Out of Turn)", "Active (Maneuver)", "Active (Action)"];
 /** Skills whose weapons add Brawn to their damage. */
 const BRAWN_SKILLS = new Set(["melee", "brawl"]);
 
@@ -126,7 +119,7 @@ export function emptyDraft(type = "weapon") {
  * The form's values, cleaned and clamped. Unknown fields are dropped; every field has a value, so
  * switching types keeps what was typed.
  */
-export function normalizeDraft(raw = {}, { attachmentTypes = ["all", "weapon", "armour"], modifierTypes = ["all", "weapon", "armour"] } = {}) {
+export function normalizeDraft(raw = {}, { attachmentTypes = ["all", "weapon", "armour"] } = {}) {
     const type = Object.hasOwn(MAKER_TYPES, raw.type) ? raw.type : "weapon";
     const seen = new Set();
     const properties = (Array.isArray(raw.properties) ? raw.properties : [])
@@ -139,7 +132,7 @@ export function normalizeDraft(raw = {}, { attachmentTypes = ["all", "weapon", "
         name: text(raw.name, NAME_MAX),
         img: cleanImagePath(raw.img) ?? "",
         description: text(raw.description, DESCRIPTION_MAX),
-        price: int(raw.price),
+        basePrice: int(raw.basePrice),
         rarity: int(raw.rarity, { max: 20 }),
         restricted: raw.restricted === true || raw.restricted === "true" || raw.restricted === "on",
         encumbrance: int(raw.encumbrance, { max: 999 }),
@@ -152,75 +145,10 @@ export function normalizeDraft(raw = {}, { attachmentTypes = ["all", "weapon", "
         special: text(raw.special, SPECIAL_MAX),
         soak: int(raw.soak, { max: 99 }),
         defence: int(raw.defence, { max: 99 }),
+        singleUse: raw.singleUse === true || raw.singleUse === "true" || raw.singleUse === "on",
         attachmentType: oneOf(raw.attachmentType, attachmentTypes, attachmentTypes[0] ?? "all"),
-        modifierType: oneOf(raw.modifierType, modifierTypes, modifierTypes[0] ?? "all"),
-        rank: int(raw.rank, { max: 99 }),
-        activation: oneOf(raw.activation, ACTIVATIONS, "Passive"),
-        ranked: raw.ranked === true || raw.ranked === "true" || raw.ranked === "on",
-        tier: int(raw.tier, { min: 1, max: 5, fallback: 1 }),
-        properties: MAKER_TYPES[type].properties ? properties : [],
-        costs: normalizeCosts(raw.costs),
-        pay: raw.pay === undefined ? true : raw.pay === true || raw.pay === "true" || raw.pay === "on",
-        payer: typeof raw.payer === "string" && /^[A-Za-z0-9]{1,32}$/.test(raw.payer) ? raw.payer : ""
+        properties: MAKER_TYPES[type].properties ? properties : []
     };
-}
-
-/** Cost lines: {resource: "sheet" | "entry:<id>", amount}. Lines without an amount are kept while editing. */
-export function normalizeCosts(raw) {
-    return (Array.isArray(raw) ? raw : [])
-        .filter(c => typeof c?.resource === "string" && (c.resource === SHEET_CREDITS || /^entry:[\w-]{1,64}$/.test(c.resource)))
-        .slice(0, MAX_COSTS)
-        .map(c => ({ resource: c.resource, amount: int(c.amount, { max: NUMBER_MAX }) }));
-}
-
-/**
- * What to pay: cost lines with an amount, the same resource added up. Pure.
- * @returns {{resource: string, amount: number}[]}
- */
-export function costTotals(costs) {
-    const totals = new Map();
-    for (const { resource, amount } of normalizeCosts(costs)) {
-        if (amount > 0) totals.set(resource, (totals.get(resource) ?? 0) + amount);
-    }
-    return [...totals].map(([resource, amount]) => ({ resource, amount }));
-}
-
-/**
- * Problems with paying `totals`: unknown resources, no character for credits, or not enough.
- * @param {object} available  {sheet: number|null (the payer's credits; null without a payer), entries: Map<id, {name, total}>}
- */
-export function checkPayment(totals, { sheet = null, entries = new Map() } = {}) {
-    const errors = [];
-    for (const { resource, amount } of totals) {
-        if (resource === SHEET_CREDITS) {
-            if (sheet === null) errors.push("Choose the character who pays the credits.");
-            else if (sheet < amount) errors.push(`Not enough credits: ${amount.toLocaleString()} needed, the character has ${sheet.toLocaleString()}.`);
-            continue;
-        }
-        const entry = entries.get(resource.slice("entry:".length));
-        if (!entry) errors.push("A cost uses a resource that no longer exists.");
-        else if (entry.total < amount) errors.push(`Not enough ${entry.name}: ${amount.toLocaleString()} needed, ${entry.total.toLocaleString()} available.`);
-    }
-    return errors;
-}
-
-/** A suggested material cost from the GMs' percentage of the price (null when not set). Pure. */
-export function suggestedCost(price, percent) {
-    const p = Number(percent);
-    if (!Number.isFinite(p) || p <= 0 || !(price > 0)) return null;
-    return Math.ceil((price * p) / 100);
-}
-
-/**
- * The "Crafting cost" part of the item description. `lines` are {label, amount}; `paid` says whether
- * the cost was deducted when the item was made.
- */
-export function costHtml(lines, { paid = false, payerName = "", maker = "" } = {}) {
-    if (!lines.length) return "";
-    const escape = value => String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-    const items = lines.map(line => `<li>${escape(line.amount.toLocaleString("en-US"))} ${escape(line.label)}</li>`).join("");
-    const who = [maker && `made by ${escape(maker)}`, paid ? `paid${payerName ? ` (credits from ${escape(payerName)})` : ""}` : "not paid through the Item Maker"].filter(Boolean).join("; ");
-    return `<h3>Crafting cost</h3><ul>${items}</ul><p><em>${who}.</em></p>`;
 }
 
 export function validateDraft(draft) {
@@ -249,14 +177,14 @@ export function descriptionHtml(plain) {
  * @param {string|null} [options.folder]
  * @param {object} [options.ownership]
  * @param {object} [options.flags]
- * @param {string} [options.cost]                    the "Crafting cost" HTML (costHtml), appended
+ * @param {{total: number, html: string}} [options.price]  the worked-out price and its description part
  */
-export function buildItemData(draft, { properties = new Map(), newId = () => "", folder = null, ownership = undefined, flags = {}, cost = "" } = {}) {
+export function buildItemData(draft, { properties = new Map(), newId = () => "", folder = null, ownership = undefined, flags = {}, price = { total: 0, html: "" } } = {}) {
     const groups = new Set(MAKER_TYPES[draft.type].groups);
-    const system = { description: descriptionHtml(draft.description) + cost };
+    const system = { description: descriptionHtml(draft.description) + price.html };
 
     if (groups.has("basic")) {
-        system.price = { value: draft.price };
+        system.price = { value: price.total };
         system.rarity = { value: draft.rarity, isrestricted: draft.restricted };
         system.encumbrance = { value: draft.encumbrance };
         system.quantity = { value: groups.has("quantity") ? draft.quantity : 1 };
@@ -275,16 +203,6 @@ export function buildItemData(draft, { properties = new Map(), newId = () => "",
         system.defence = { value: draft.defence };
     }
     if (groups.has("attachment")) system.type = draft.attachmentType;
-    if (groups.has("modifier")) {
-        system.type = draft.modifierType;
-        system.rank = draft.rank;
-        system.rank_current = draft.rank;
-    }
-    if (groups.has("talent")) {
-        system.activation = { value: draft.activation };
-        system.ranks = { ranked: draft.ranked, current: 1, min: 0 };
-        system.tier = draft.tier;
-    }
 
     if (MAKER_TYPES[draft.type].properties) {
         system.itemmodifier = draft.properties

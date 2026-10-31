@@ -1,6 +1,7 @@
 /**
- * Item Maker (toolbar tab, everyone): make an item of any common type, with stats, item properties
- * and an icon from the icon folders GMs allow. New items go to the Item folder
+ * Item Maker (toolbar tab, everyone): make a weapon, armour, gear or an attachment, with stats, item
+ * properties and an icon from the icon folders GMs allow. Its price is worked out from the price
+ * table (GMs edit it in the Item Maker). New items go to the Item folder
  * "Item Maker › <creator's name>", owned by their creator and visible to everyone.
  *
  * Players may not create world Items or browse files (Foundry's default permissions), so their
@@ -10,10 +11,8 @@
  */
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
-import { buildStanding, recordAdjustment } from "../mission-dashboard/trackers.js";
-import { readActiveSquad } from "../mission-dashboard/squads.js";
+import { PRICE_SECTIONS, PROPERTY_DEFAULTS, normalizeTable, priceBreakdown, priceHtml, propertyKey } from "./item-prices.js";
 import {
-    ACTIVATIONS,
     DEFAULT_ICON_PATHS,
     IMAGE_EXTENSIONS,
     MAKER_TYPES,
@@ -23,13 +22,8 @@ import {
     SPECIAL_MAX,
     WEAPON_SKILLS,
     EFFECT_TARGET_TYPES,
-    SHEET_CREDITS,
     buildItemData,
-    checkPayment,
     cleanFolderPath,
-    costHtml,
-    costTotals,
-    suggestedCost,
     defaultImage,
     emptyDraft,
     iconSource,
@@ -44,7 +38,7 @@ const MODULE_ID = "ffg-azecraft-addon";
 const SOCKET = `module.${MODULE_ID}`;
 const TEMPLATE = `modules/${MODULE_ID}/templates/item-maker/item-maker.hbs`;
 const PATHS_SETTING = "itemMakerIconPaths";
-const PERCENT_SETTING = "itemMakerMaterialPercent";
+const PRICES_SETTING = "itemMakerPriceTable";
 /** The system's item helpers (served by Foundry; not resolvable at lint time). */
 const SYSTEM_ITEM_HELPERS = "/systems/starwarsffg/modules/helpers/item-helpers.js";
 const FOLDER_FLAG = "itemMakerFolder";
@@ -63,15 +57,14 @@ export function iconRoots() {
     return [...new Set(list)];
 }
 
-/** The system's attachment / property kinds (CONFIG.FFG.itemmodifier_types), as {value, label}. */
-function modifierTypes() {
+/** What an attachment fits (the system's CONFIG.FFG.itemmodifier_types), as {value, label}. */
+function attachmentKinds() {
     const types = CONFIG.FFG?.itemmodifier_types ?? { all: { value: "all", label: "All" } };
     return Object.entries(types).map(([key, entry]) => ({ value: entry?.value ?? key, label: game.i18n.localize(entry?.label ?? key) }));
 }
 
 function normalize(raw) {
-    const kinds = modifierTypes().map(t => t.value);
-    return normalizeDraft(raw, { attachmentTypes: kinds, modifierTypes: kinds });
+    return normalizeDraft(raw, { attachmentTypes: attachmentKinds().map(t => t.value) });
 }
 
 /** Weapon skills: the usual ones plus any other skill a world weapon uses. */
@@ -103,33 +96,32 @@ export function propertyItems() {
     return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Resources tracker entries one can pay with ({id, name, total}); empty when it is not readable. */
-function resourceEntries() {
-    try {
-        const standing = buildStanding("resources");
-        if (standing.state !== "ready") return [];
-        return standing.entries.filter(e => !e.archived).map(e => ({ id: e.id, name: e.name, total: e.total }));
-    } catch {
-        return [];
+/** The price table: the GMs' values where set, the defaults elsewhere. */
+export function priceTable() {
+    return normalizeTable(game.settings.get(MODULE_ID, PRICES_SETTING));
+}
+
+/** A draft's price, line by line, from the price table and the chosen properties' names. */
+function draftPrice(draft, table = priceTable()) {
+    const props = new Map(propertyItems().map(item => [item.id, item]));
+    const chosen = draft.properties.filter(p => props.has(p.id)).map(p => ({ name: props.get(p.id).name, rank: p.rank }));
+    return priceBreakdown(draft, table, chosen);
+}
+
+/**
+ * What GMs saved in the price table: only values that differ from the defaults, so later default
+ * changes still reach rows nobody changed.
+ */
+function tableChanges(values, properties) {
+    const changed = { values: {}, properties: {} };
+    for (const row of PRICE_SECTIONS.flatMap(section => section.rows)) {
+        if (values[row.key] !== row.value) changed.values[row.key] = values[row.key];
     }
-}
-
-function sheetCredits(actor) {
-    const value = Number(actor?.system?.stats?.credits?.value);
-    return Number.isFinite(value) ? value : 0;
-}
-
-/** Characters whose credits this user may spend: their own; for GMs also the active squad's. */
-function payers(user = game.user) {
-    const squad = new Set((readActiveSquad()?.party ?? []).map(slot => slot.actorUuid).filter(Boolean));
-    return game.actors
-        .filter(actor => actor.type === "character" && (actor.testUserPermission(user, "OWNER") && (!user.isGM || squad.has(actor.uuid) || actor === user.character)))
-        .sort((a, b) => Number(b === user.character) - Number(a === user.character) || a.name.localeCompare(b.name));
-}
-
-function costLabel(resource, entries) {
-    if (resource === SHEET_CREDITS) return "credits";
-    return entries.find(e => `entry:${e.id}` === resource)?.name ?? "unknown resource";
+    for (const [key, entry] of Object.entries(properties)) {
+        const fallback = PROPERTY_DEFAULTS[key] ?? { flat: 0, perRank: values.otherProperty };
+        if (entry.flat !== fallback.flat || entry.perRank !== fallback.perRank) changed.properties[key] = entry;
+    }
+    return changed;
 }
 
 function plainText(html) {
@@ -212,7 +204,7 @@ async function makerFolder(user) {
     return mine ?? Folder.implementation.create({ name: user.name, type: "Item", folder: root.id, sorting: "a", flags: { [MODULE_ID]: { [FOLDER_FLAG]: user.id } } });
 }
 
-/** Create an item for `user` from a draft (GM side). Returns the new Item. */
+/** Create an item for `user` from a draft (GM side); the price is worked out here. Returns the new Item. */
 async function createFor(rawDraft, user) {
     const draft = normalize(rawDraft);
     const errors = validateDraft(draft);
@@ -220,23 +212,7 @@ async function createFor(rawDraft, user) {
     // Only icons from the allowed folders, or the type's default image.
     if (draft.img && !isWithinRoots(draft.img.split("/").slice(0, -1).join("/"), iconRoots()) && draft.img !== defaultImage(draft.type)) draft.img = "";
 
-    // The crafting cost: checked before anything is created, paid after.
-    const entries = resourceEntries();
-    const totals = costTotals(draft.costs);
-    const paying = draft.pay && totals.length > 0;
-    const payer = draft.payer ? game.actors.get(draft.payer) : null;
-    const usesCredits = totals.some(t => t.resource === SHEET_CREDITS);
-    if (paying) {
-        // Only a character the requesting user owns pays credits (GMs own every character).
-        const allowed = payer && payer.type === "character" && payer.testUserPermission(user, "OWNER");
-        const errors = checkPayment(totals, {
-            sheet: usesCredits && allowed ? sheetCredits(payer) : null,
-            entries: new Map(entries.map(e => [e.id, e]))
-        });
-        if (errors.length) throw new Error(errors.join(" "));
-    }
-    const lines = totals.map(t => ({ ...t, label: costLabel(t.resource, entries) }));
-
+    const price = draftPrice(draft);
     const properties = new Map(propertyItems().filter(item => draft.properties.some(p => p.id === item.id)).map(item => [item.id, item.toObject()]));
     const folder = await makerFolder(user);
     const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, [user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
@@ -245,18 +221,16 @@ async function createFor(rawDraft, user) {
         newId: () => foundry.utils.randomID(),
         folder: folder.id,
         ownership,
-        cost: costHtml(lines, { paid: paying, payerName: paying && usesCredits ? payer.name : "", maker: user.name }),
+        price: { total: price.total, html: priceHtml(price, { maker: user.name }) },
         flags: { [MODULE_ID]: { [ITEM_FLAG]: {
             createdBy: user.id,
             createdAt: new Date().toISOString(),
-            cost: { lines, paid: paying, payer: paying && usesCredits ? payer.uuid : null }
+            price
         } } }
     });
     const item = await Item.implementation.create(data);
     await copyPropertyEffects(item, draft, properties);
-    // A failed payment leaves the item (made already) with a warning, so Create is not clicked twice.
-    const warning = paying ? await pay(item, totals, payer, user) : null;
-    return { item, warning };
+    return item;
 }
 
 /**
@@ -281,44 +255,14 @@ async function copyPropertyEffects(item, draft, properties) {
 }
 
 /**
- * Deduct the cost: credits from the payer's sheet, resources as Resources tracker adjustments (GM).
- * @returns {Promise<string|null>} a warning when part of it could not be paid
- */
-async function pay(item, totals, payer, user) {
-    const failed = [];
-    for (const { resource, amount } of totals) {
-        try {
-            if (resource === SHEET_CREDITS) {
-                // Checked again: the credits may have changed since the check before creating.
-                const credits = sheetCredits(payer);
-                if (credits < amount) throw new Error("Not enough credits any more.");
-                await payer.update({ "system.stats.credits.value": credits - amount });
-            } else {
-                await recordAdjustment("resources", {
-                    eventId: foundry.utils.randomID(16),
-                    target: { kind: "entry", id: resource.slice("entry:".length) },
-                    delta: -amount,
-                    reason: `Item Maker: ${item.name} (made by ${user.name})`.slice(0, 300),
-                    sceneUuid: game.scenes.viewed?.uuid ?? null
-                });
-            }
-        } catch (error) {
-            console.warn("Azecraft | Item Maker: could not pay a cost", error);
-            failed.push(costLabel(resource, resourceEntries()));
-        }
-    }
-    return failed.length ? `${item.name} was created, but paying ${failed.join(", ")} failed. Ask a GM to adjust it by hand.` : null;
-}
-
-/**
  * Create an item from a draft: on the active GM's client (queued), else through it.
- * @returns {Promise<{item: Item|null, warning: string|null}>}
+ * @returns {Promise<Item|null>}
  */
 export async function createItem(draft) {
     if (isActiveGM() || (game.user.isGM && !game.users.activeGM)) return queueGM(() => createFor(draft, game.user));
     // Other GMs go through the active GM too, so two GMs never create the same folder at once.
-    const { uuid, warning } = await ask("itemMakerCreate", { draft });
-    return { item: await fromUuid(uuid), warning };
+    const { uuid } = await ask("itemMakerCreate", { draft });
+    return fromUuid(uuid);
 }
 
 function onSocket(message, senderId) {
@@ -333,7 +277,7 @@ function onSocket(message, senderId) {
         browse(message.path, { forPlayer: !user.isGM }).then(result => reply(result), error => reply(null, error.message));
     } else if (message.type === "itemMakerCreate") {
         queueGM(() => createFor(message.draft ?? {}, user))
-            .then(({ item, warning }) => reply({ uuid: item.uuid, warning }), error => {
+            .then(item => reply({ uuid: item.uuid }), error => {
                 console.warn("Azecraft | Item Maker: could not create an item", error);
                 reply(null, error.message || "The item could not be created.");
             });
@@ -362,15 +306,14 @@ export class ItemMakerApp extends SceneSpaceApp {
             addRoot: ItemMakerApp.#onAddRoot,
             removeRoot: ItemMakerApp.#onRemoveRoot,
             browseRoot: ItemMakerApp.#onBrowseRoot,
-            addCost: ItemMakerApp.#onAddCost,
-            removeCost: ItemMakerApp.#onRemoveCost,
-            useSuggestion: ItemMakerApp.#onUseSuggestion,
-            savePercent: ItemMakerApp.#onSavePercent
+            showPrices: ItemMakerApp.#onShowPrices,
+            savePrices: ItemMakerApp.#onSavePrices,
+            resetPrices: ItemMakerApp.#onResetPrices
         }
     };
 
     static PARTS = {
-        body: { template: TEMPLATE, scrollable: [".azim-form", ".azim-icons"] }
+        body: { template: TEMPLATE, scrollable: [".azim-form", ".azim-icons", ".azim-prices"] }
     };
 
     /** The form, kept across renders (and while the window is closed, until it is cleared). */
@@ -380,6 +323,8 @@ export class ItemMakerApp extends SceneSpaceApp {
     busy = "";
     rootsOpen = false;
     propertyQuery = "";
+    /** "form", or "prices" for the price table. */
+    view = "form";
     #listings = new Map();
 
     get draft() {
@@ -391,6 +336,7 @@ export class ItemMakerApp extends SceneSpaceApp {
     }
 
     async _prepareContext() {
+        if (this.view === "prices") return this.#pricesContext();
         const draft = this.draft;
         const definition = MAKER_TYPES[draft.type];
         const roots = iconRoots();
@@ -416,16 +362,14 @@ export class ItemMakerApp extends SceneSpaceApp {
             hasGroups: definition.groups.length > 0,
             skills: weaponSkills(),
             ranges: RANGES,
-            activations: ACTIVATIONS,
-            attachmentTypes: modifierTypes(),
-            modifierTypes: modifierTypes(),
+            attachmentTypes: attachmentKinds(),
             hasProperties: definition.properties,
             properties: draft.properties.map(p => {
                 const item = props.get(p.id);
                 return { ...p, name: item?.name ?? "Missing property", tooltip: plainText(item?.system?.description).slice(0, 300) };
             }),
             limits: { name: NAME_MAX, description: DESCRIPTION_MAX, special: SPECIAL_MAX },
-            ...this.#costContext(draft),
+            canSingleUse: ["weapon", "gear"].includes(draft.type),
             userName: game.user.name,
             busy: this.busy,
             isGM: game.user.isGM,
@@ -445,20 +389,23 @@ export class ItemMakerApp extends SceneSpaceApp {
         };
     }
 
-    #costContext(draft) {
-        const entries = resourceEntries();
-        const options = [{ value: SHEET_CREDITS, label: "Credits (character sheet)" }, ...entries.map(e => ({ value: `entry:${e.id}`, label: `${e.name} (Resources: ${e.total.toLocaleString()})` }))];
-        const characters = payers();
-        const payer = characters.find(a => a.id === draft.payer) ?? characters[0] ?? null;
-        if (payer && draft.payer !== payer.id) this.draft = { ...draft, payer: payer.id };
-        const suggestion = suggestedCost(draft.price, game.settings.get(MODULE_ID, PERCENT_SETTING));
+    /** The price table: every row, and a row per world property (GMs edit, players read). */
+    #pricesContext() {
+        const table = priceTable();
+        const keys = [...new Set(propertyItems().map(item => propertyKey(item.name)))].sort();
         return {
-            costs: draft.costs.map((cost, index) => ({ ...cost, index, options: options.map(o => ({ ...o, selected: o.value === cost.resource })) })),
-            canAddCost: draft.costs.length < 10,
-            usesCredits: draft.costs.some(c => c.resource === SHEET_CREDITS),
-            payers: characters.map(a => ({ id: a.id, name: a.name, credits: sheetCredits(a).toLocaleString(), selected: a === payer })),
-            suggestion: suggestion && { amount: suggestion, label: suggestion.toLocaleString(), percent: game.settings.get(MODULE_ID, PERCENT_SETTING) },
-            percent: game.settings.get(MODULE_ID, PERCENT_SETTING)
+            pricesView: true,
+            isGM: game.user.isGM,
+            busy: this.busy,
+            sections: PRICE_SECTIONS.map(section => ({
+                ...section,
+                rows: section.rows.map(row => ({ ...row, current: table.values[row.key], changed: table.values[row.key] !== row.value }))
+            })),
+            properties: keys.map(key => {
+                const entry = table.properties[key] ?? { flat: 0, perRank: table.values.otherProperty };
+                const fallback = PROPERTY_DEFAULTS[key] ?? { flat: 0, perRank: table.values.otherProperty };
+                return { key, label: key.replace(/(^|[\s-])\p{L}/gu, c => c.toUpperCase()), ...entry, changed: entry.flat !== fallback.flat || entry.perRank !== fallback.perRank };
+            })
         };
     }
 
@@ -466,6 +413,7 @@ export class ItemMakerApp extends SceneSpaceApp {
         await super._onRender(context, options);
         const root = this.element;
         const form = root.querySelector(".azim-form");
+        if (!form) return;
         // Typing updates the draft without re-rendering (focus and caret stay).
         form.addEventListener("input", event => this.#readField(event.target));
         form.addEventListener("change", event => this.#readField(event.target));
@@ -499,22 +447,27 @@ export class ItemMakerApp extends SceneSpaceApp {
         }, 250));
         root.querySelector(".azim-roots")?.addEventListener("toggle", event => { this.rootsOpen = event.target.open; });
         this.#showSimilar();
+        this.#showPrice();
+    }
+
+    /** The price, line by line, under the stats; updated as the form changes. */
+    #showPrice() {
+        const box = this.element?.querySelector("[data-azim-price]");
+        if (!box) return;
+        const { lines, total } = draftPrice(this.draft);
+        const escape = foundry.utils.escapeHTML;
+        const format = value => `${value < 0 ? "−" : ""}${Math.abs(value).toLocaleString()}`;
+        box.querySelector("[data-azim-price-lines]").innerHTML = lines.map(line => `<li><span>${escape(line.label)}</span><span>${format(line.amount)}</span></li>`).join("")
+            || '<li class="azim-muted"><span>Add stats, properties or a base price.</span></li>';
+        box.querySelector("[data-azim-price-total]").textContent = total.toLocaleString();
     }
 
     #readField(input) {
         const name = input?.name;
-        if (input?.dataset.azimCost !== undefined) {
-            const index = Number(input.dataset.azimCost);
-            const field = input.dataset.field;
-            this.draft = normalize({ ...this.draft, costs: this.draft.costs.map((c, i) => (i === index ? { ...c, [field]: input.value } : c)) });
-            // A different resource can show or hide the paying character.
-            if (field === "resource" && input.type !== "number") this.render({ parts: ["body"] });
-            return;
-        }
-        if (name === "percent") return;
         if (input?.dataset.azimRank) {
             const id = input.dataset.azimRank;
             this.draft = normalize({ ...this.draft, properties: this.draft.properties.map(p => (p.id === id ? { ...p, rank: input.value } : p)) });
+            this.#showPrice();
             return;
         }
         if (!name) return;
@@ -524,6 +477,7 @@ export class ItemMakerApp extends SceneSpaceApp {
         if (input.type === "text" || input.tagName === "TEXTAREA") next[name] = String(value).slice(0, input.maxLength > 0 ? input.maxLength : undefined);
         this.draft = next;
         if (name === "name") this.#showSimilar();
+        else this.#showPrice();
     }
 
     /** Similarly named items the user can see, under the name field. */
@@ -654,9 +608,8 @@ export class ItemMakerApp extends SceneSpaceApp {
         this.busy = "Creating…";
         this.render({ parts: ["body"] });
         try {
-            const { item, warning } = await createItem(draft);
-            if (warning) ui.notifications.warn(warning, { permanent: true });
-            else ui.notifications.info(`Created ${item?.name ?? draft.name} in Item Maker › ${game.user.name}.`);
+            const item = await createItem(draft);
+            ui.notifications.info(`Created ${item?.name ?? draft.name} in Item Maker › ${game.user.name}.`);
             item?.sheet?.render(true);
             // A fresh form of the same type; the icon folder stays where it was.
             this.draft = emptyDraft(draft.type);
@@ -668,36 +621,35 @@ export class ItemMakerApp extends SceneSpaceApp {
         }
     }
 
-    static #onAddCost() {
-        const used = new Set(this.draft.costs.map(c => c.resource));
-        const next = [SHEET_CREDITS, ...resourceEntries().map(e => `entry:${e.id}`)].find(r => !used.has(r)) ?? SHEET_CREDITS;
-        this.draft = normalize({ ...this.draft, costs: [...this.draft.costs, { resource: next, amount: 0 }] });
+    /** Switch between the form and the price table. */
+    static #onShowPrices() {
+        this.view = this.view === "prices" ? "form" : "prices";
         this.render({ parts: ["body"] });
     }
 
-    static #onRemoveCost(event, target) {
-        const index = Number(target.dataset.index);
-        this.draft = normalize({ ...this.draft, costs: this.draft.costs.filter((c, i) => i !== index) });
-        this.render({ parts: ["body"] });
-    }
-
-    /** Put the suggested materials cost on the credits line (added if there is none). */
-    static #onUseSuggestion() {
-        const amount = suggestedCost(this.draft.price, game.settings.get(MODULE_ID, PERCENT_SETTING));
-        if (!amount) return;
-        const costs = [...this.draft.costs];
-        const index = costs.findIndex(c => c.resource === SHEET_CREDITS);
-        if (index === -1) costs.unshift({ resource: SHEET_CREDITS, amount });
-        else costs[index] = { ...costs[index], amount };
-        this.draft = normalize({ ...this.draft, costs });
-        this.render({ parts: ["body"] });
-    }
-
-    static async #onSavePercent() {
+    static async #onSavePrices() {
         if (!game.user.isGM) return;
-        const value = Number(this.element.querySelector("[name=percent]")?.value);
-        this.rootsOpen = true;
-        await game.settings.set(MODULE_ID, PERCENT_SETTING, Number.isFinite(value) && value > 0 ? Math.min(1000, value) : 0);
+        const read = selector => [...this.element.querySelectorAll(selector)];
+        const raw = { values: {}, properties: {} };
+        for (const input of read("[data-price-row]")) raw.values[input.dataset.priceRow] = input.value;
+        for (const input of read("[data-price-property]")) {
+            const key = input.dataset.priceProperty;
+            raw.properties[key] = { ...raw.properties[key], [input.dataset.field]: input.value };
+        }
+        // Rows for properties no longer in the world keep what was saved for them.
+        const stored = game.settings.get(MODULE_ID, PRICES_SETTING) ?? {};
+        const table = normalizeTable({ values: raw.values, properties: { ...(stored.properties ?? {}), ...raw.properties } });
+        await game.settings.set(MODULE_ID, PRICES_SETTING, tableChanges(table.values, table.properties));
+        ui.notifications.info("Price table saved.");
+    }
+
+    static async #onResetPrices() {
+        if (!game.user.isGM) return;
+        const confirmed = await foundry.applications.api.DialogV2.confirm({
+            window: { title: "Reset the price table" },
+            content: "<p>Put every price in the table back to the module's defaults?</p>"
+        });
+        if (confirmed) await game.settings.set(MODULE_ID, PRICES_SETTING, {});
     }
 
     static async #onAddRoot() {
@@ -742,13 +694,13 @@ export function initItemMaker() {
         default: DEFAULT_ICON_PATHS,
         onChange: () => foundry.applications.instances.get(ItemMakerApp.DEFAULT_OPTIONS.id)?.render()
     });
-    game.settings.register(MODULE_ID, PERCENT_SETTING, {
-        name: "Item Maker: suggested materials cost",
-        hint: "Percent of an item's price that the Item Maker suggests as its crafting cost in credits (0: no suggestion). Also set in the Item Maker's GM section.",
+    // Only the GMs' changes to the default prices (item-prices.js); edited in the Item Maker.
+    game.settings.register(MODULE_ID, PRICES_SETTING, {
+        name: "Item Maker price table",
         scope: "world",
-        config: true,
-        type: Number,
-        default: 0,
+        config: false,
+        type: Object,
+        default: {},
         onChange: () => foundry.applications.instances.get(ItemMakerApp.DEFAULT_OPTIONS.id)?.render()
     });
     Hooks.once("setup", () => foundry.applications.handlebars.loadTemplates([TEMPLATE]));

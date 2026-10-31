@@ -1,9 +1,52 @@
+{{#if pricesView}}
+<div class="azim-prices">
+    <div class="azim-prices-head">
+        <button type="button" data-action="showPrices"><i class="fa-solid fa-arrow-left" inert></i> Back to the form</button>
+        <span class="azim-muted">{{#if isGM}}What each stat point and property adds to a made item's price. Changed values are marked; empty fields go back to the default.{{else}}What each stat point and property adds to a made item's price (set by the GMs).{{/if}}</span>
+    </div>
+    {{#each sections as |section|}}
+    <table class="azim-price-table">
+        <caption>{{section.label}}</caption>
+        <thead><tr><th>Item</th><th>Credits</th><th>Default</th></tr></thead>
+        <tbody>
+            {{#each section.rows as |row|}}
+            <tr class="{{#if row.changed}}azim-changed{{/if}}">
+                <th scope="row">{{row.label}} <span class="azim-muted">({{row.unit}})</span></th>
+                <td>{{#if @root.isGM}}<input type="number" step="1" value="{{row.current}}" data-price-row="{{row.key}}" aria-label="{{row.label}}">{{else}}{{row.current}}{{/if}}</td>
+                <td class="azim-muted">{{row.value}}</td>
+            </tr>
+            {{/each}}
+            {{#if (eq section.key "properties")}}
+            <tr class="azim-price-subhead"><th scope="col">Property</th><th scope="col">Flat</th><th scope="col">Per rank</th></tr>
+            {{#each @root.properties as |prop|}}
+            <tr class="{{#if prop.changed}}azim-changed{{/if}}">
+                <th scope="row">{{prop.label}}</th>
+                <td>{{#if @root.isGM}}<input type="number" step="1" value="{{prop.flat}}" data-price-property="{{prop.key}}" data-field="flat" aria-label="{{prop.label}}: flat">{{else}}{{prop.flat}}{{/if}}</td>
+                <td>{{#if @root.isGM}}<input type="number" step="1" value="{{prop.perRank}}" data-price-property="{{prop.key}}" data-field="perRank" aria-label="{{prop.label}}: per rank">{{else}}{{prop.perRank}}{{/if}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="3" class="azim-muted">No item properties in the world.</td></tr>
+            {{/each}}
+            {{/if}}
+        </tbody>
+    </table>
+    {{/each}}
+    {{#if isGM}}
+    <div class="azim-actions">
+        <span class="azim-hint">A made item's price is its base price plus these, then the percentages. Drawbacks use negative amounts.</span>
+        <button type="button" data-action="resetPrices"><i class="fa-solid fa-rotate-left" inert></i> Reset to defaults</button>
+        <button type="button" class="azim-create" data-action="savePrices"><i class="fa-solid fa-floppy-disk" inert></i> Save</button>
+    </div>
+    {{/if}}
+</div>
+{{else}}
 <div class="azim">
     <form class="azim-form" autocomplete="off">
         <div class="azim-types" role="radiogroup" aria-label="Item type">
             {{#each types as |t|}}
             <button type="button" class="azim-type {{#if t.selected}}azim-type--on{{/if}}" data-action="setType" data-type="{{t.key}}" role="radio" aria-checked="{{t.selected}}"><i class="{{t.icon}}" inert></i> {{t.label}}</button>
             {{/each}}
+            <button type="button" class="azim-type azim-prices-button" data-action="showPrices" data-tooltip="What stats and properties cost"><i class="fa-solid fa-table" inert></i> Price table</button>
         </div>
 
         <div class="azim-head">
@@ -38,7 +81,7 @@
             <label>Defense <input type="number" name="defence" min="0" value="{{draft.defence}}"></label>
             {{/if}}
             {{#if groups.basic}}
-            <label>Price <input type="number" name="price" min="0" value="{{draft.price}}"></label>
+            <label data-tooltip="For what the stats and properties don't cover (a narrative feature, an attachment's effect)">Base price <input type="number" name="basePrice" min="0" value="{{draft.basePrice}}"></label>
             <label>Rarity <input type="number" name="rarity" min="0" max="20" value="{{draft.rarity}}"></label>
             <label>Encumbrance <input type="number" name="encumbrance" min="0" value="{{draft.encumbrance}}"></label>
             {{/if}}
@@ -53,21 +96,11 @@
                 <select name="attachmentType">{{#each attachmentTypes as |t|}}<option value="{{t.value}}" {{#if (eq t.value @root.draft.attachmentType)}}selected{{/if}}>{{t.label}}</option>{{/each}}</select>
             </label>
             {{/if}}
-            {{#if groups.modifier}}
-            <label>Applies to
-                <select name="modifierType">{{#each modifierTypes as |t|}}<option value="{{t.value}}" {{#if (eq t.value @root.draft.modifierType)}}selected{{/if}}>{{t.label}}</option>{{/each}}</select>
-            </label>
-            <label>Rank <input type="number" name="rank" min="0" value="{{draft.rank}}"></label>
-            {{/if}}
-            {{#if groups.talent}}
-            <label class="azim-wide">Activation
-                <select name="activation">{{#each activations as |a|}}<option value="{{a}}" {{#if (eq a @root.draft.activation)}}selected{{/if}}>{{a}}</option>{{/each}}</select>
-            </label>
-            <label>Tier <input type="number" name="tier" min="1" max="5" value="{{draft.tier}}"></label>
-            <label class="azim-check"><input type="checkbox" name="ranked" {{checked draft.ranked}}> Ranked</label>
-            {{/if}}
             {{#if groups.basic}}
             <label class="azim-check"><input type="checkbox" name="restricted" {{checked draft.restricted}}> Restricted</label>
+            {{/if}}
+            {{#if canSingleUse}}
+            <label class="azim-check" data-tooltip="Used up when used (a grenade, a charge, a stim): priced lower"><input type="checkbox" name="singleUse" {{checked draft.singleUse}}> Single use</label>
             {{/if}}
             {{#if groups.weapon}}
             <label class="azim-full">Special <input type="text" name="special" maxlength="{{limits.special}}" value="{{draft.special}}" placeholder="Anything the stats don't cover"></label>
@@ -96,38 +129,11 @@
         </div>
         {{/if}}
 
-        <div class="azim-cost">
-            <span class="azim-label"><i class="fa-solid fa-coins" inert></i> Crafting cost</span>
-            {{#if costs.length}}
-            <ul class="azim-cost-list">
-                {{#each costs as |c|}}
-                <li>
-                    <input type="number" min="0" value="{{c.amount}}" data-azim-cost="{{c.index}}" data-field="amount" aria-label="Amount">
-                    <select data-azim-cost="{{c.index}}" data-field="resource" aria-label="Paid with">
-                        {{#each c.options as |o|}}<option value="{{o.value}}" {{#if o.selected}}selected{{/if}}>{{o.label}}</option>{{/each}}
-                    </select>
-                    <button type="button" data-action="removeCost" data-index="{{c.index}}" data-tooltip="Remove" aria-label="Remove this cost"><i class="fa-solid fa-xmark" inert></i></button>
-                </li>
-                {{/each}}
-            </ul>
-            {{/if}}
-            <div class="azim-cost-tools">
-                {{#if canAddCost}}<button type="button" data-action="addCost"><i class="fa-solid fa-plus" inert></i> Add cost</button>{{/if}}
-                {{#if suggestion}}<button type="button" data-action="useSuggestion" data-tooltip="Materials: {{suggestion.percent}}% of the price (set by the GMs)"><i class="fa-solid fa-wand-magic-sparkles" inert></i> Suggested: {{suggestion.label}} credits</button>{{/if}}
-            </div>
-            {{#if costs.length}}
-            <div class="azim-cost-pay">
-                <label class="azim-check"><input type="checkbox" name="pay" {{checked draft.pay}}> Pay now</label>
-                {{#if usesCredits}}
-                <label>Credits from
-                    <select name="payer">
-                        {{#each payers as |a|}}<option value="{{a.id}}" {{#if a.selected}}selected{{/if}}>{{a.name}} ({{a.credits}} cr)</option>{{else}}<option value="">No character of yours</option>{{/each}}
-                    </select>
-                </label>
-                {{/if}}
-                <span class="azim-muted">Paying takes the credits from the character's sheet and records the resources in the Resources tracker. Either way the cost is written into the item.</span>
-            </div>
-            {{/if}}
+        <div class="azim-price" data-azim-price>
+            <span class="azim-label"><i class="fa-solid fa-coins" inert></i> Price</span>
+            <ul class="azim-price-lines" data-azim-price-lines></ul>
+            <div class="azim-price-total"><span>Price</span><span><strong data-azim-price-total>0</strong> credits</span></div>
+            <span class="azim-muted">Worked out from the price table; the item gets this price and the breakdown in its description. Nothing is paid when it is made.</span>
         </div>
 
         <label class="azim-desc">Description
@@ -184,11 +190,8 @@
                 <button type="button" data-action="addRoot"><i class="fa-solid fa-plus" inert></i> Add</button>
             </div>
             <p class="azim-muted">Everyone picks icons from these folders (and their subfolders). Players' requests go through a GM's client, so a GM must be online.</p>
-            <div class="azim-root-add azim-percent">
-                <label>Suggested materials cost <input type="number" name="percent" min="0" max="1000" value="{{percent}}"> % of the price</label>
-                <button type="button" data-action="savePercent">Save</button>
-            </div>
         </details>
         {{/if}}
     </aside>
 </div>
+{{/if}}

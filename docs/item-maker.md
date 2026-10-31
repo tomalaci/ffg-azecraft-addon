@@ -3,13 +3,13 @@
 **Item Maker** in the toolbar (next to the Scene list) opens a window where anyone, players and GMs,
 can make an item:
 
-- **Type**: Weapon, Armour, Gear, Attachment, Item property, Talent or Ability.
+- **Type**: Weapon, Armour, Gear or Attachment.
 - **Name**, and the stats that type has: skill, damage, critical rating, range and special for
-  weapons; soak and defense for armour; price, rarity, encumbrance and *Restricted* for equipment;
-  hard points for weapons, armour and attachments; quantity for gear; what an attachment fits; rank
-  and what a property applies to; activation, tier and *Ranked* for talents. Melee and Brawl weapons
-  add Brawn to their damage, as the system's own melee weapons do.
-- **Item properties** (weapons, armour, gear, attachments): type in the search field and click a
+  weapons; soak and defense for armour; base price, rarity, encumbrance and *Restricted* for all of
+  them; hard points for weapons, armour and attachments; quantity and *Single use* for gear; *Single
+  use* for weapons; what an attachment fits. Melee and Brawl weapons add Brawn to their damage, as the
+  system's own melee weapons do.
+- **Item properties**: type in the search field and click a
   property, or press Enter, to add the first result. Set each property's rank; × removes it. The list
   comes from the world's Item property items that only GMs can edit (so properties made by players,
   in the Item Maker or elsewhere, are not offered). When two have the same name, the one in an "Item
@@ -22,17 +22,15 @@ can make an item:
 - **Similar items**: while you type a name, items with similar names show under it (only items you
   can see). Click one to open it, for example to check that what you want does not exist already.
 
-- **Crafting cost**: **Add cost** adds a line: an amount and what pays it, either *Credits (character
-  sheet)* or any entry of the Resources tracker (Funds, Element Zero, Omni-gel…; its current total
-  is shown). If the GMs set a *suggested materials cost* (a percentage of the price), **Suggested**
-  puts that amount on the credits line. With **Pay now** ticked (the default), creating the item
-  takes the credits from the chosen character's sheet (players can choose their own characters;
-  GMs also the active squad's) and records each resource as a Resources tracker change with the
-  reason "Item Maker: <item> (made by <user>)". If anything is short, nothing is created and the
-  window says what is missing. Untick it to only write the cost down. Either way the item's
-  description ends with a **Crafting cost** list (amounts, who made it, and whether it was paid).
+- **Price**: worked out as you fill in the form, line by line, from the [price table](#price-table):
+  the base price, then what the damage, critical rating, range, soak, defense and each property add,
+  then the percentages (Melee and Brawl weapons, single-use items). The **base price** is for what the
+  stats and properties don't cover, such as a narrative feature or an attachment's effect. The item
+  gets this price, and its description ends with a **Price** list of the lines and the total. Nothing
+  is paid when the item is made; the price is what the item is worth, for buying it or adding it to a
+  character.
 
-**Create** saves the item in the Items sidebar, in the folder **Item Maker › (your user name)**, and
+**Create** saves**Create** saves the item in the Items sidebar, in the folder **Item Maker › (your user name)**, and
 opens it. You own it and everyone else can view it. Drag it onto a character, or (GMs) into another
 folder, like any other item. The form keeps its values until you create the item or click **Clear**.
 
@@ -44,12 +42,29 @@ folders (weapons, equipment, tools, consumables, commodities, containers, sundri
 SVG icons). Add a folder by typing its path (for example `worlds/<world id>/icons`) or browsing for
 it, and remove one with ×. The list is a world setting shared by every GM.
 
-## Suggested materials cost (GMs)
+## Price table
 
-The book's crafting rules are not built into the module. If your table uses a materials cost that
-is a share of the item's price, enter that percentage in *Suggested materials cost* (Icon folders
-section of the window, or Configure Settings → *Item Maker: suggested materials cost*). 0 turns the
-suggestion off. Rarer materials (element zero, omni-gel…) are added by hand as Resources lines.
+**Price table** (at the end of the type buttons) shows what each stat point and property adds to a
+made item's price. Everyone can read it; GMs can change it and click **Save** (a world setting).
+Changed values are marked, and the defaults are listed beside them. An empty field goes back to its
+default, and **Reset to defaults** puts the whole table back.
+
+- **Weapons**: an amount for each damage point by band (4–5, 6–7, 8–9, 10–12, 13 and up; 1–3 are
+  free), for critical ratings 4 to 1 (5 and up are free), and for Medium, Long and Extreme range;
+  then a percentage of the price for Melee and Brawl weapons (they add Brawn) and for single-use
+  weapons and gear.
+- **Armour**: soak and defense by point (the 1st, 2nd and 3rd point each have an amount, every
+  point from the 4th the same amount), plus an amount when the armour has both.
+- **Item properties**: every property in the world, with a flat amount and an amount per rank.
+  Drawbacks are negative (Cumbersome and Unwieldy start at 100 and take 100 off per rank, so rank 1
+  costs nothing). A property not in the table costs the *any other property* amount per rank.
+
+The defaults are the module's own estimates, checked against the prices of the world's weapons and
+armour: standard pistols, rifles, shotguns, knives, swords and light armour come out close to their
+listed prices. Heavy weapons and setting-specific gear often have features the table cannot see
+(add them as a base price or adjust the table).
+
+## How it works
 
 ## How it works
 
@@ -59,19 +74,16 @@ lists icon folders, but only inside the allowed folders and without the folders 
 private. Requests and replies go only between the asking user and the active GM, and replies are
 only accepted from a GM. Other GMs' requests also go through the active GM, so two GMs never create
 the Item Maker folders twice. It also creates items from the form's
-values: the item is always built by the module from those values, and a player cannot send other
-item data. **A GM must be online** for players to browse icons and create items; without one, the
+values: the item is always built by the module from those values, and the price is worked out on
+the GM's client from the price table, so a player cannot send other item data or their own price. **A GM must be online** for players to browse icons and create items; without one, the
 window says so. GMs browse and create directly.
 
-The cost is checked (the requesting user must own the paying character; totals must cover every
-line) before the item is created, and paid after it (credits are checked once more). If a payment
-fails after that, the item stays, and a warning says which part a GM should adjust by hand.
-
-Created items carry the flag `flags.ffg-azecraft-addon.itemMaker = { createdBy, createdAt, cost:
-{ lines: [{resource, label, amount}], paid, payer } }`. The
+Created items carry the flag `flags.ffg-azecraft-addon.itemMaker = { createdBy, createdAt, price:
+{ lines: [{label, amount}], total } }`. The
 folders are found by their flag (`itemMakerFolder`: `root`, or the creator's user id), so GMs can
 rename or recolour them.
 
 Files: `scripts/item-maker/item-maker-core.js` (rules: types, drafts, item data, similar names, icon
-paths; unit-tested in `tests/item-maker-core.test.js`), `scripts/item-maker/item-maker.js` (window,
-socket relay, settings), `templates/item-maker/item-maker.hbs`, `styles/item-maker.css`.
+paths; unit-tested in `tests/item-maker-core.test.js`), `scripts/item-maker/item-prices.js` (price table
+rows, default property prices and the price calculation; `tests/item-prices.test.js`),
+`scripts/item-maker/item-maker.js` (window, socket relay, settings), `templates/item-maker/item-maker.hbs`, `styles/item-maker.css`.
