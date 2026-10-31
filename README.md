@@ -39,8 +39,9 @@ The module:
   weapons, armour, gear and attachments with properties and icons, priced from a GM-editable price table; see
   [docs/item-maker.md](docs/item-maker.md)), **UI Performance** (frame rate,
   slow code by module, graphs and loaded assets, with reports to the GM) and, for GMs, **XP
-  Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs)
-  and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
+  Management** (add, reduce or set player characters' XP with a logged reason, adjust available XP, read their XP logs),
+  **Desires** (mark the squad's Desires fulfilled each session, with notes and a history; see
+  [docs/desire-tracker.md](docs/desire-tracker.md)) and the **Admin Panel** (bulk art fixes, asset browser with WebP conversion and moves that relink
   documents, large and unused files); plus a *Reduce visual effects* option. See
   [docs/performance.md](docs/performance.md), [docs/xp-management.md](docs/xp-management.md) and
   [docs/admin-panel.md](docs/admin-panel.md).
@@ -104,6 +105,9 @@ These templates remain tightly coupled to the upstream Star Wars FFG system part
 
 `scripts/item-maker/`, `templates/item-maker/`, `styles/item-maker.css`
 : Item Maker.
+
+`scripts/desires/`, `templates/desires/`, `styles/desires.css`
+: Desire Tracker.
 
 `scripts/default-art/`, `templates/default-art-config.hbs`, `styles/default-art.css`, `assets/default-art/`
 : Default actor art feature.

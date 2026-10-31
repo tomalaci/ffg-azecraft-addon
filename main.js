@@ -21,6 +21,7 @@ import { ShareTextApp, initShareText } from "./scripts/share/share-text.js";
 import { initShareArchive } from "./scripts/share/share-archive.js";
 import { initQuickEffects } from "./scripts/effects/quick-effects.js";
 import { ItemMakerApp, initItemMaker } from "./scripts/item-maker/item-maker.js";
+import { DesireTrackerApp, initDesireTracker } from "./scripts/desires/desire-tracker.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -74,7 +75,7 @@ Hooks.once("init", () => {
         order: 27,
         label: "Item Maker",
         icon: "fa-solid fa-hammer",
-        tooltip: "Make an item (weapon, armour, gear, attachment, property, talent, ability) with properties and an icon",
+        tooltip: "Make a weapon, armour, gear or an attachment with properties and an icon; priced from the price table",
         isActive: () => Boolean(foundry.applications.instances.get("azecraft-item-maker")),
         onClick: async () => {
             await ItemMakerApp.toggle();
@@ -106,6 +107,21 @@ Hooks.once("init", () => {
         onClick: async () => {
             if (!game.user.isGM) return;
             await XPManagerApp.toggle();
+            refreshToolbar();
+        }
+    });
+    initDesireTracker();
+    registerToolbarButton({
+        id: "desire-tracker",
+        order: 36,
+        gmOnly: true,
+        label: "Desires",
+        icon: "fa-solid fa-heart",
+        tooltip: "The squad's Desires: mark them fulfilled this session, with notes and a history of earlier sessions",
+        isActive: () => Boolean(foundry.applications.instances.get("azecraft-desires")),
+        onClick: async () => {
+            if (!game.user.isGM) return;
+            await DesireTrackerApp.toggle();
             refreshToolbar();
         }
     });

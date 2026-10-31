@@ -1,0 +1,66 @@
+<div class="azds">
+    <div class="azds-bar">
+        <label class="azds-session">
+            <span class="azds-label">Session</span>
+            <input type="text" data-azds-label value="{{label}}" placeholder="{{placeholder}}" maxlength="{{limits.label}}" aria-label="Session name">
+        </label>
+        <span class="azds-muted">since {{started}} · <strong>{{doneCount}}</strong> of {{rows.length}} fulfilled</span>
+        <button type="button" data-action="newSession" data-tooltip="File this session's marks in the history and start the next session"><i class="fa-solid fa-flag-checkered" inert></i> New session</button>
+    </div>
+
+    <div class="azds-scroll">
+        <table class="azds-table">
+            <thead>
+                <tr><th colspan="2">Character</th><th>Desire</th><th class="azds-done-col">Fulfilled</th><th>How (note)</th><th class="azds-tools"></th></tr>
+            </thead>
+            <tbody>
+            {{#each rows as |row|}}
+                <tr class="azds-row {{#if row.done}}azds-row--done{{/if}}">
+                    <td class="azds-portrait">{{#if row.img}}<img src="{{row.img}}" alt="" loading="lazy">{{/if}}</td>
+                    <td class="azds-name">{{row.name}}{{#if row.player}}<span class="azds-muted">{{row.player}}</span>{{/if}}</td>
+                    <td class="azds-desire">
+                        {{#if row.desire}}{{row.desire}}{{else}}<span class="azds-muted">No Desire on the sheet</span>{{/if}}
+                        {{#if row.markedDesire}}<span class="azds-muted azds-was" data-tooltip="The Desire changed on the sheet after it was marked">Fulfilled: {{row.markedDesire}}</span>{{/if}}
+                    </td>
+                    <td class="azds-done-col">
+                        <button type="button" class="azds-check {{#if row.done}}azds-check--on{{/if}}" data-action="toggle" data-actor="{{row.id}}" aria-pressed="{{row.done}}" data-tooltip="{{#if row.done}}Fulfilled this session (click to undo){{else}}Mark fulfilled this session{{/if}}">
+                            <i class="fa-solid {{#if row.done}}fa-circle-check{{else}}fa-circle{{/if}}" inert></i>
+                        </button>
+                        {{#if row.count}}<span class="azds-count" data-tooltip="Times fulfilled, all sessions">×{{row.count}}</span>{{/if}}
+                    </td>
+                    <td class="azds-note">{{#if row.done}}<input type="text" data-azds-note="{{row.id}}" value="{{row.note}}" maxlength="{{@root.limits.note}}" placeholder="How it was fulfilled (optional)" aria-label="Note for {{row.name}}">{{/if}}</td>
+                    <td class="azds-tools"><button type="button" data-action="openSheet" data-actor="{{row.id}}" data-tooltip="Open the character sheet"><i class="fa-solid fa-id-card" inert></i></button></td>
+                </tr>
+            {{else}}
+                <tr><td colspan="6" class="azds-empty">No characters: choose an active squad on the dashboard.</td></tr>
+            {{/each}}
+            {{#each others as |other|}}
+                <tr class="azds-row azds-row--done azds-row--other">
+                    <td class="azds-portrait"></td>
+                    <td class="azds-name">{{other.name}}<span class="azds-muted">not in the squad</span></td>
+                    <td class="azds-desire">{{other.desire}}</td>
+                    <td class="azds-done-col"><button type="button" class="azds-check azds-check--on" data-action="toggle" data-actor="{{other.id}}" data-tooltip="Fulfilled this session (click to undo)"><i class="fa-solid fa-circle-check" inert></i></button></td>
+                    <td class="azds-note"><input type="text" data-azds-note="{{other.id}}" value="{{other.note}}" maxlength="{{@root.limits.note}}" aria-label="Note for {{other.name}}"></td>
+                    <td class="azds-tools"></td>
+                </tr>
+            {{/each}}
+            </tbody>
+        </table>
+
+        <details class="azds-history" {{#if historyOpen}}open{{/if}}>
+            <summary><i class="fa-solid fa-clock-rotate-left" inert></i> Earlier sessions ({{history.length}}{{#if moreHistory}}+{{moreHistory}}{{/if}})</summary>
+            {{#each history as |entry|}}
+            <section class="azds-past">
+                <h4>{{entry.label}} <span class="azds-muted">{{entry.dates}}</span></h4>
+                <ul>
+                    {{#each entry.marks as |mark|}}
+                    <li><strong>{{mark.name}}</strong>: {{mark.desire}}{{#if mark.note}} <span class="azds-muted">— {{mark.note}}</span>{{/if}}</li>
+                    {{/each}}
+                </ul>
+            </section>
+            {{else}}
+            <p class="azds-muted">No earlier sessions yet. <strong>New session</strong> files the current one here.</p>
+            {{/each}}
+        </details>
+    </div>
+</div>
