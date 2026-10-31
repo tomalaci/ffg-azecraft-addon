@@ -53,7 +53,7 @@ function registerSettings() {
         scope: "client",
         config: true,
         type: Number,
-        choices: { 0: "Auto", 1: "Smallest", 2: "Compact", 3: "Normal", 4: "Large (horizontal)" },
+        choices: { 0: "Auto", 1: "Smallest", 2: "Compact", 3: "Normal" },
         default: 0,
         onChange: () => {
             controller?.app?.applyPreferences();

@@ -69,19 +69,20 @@ function visibleRect(selector) {
     return rect;
 }
 
-/** Squad rail sizes: 1 smallest compact, 2 compact, 3 normal, 4 a horizontal strip of large cards. */
-export const RAIL_LEVELS = [1, 2, 3, 4];
+/** Squad rail sizes: 1 smallest compact, 2 compact, 3 normal. */
+export const RAIL_LEVELS = [1, 2, 3];
 /** Mission panel sizes: 1 normal, 2 half the screen, 3 up to the top bar. */
 export const LEDGER_LEVELS = [1, 2, 3];
 
 /**
  * The rail and panel levels actually used. Pure. `railLevel` 0 (or anything unknown) means auto:
- * compact on small screens or when the sidebar leaves little room, normal otherwise. The horizontal
- * rail and expanded panels would overlap, so rail level 4 keeps the panels at level 1.
+ * compact on small screens or when the sidebar leaves little room, normal otherwise. A level above
+ * the largest (the earlier horizontal rail, 4) is the normal rail.
  */
 export function effectiveLevels({ railLevel = 0, ledgerLevel = 1, autoCompact = false } = {}) {
-    const rail = RAIL_LEVELS.includes(railLevel) ? railLevel : autoCompact ? 2 : 3;
-    const ledger = rail === 4 ? 1 : LEDGER_LEVELS.includes(ledgerLevel) ? ledgerLevel : 1;
+    const largest = RAIL_LEVELS.at(-1);
+    const rail = RAIL_LEVELS.includes(railLevel) ? railLevel : railLevel > largest ? largest : autoCompact ? 2 : 3;
+    const ledger = LEDGER_LEVELS.includes(ledgerLevel) ? ledgerLevel : 1;
     return { rail, ledger };
 }
 
@@ -107,8 +108,7 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     const levels = effectiveLevels({ railLevel, ledgerLevel, autoCompact });
     const compact = levels.rail <= 2;
 
-    // Wide enough that character art is a real feature of the frame, not a thumbnail. The
-    // horizontal rail (4) keeps the normal column for the header, toolbar and story points.
+    // Wide enough that character art is a real feature of the frame, not a thumbnail.
     const normalWidth = width >= 2200 ? 480 : width >= 1600 ? 420 : 340;
     const compactWidth = Math.min(normalWidth, 280);
     const railWidth = { 1: Math.round(compactWidth * 2 / 3), 2: compactWidth }[levels.rail] ?? normalWidth;
@@ -136,13 +136,9 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     // The second tab takes whatever rounding leaves, so the two always add up to the bar width.
     const [col1] = clampColumns(columns, barWidth).map(Math.round);
 
-    // The horizontal rail (4): from the squad column's left edge to the sidebar, above the panels.
-    const stripRight = width - (framed ? Math.max(GAP, right) : right);
-    const stripBottom = bottom + missionHeight + GAP;
-
     // Where toolbar windows go (scene-space.js): the space of the normal layout (normal rail, level
     // 1 panels), so expanding the rail or the panels never moves or shrinks them.
-    const spaceLeft = left + (levels.rail === 4 ? normalWidth : railWidth) + GAP;
+    const spaceLeft = left + railWidth + GAP;
     const spaceBottom = bottom + (missionCollapsed ? 34 : normalHeight) + GAP;
 
     return {
@@ -163,8 +159,6 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
             "--azd-bar-width": `${barWidth}px`,
             "--azd-col-1": `${col1}px`,
             "--azd-col-2": `${barWidth - col1}px`,
-            "--azd-strip-width": `${Math.max(0, stripRight - left)}px`,
-            "--azd-strip-bottom": `${stripBottom}px`,
             "--azd-space-left": `${spaceLeft}px`,
             "--azd-space-bottom": `${spaceBottom}px`
         },

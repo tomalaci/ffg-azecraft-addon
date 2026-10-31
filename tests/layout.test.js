@@ -49,30 +49,25 @@ test("a chosen rail level overrides automatic compact mode; collapse shrinks the
     assert.equal(computeLayout(desktop, { missionCollapsed: true }).values["--azd-mission-height"], "34px");
 });
 
-test("rail levels: 1 is two thirds of compact, 4 keeps the normal column and spans a strip", () => {
+test("rail levels: 1 is two thirds of compact; the earlier level 4 is the normal rail", () => {
     assert.equal(computeLayout(desktop, { railLevel: 1 }).values["--azd-rail-width"], "187px");
     assert.equal(computeLayout(desktop, { railLevel: 1 }).compact, true);
-    const strip = computeLayout(desktop, { railLevel: 4 });
-    assert.equal(strip.compact, false);
-    assert.equal(strip.values["--azd-rail-width"], "420px");
-    // left 100 to sidebar 1572 - 12; bottom: hotbar inset 84 + panels 220 + gap 12
-    assert.equal(strip.values["--azd-strip-width"], "1460px");
-    assert.equal(strip.values["--azd-strip-bottom"], "316px");
+    const old = computeLayout({ ...desktop, width: 1366, height: 768 }, { railLevel: 4 });
+    assert.equal(old.railLevel, 3);
+    assert.equal(old.compact, false);
 });
 
-test("panel levels: half the screen, then up to the top bar; never with the horizontal rail", () => {
+test("panel levels: half the screen, then up to the top bar", () => {
     assert.equal(computeLayout(desktop, { ledgerLevel: 2 }).values["--azd-mission-height"], "456px");
     // 1080 - hotbar inset 84 - top 56; with the toolbar (bottom 50): below it, 1080 - 84 - 64
     assert.equal(computeLayout(desktop, { ledgerLevel: 3 }).values["--azd-mission-height"], "940px");
     assert.equal(computeLayout({ ...desktop, toolbar: rect(544, 16, 900, 34) }, { ledgerLevel: 3 }).values["--azd-mission-height"], "932px");
-    const both = computeLayout(desktop, { railLevel: 4, ledgerLevel: 3 });
-    assert.equal(both.ledgerLevel, 1);
-    assert.equal(both.values["--azd-mission-height"], "220px");
+    assert.equal(computeLayout(desktop, { railLevel: 1, ledgerLevel: 3 }).ledgerLevel, 3);
 });
 
 test("toolbar windows use the normal layout's space whatever the levels", () => {
     const normal = computeLayout(desktop).values;
-    for (const options of [{ railLevel: 4 }, { ledgerLevel: 3 }, { ledgerLevel: 2 }]) {
+    for (const options of [{ ledgerLevel: 3 }, { ledgerLevel: 2 }]) {
         const values = computeLayout(desktop, options).values;
         assert.equal(values["--azd-space-left"], normal["--azd-space-left"]);
         assert.equal(values["--azd-space-bottom"], normal["--azd-space-bottom"]);

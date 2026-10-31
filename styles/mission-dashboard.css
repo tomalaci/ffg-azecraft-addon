@@ -2102,7 +2102,7 @@
 }
 
 /* -------------------------------------------- */
-/*  Size levels (rail 1–4, mission panels 0–3)  */
+/*  Size levels (rail 1–3, mission panels 0–3)  */
 /* -------------------------------------------- */
 
 /* Arrow pills: the rail's sits on the rail's top edge, the panels' on the mission bar's top edge. */
@@ -2111,9 +2111,9 @@
     z-index: 4;
     display: flex;
     align-items: center;
-    gap: 2px;
-    height: 18px;
-    padding: 0 2px;
+    gap: 3px;
+    height: 27px;
+    padding: 0 3px;
     border: 1px solid var(--azd-line);
     background: #0a1220;
     box-shadow: 0 0 8px rgba(114, 212, 255, 0.35);
@@ -2125,16 +2125,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
+    width: 27px;
     min-width: 0;
-    height: 16px;
+    height: 24px;
     margin: 0;
     padding: 0;
     border: none;
     border-radius: 0;
     background: none;
     color: var(--azd-accent);
-    font-size: 13px;
+    font-size: 20px;
     line-height: 1;
     box-shadow: none;
 }
@@ -2150,12 +2150,12 @@
 
 #azecraft-mission-dashboard .azd-size-pips {
     display: flex;
-    gap: 2px;
+    gap: 3px;
 }
 
 #azecraft-mission-dashboard .azd-size-pips > i {
-    width: 4px;
-    height: 8px;
+    width: 6px;
+    height: 12px;
     background: rgba(114, 212, 255, 0.25);
 }
 
@@ -2244,103 +2244,6 @@
     min-width: 18px;
     padding: 0 3px;
     font-size: 10px;
-}
-
-/* Rail level 4: a horizontal strip of large cards from the squad column to the sidebar, above the
- * mission panels; scrolled sideways. The header, toolbar and story points keep the normal column. */
-#azecraft-mission-dashboard.azd--rail-4 .azd-rail {
-    z-index: 3;
-    width: var(--azd-strip-width);
-    bottom: var(--azd-strip-bottom);
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-rail-cards {
-    flex-direction: row;
-    gap: 10px;
-    height: 100%;
-    max-height: none;
-    padding-top: 12px;
-    box-sizing: border-box;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-rail-edge {
-    display: none;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    height: 100%;
-    aspect-ratio: 4 / 5;
-    padding: 12px 14px 12px 16px;
-    box-sizing: border-box;
-    font-size: 15px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card--empty,
-#azecraft-mission-dashboard.azd--rail-4 .azd-card--missing,
-#azecraft-mission-dashboard.azd--rail-4 .azd-card--restricted {
-    aspect-ratio: auto;
-    width: 220px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card-main {
-    flex: 1;
-    min-height: 0;
-    grid-template-columns: minmax(0, 1fr) 52%;
-    gap: 12px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card-art {
-    height: 100%;
-    min-height: 0;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card-info {
-    gap: 8px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-name {
-    font-size: 20px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-subtitle {
-    font-size: 14px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 :is(.azd-track-label, .azd-derived dt, .azd-section-label) {
-    font-size: 13px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-track-value {
-    font-size: 17px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-bar {
-    height: 6px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-derived dd {
-    font-size: 22px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-desire {
-    flex: 0 0 auto;
-    max-height: 30%;
-    overflow-y: auto;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-desire-text {
-    font-size: 15px;
-}
-
-#azecraft-mission-dashboard.azd--rail-4 .azd-card-toggle {
-    display: none;
 }
 
 #azecraft-mission-dashboard.azd--rail-1 .azd-card:not(.azd-card--expanded) .azd-derived dt {

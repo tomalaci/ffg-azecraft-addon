@@ -409,7 +409,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             group.querySelector('[data-step="1"]').disabled = level >= max;
             group.querySelectorAll(".azd-size-pips > i").forEach((pip, index) => pip.classList.toggle("azd-on", index <= level - min));
         };
-        set(".azd-rail-size", layout.railLevel, 1, 4);
+        set(".azd-rail-size", layout.railLevel, 1, 3);
         set(".azd-ledger-size", ledger, 0, 3);
     }
 
@@ -967,21 +967,19 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
     }
 
     /**
-     * Squad rail size, one level at a time: 1 smallest, 2 compact, 3 normal, 4 horizontal. The
-     * horizontal rail would sit under expanded mission panels, so it shrinks them to level 1.
+     * Squad rail size, one level at a time: 1 smallest, 2 compact, 3 normal.
      */
     static async #onStepRail(event, target) {
         const layout = this.#layout?.last;
         if (!layout) return;
-        const next = Math.min(4, Math.max(1, layout.railLevel + Number(target.dataset.step)));
+        const next = Math.min(3, Math.max(1, layout.railLevel + Number(target.dataset.step)));
         if (next === layout.railLevel) return;
-        if (next === 4 && this.controller.preferences().ledgerLevel !== 1) await game.settings.set(MODULE_ID, SETTINGS.ledgerLevel, 1);
         await game.settings.set(MODULE_ID, SETTINGS.railLevel, next);
     }
 
     /**
      * Mission panel size, one level at a time: 0 one collapsed bar, 1 normal, 2 half the screen, 3
-     * up to the top bar. Expanding past 1 turns a horizontal squad rail back into the normal column.
+     * up to the top bar.
      */
     static async #onStepLedger(event, target) {
         const layout = this.#layout?.last;
@@ -990,7 +988,6 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         const current = prefs.missionCollapsed ? 0 : layout.ledgerLevel;
         const next = Math.min(3, Math.max(0, current + Number(target.dataset.step)));
         if (next === current) return;
-        if (next > 1 && layout.railLevel === 4) await game.settings.set(MODULE_ID, SETTINGS.railLevel, 3);
         if (next > 0 && prefs.ledgerLevel !== next) await game.settings.set(MODULE_ID, SETTINGS.ledgerLevel, next);
         if (prefs.missionCollapsed !== (next === 0)) await game.settings.set(MODULE_ID, SETTINGS.missionCollapsed, next === 0);
     }
