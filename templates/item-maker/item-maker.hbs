@@ -147,7 +147,7 @@
             <div class="azim-picker-head">
                 <span class="azim-label"><i class="fa-solid fa-icons" inert></i> Icons</span>
                 <select data-azim-root aria-label="Icon folder">
-                    {{#each iconRoots as |root|}}<option value="{{root}}" {{#if (eq root @root.picker.root)}}selected{{/if}}>{{root}}</option>{{/each}}
+                    {{#each iconRoots as |folder|}}<option value="{{folder}}" {{#if (eq folder @root.picker.root)}}selected{{/if}}>{{folder}}</option>{{/each}}
                 </select>
             </div>
             <div class="azim-crumbs">
@@ -174,8 +174,8 @@
         <details class="azim-roots" {{#if rootsOpen}}open{{/if}}>
             <summary><i class="fa-solid fa-folder-tree" inert></i> Icon folders (GM)</summary>
             <ul>
-                {{#each iconRoots as |root|}}
-                <li><span>{{root}}</span><button type="button" data-action="removeRoot" data-path="{{root}}" data-tooltip="Remove from the list" aria-label="Remove {{root}}"><i class="fa-solid fa-xmark" inert></i></button></li>
+                {{#each iconRoots as |folder|}}
+                <li><span>{{folder}}</span><button type="button" data-action="removeRoot" data-path="{{folder}}" data-tooltip="Remove from the list" aria-label="Remove {{folder}}"><i class="fa-solid fa-xmark" inert></i></button></li>
                 {{/each}}
             </ul>
             <div class="azim-root-add">
