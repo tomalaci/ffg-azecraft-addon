@@ -343,7 +343,8 @@
 #azecraft-mission-dashboard .azd-rail {
     position: absolute;
     left: var(--azd-left, 100px);
-    top: calc(var(--azd-top, 12px) + var(--azd-header-height) + 6px);
+    /* Room above the cards for the size arrows standing on the rail's top edge (.azd-rail-size). */
+    top: calc(var(--azd-top, 12px) + var(--azd-header-height) + 32px);
     bottom: var(--azd-rail-bottom, 120px);
     width: var(--azd-rail-width, 330px);
     display: flex;
@@ -2105,7 +2106,8 @@
 /*  Size levels (rail 1–3, mission panels 0–3)  */
 /* -------------------------------------------- */
 
-/* Arrow pills: the rail's sits on the rail's top edge, the panels' on the mission bar's top edge. */
+/* Arrow pills: standing on the rail's top edge and on the mission bar's top edge (above the line, so
+ * they don't cover the buttons and titles below it). */
 #azecraft-mission-dashboard .azd-size {
     position: absolute;
     z-index: 4;
@@ -2166,12 +2168,13 @@
 #azecraft-mission-dashboard .azd-rail-size {
     top: 0;
     left: calc(var(--azd-rail-width, 330px) / 2);
+    transform: translate(-50%, -100%);
 }
 
 #azecraft-mission-dashboard .azd-ledger-size {
     left: calc(var(--azd-bar-left) + var(--azd-bar-width) / 2);
     bottom: calc(var(--azd-bottom, 84px) + var(--azd-mission-height, 220px));
-    transform: translate(-50%, 50%);
+    transform: translate(-50%, 0);
 }
 
 #azecraft-mission-dashboard.azd--hidden .azd-size {

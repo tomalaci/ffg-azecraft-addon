@@ -118,8 +118,8 @@ export function computeLayout({ width, height, controls, navActive, navExpand, p
     const ledgerHeight = {
         1: normalHeight,
         2: Math.max(normalHeight, Math.round(height / 2 - bottom)),
-        // Clear of the toolbar tabs, with room for the size arrows on the panels' top edge.
-        3: Math.max(normalHeight, height - bottom - Math.max(top, Math.round((toolbar?.bottom ?? 0) + 14)))
+        // A tab height below the toolbar: room for the size arrows that sit on the panels' top edge.
+        3: Math.max(normalHeight, height - bottom - Math.max(top, toolbar ? Math.round(toolbar.bottom + toolbar.height + 8) : 0))
     }[levels.ledger];
     const missionHeight = missionCollapsed ? 34 : ledgerHeight;
 

@@ -59,9 +59,9 @@ test("rail levels: 1 is two thirds of compact; the earlier level 4 is the normal
 
 test("panel levels: half the screen, then up to the top bar", () => {
     assert.equal(computeLayout(desktop, { ledgerLevel: 2 }).values["--azd-mission-height"], "456px");
-    // 1080 - hotbar inset 84 - top 56; with the toolbar (bottom 50): below it, 1080 - 84 - 64
+    // 1080 - hotbar inset 84 - top 56; with the toolbar (bottom 50, 34 high): a tab height below it, 1080 - 84 - 92
     assert.equal(computeLayout(desktop, { ledgerLevel: 3 }).values["--azd-mission-height"], "940px");
-    assert.equal(computeLayout({ ...desktop, toolbar: rect(544, 16, 900, 34) }, { ledgerLevel: 3 }).values["--azd-mission-height"], "932px");
+    assert.equal(computeLayout({ ...desktop, toolbar: rect(544, 16, 900, 34) }, { ledgerLevel: 3 }).values["--azd-mission-height"], "904px");
     assert.equal(computeLayout(desktop, { railLevel: 1, ledgerLevel: 3 }).ledgerLevel, 3);
 });
 
