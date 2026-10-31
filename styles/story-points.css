@@ -225,6 +225,14 @@ body.azsp-active #destiny-tracker {
     text-align: center;
 }
 
+/* Narrow (under the smallest squad rail): no tug-of-war bar; the counts and buttons share the width. */
+#azecraft-story-points.azsp--narrow .azsp-panel { padding: 5px 6px 6px 7px; }
+#azecraft-story-points.azsp--narrow .azsp-bar { display: none; }
+#azecraft-story-points.azsp--narrow .azsp-side,
+#azecraft-story-points.azsp--narrow .azsp-take { flex: 1 1 0; width: auto; min-width: 0; }
+#azecraft-story-points.azsp--narrow .azsp-gm { gap: 4px; }
+#azecraft-story-points.azsp--narrow .azsp-capacity .azsp-icon { min-width: 18px; padding: 0 3px; }
+
 #azecraft-story-points .azsp-muted {
     color: var(--azsp-muted);
     font-family: var(--azsp-font-heading);

@@ -7,20 +7,26 @@ const rect = (left, top, width, height) => ({ left, top, width, height, right: l
 const controls = rect(16, 16, 72, 400);
 const hotbar = rect(578, 1004, 764, 60);
 
-test("with the dashboard: under the squad rail, from its left edge to the mission tabs", () => {
-    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 434 });
+test("with the dashboard: under the squad rail, as wide as the rail", () => {
+    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 544, railLeft: 100, railWidth: 420 }), { left: 100, bottom: 16, width: 420, narrow: false });
+    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 434, narrow: false });
+});
+
+test("the smallest squad rail gets the narrow bar, inside the rail", () => {
+    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 311, railLeft: 100, railWidth: 187 }), { left: 100, bottom: 16, width: 187, narrow: true });
+    assert.equal(storyPointsBox({ width: 1920, height: 1080, controls, hotbar, barLeft: 404, railLeft: 100, railWidth: 280 }).narrow, false);
 });
 
 test("with the dashboard on a narrow screen: clear of a hotbar that starts before the mission tabs", () => {
-    assert.deepEqual(storyPointsBox({ width: 1600, height: 900, controls, hotbar: rect(418, 824, 764, 60), barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 308 });
+    assert.deepEqual(storyPointsBox({ width: 1600, height: 900, controls, hotbar: rect(418, 824, 764, 60), barLeft: 544, railLeft: 100 }), { left: 100, bottom: 16, width: 308, narrow: false });
 });
 
 test("without the dashboard: default width, clear of the hotbar", () => {
-    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar }), { left: 16, bottom: 16, width: 330 });
+    assert.deepEqual(storyPointsBox({ width: 1920, height: 1080, controls, hotbar }), { left: 16, bottom: 16, width: 330, narrow: false });
     assert.equal(storyPointsBox({ width: 1920, height: 1080, controls, hotbar: rect(300, 1004, 600, 60) }).width, 274);
 });
 
 test("never narrower than the bar's minimum", () => {
     assert.equal(storyPointsBox({ width: 1280, height: 800, controls, barLeft: 120 }).width, 260);
-    assert.deepEqual(storyPointsBox({ width: 800, height: 600 }), { left: 16, bottom: 16, width: 330 });
+    assert.deepEqual(storyPointsBox({ width: 800, height: 600 }), { left: 16, bottom: 16, width: 330, narrow: false });
 });

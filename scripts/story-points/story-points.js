@@ -165,17 +165,20 @@ export class StoryPointsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         const dashboard = document.querySelector("#azecraft-mission-dashboard:not(.azd--hidden)");
         const barLeft = dashboard ? parseFloat(dashboard.style.getPropertyValue("--azd-bar-left")) : NaN;
         const railLeft = dashboard ? parseFloat(dashboard.style.getPropertyValue("--azd-left")) : NaN;
+        const railWidth = dashboard ? parseFloat(dashboard.style.getPropertyValue("--azd-rail-width")) : NaN;
         const box = storyPointsBox({
             width: window.innerWidth,
             height: window.innerHeight,
             controls: visibleRect("#scene-controls"),
             hotbar: visibleRect("#hotbar"),
             barLeft,
-            railLeft
+            railLeft,
+            railWidth
         });
         element.style.setProperty("--azsp-left", `${box.left}px`);
         element.style.setProperty("--azsp-bottom", `${box.bottom}px`);
         element.style.setProperty("--azsp-width", `${box.width}px`);
+        element.classList.toggle("azsp--narrow", box.narrow);
     }
 
     /* -------------------------------------------- */
