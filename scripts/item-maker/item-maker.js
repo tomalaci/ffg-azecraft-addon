@@ -11,7 +11,7 @@
  */
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
-import { PRICE_SECTIONS, PROPERTY_DEFAULTS, normalizeTable, priceBreakdown, priceHtml, propertyKey } from "./item-prices.js";
+import { CRAFT_SKILLS, PRICE_SECTIONS, craftingHtml, craftingPlan, designWarnings, duration, normalizeTable, priceBreakdown, priceHtml, propertyFallback, propertyKey } from "./item-prices.js";
 import {
     DEFAULT_ICON_PATHS,
     IMAGE_EXTENSIONS,
@@ -101,11 +101,15 @@ export function priceTable() {
     return normalizeTable(game.settings.get(MODULE_ID, PRICES_SETTING));
 }
 
-/** A draft's price, line by line, from the price table and the chosen properties' names. */
-function draftPrice(draft, table = priceTable()) {
+/**
+ * A draft's price (line by line), what crafting it takes, and the design warnings, from the price
+ * table and the chosen properties' names.
+ */
+function draftDetails(draft, table = priceTable()) {
     const props = new Map(propertyItems().map(item => [item.id, item]));
     const chosen = draft.properties.filter(p => props.has(p.id)).map(p => ({ name: props.get(p.id).name, rank: p.rank }));
-    return priceBreakdown(draft, table, chosen);
+    const price = priceBreakdown(draft, table, chosen);
+    return { price, crafting: craftingPlan(draft, table, price.total), warnings: designWarnings(draft, table, chosen) };
 }
 
 /**
@@ -118,8 +122,8 @@ function tableChanges(values, properties) {
         if (values[row.key] !== row.value) changed.values[row.key] = values[row.key];
     }
     for (const [key, entry] of Object.entries(properties)) {
-        const fallback = PROPERTY_DEFAULTS[key] ?? { flat: 0, perRank: values.otherProperty };
-        if (entry.flat !== fallback.flat || entry.perRank !== fallback.perRank) changed.properties[key] = entry;
+        const fallback = propertyFallback(key, values);
+        if (["flat", "perRank", "min", "max"].some(field => entry[field] !== fallback[field])) changed.properties[key] = entry;
     }
     return changed;
 }
@@ -212,7 +216,7 @@ async function createFor(rawDraft, user) {
     // Only icons from the allowed folders, or the type's default image.
     if (draft.img && !isWithinRoots(draft.img.split("/").slice(0, -1).join("/"), iconRoots()) && draft.img !== defaultImage(draft.type)) draft.img = "";
 
-    const price = draftPrice(draft);
+    const { price, crafting } = draftDetails(draft);
     const properties = new Map(propertyItems().filter(item => draft.properties.some(p => p.id === item.id)).map(item => [item.id, item.toObject()]));
     const folder = await makerFolder(user);
     const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, [user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
@@ -221,11 +225,12 @@ async function createFor(rawDraft, user) {
         newId: () => foundry.utils.randomID(),
         folder: folder.id,
         ownership,
-        price: { total: price.total, html: priceHtml(price, { maker: user.name }) },
+        price: { total: price.total, html: priceHtml(price, { maker: user.name }) + craftingHtml(crafting) },
         flags: { [MODULE_ID]: { [ITEM_FLAG]: {
             createdBy: user.id,
             createdAt: new Date().toISOString(),
-            price
+            price,
+            crafting
         } } }
     });
     const item = await Item.implementation.create(data);
@@ -370,6 +375,7 @@ export class ItemMakerApp extends SceneSpaceApp {
             }),
             limits: { name: NAME_MAX, description: DESCRIPTION_MAX, special: SPECIAL_MAX },
             canSingleUse: ["weapon", "gear"].includes(draft.type),
+            craftSkills: CRAFT_SKILLS,
             userName: game.user.name,
             busy: this.busy,
             isGM: game.user.isGM,
@@ -402,9 +408,12 @@ export class ItemMakerApp extends SceneSpaceApp {
                 rows: section.rows.map(row => ({ ...row, current: table.values[row.key], changed: table.values[row.key] !== row.value }))
             })),
             properties: keys.map(key => {
-                const entry = table.properties[key] ?? { flat: 0, perRank: table.values.otherProperty };
-                const fallback = PROPERTY_DEFAULTS[key] ?? { flat: 0, perRank: table.values.otherProperty };
-                return { key, label: key.replace(/(^|[\s-])\p{L}/gu, c => c.toUpperCase()), ...entry, changed: entry.flat !== fallback.flat || entry.perRank !== fallback.perRank };
+                const fallback = propertyFallback(key, table.values);
+                const entry = table.properties[key] ?? fallback;
+                const changed = ["flat", "perRank", "min", "max"].some(field => entry[field] !== fallback[field]);
+                const fields = [["flat", "flat"], ["perRank", "per rank"], ["min", "min rank"], ["max", "max rank"]]
+                    .map(([field, label]) => ({ field, label, value: entry[field], fallback: fallback[field], rank: field === "min" || field === "max" }));
+                return { key, label: key.replace(/(^|[\s-])\p{L}/gu, c => c.toUpperCase()), fields, changed };
             })
         };
     }
@@ -450,12 +459,23 @@ export class ItemMakerApp extends SceneSpaceApp {
         this.#showPrice();
     }
 
-    /** The price, line by line, under the stats; updated as the form changes. */
+    /** The price (line by line), crafting and design warnings under the stats; updated as the form changes. */
     #showPrice() {
         const box = this.element?.querySelector("[data-azim-price]");
         if (!box) return;
-        const { lines, total } = draftPrice(this.draft);
+        const { price: { lines, total }, crafting, warnings } = draftDetails(this.draft);
         const escape = foundry.utils.escapeHTML;
+        const craft = this.element.querySelector("[data-azim-crafting]");
+        if (craft) {
+            craft.querySelector("[data-azim-materials]").textContent = crafting.materials.toLocaleString();
+            craft.querySelector("[data-azim-check]").textContent = `${crafting.skill}, ${crafting.difficulty} (${crafting.dice} ${crafting.dice === 1 ? "die" : "dice"})`;
+            craft.querySelector("[data-azim-time]").textContent = `${duration(crafting.time, crafting.unit)} (${duration(crafting.fabricator, crafting.unit)} with a fabricator)`;
+        }
+        const warn = this.element.querySelector("[data-azim-warnings]");
+        if (warn) {
+            warn.hidden = !warnings.length;
+            warn.querySelector("ul").innerHTML = warnings.map(text => `<li>${escape(text)}</li>`).join("");
+        }
         const format = value => `${value < 0 ? "−" : ""}${Math.abs(value).toLocaleString()}`;
         box.querySelector("[data-azim-price-lines]").innerHTML = lines.map(line => `<li><span>${escape(line.label)}</span><span>${format(line.amount)}</span></li>`).join("")
             || '<li class="azim-muted"><span>Add stats, properties or a base price.</span></li>';

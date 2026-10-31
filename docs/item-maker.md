@@ -29,6 +29,17 @@ can make an item:
   gets this price, and its description ends with a **Price** list of the lines and the total. Nothing
   is paid when the item is made; the price is what the item is worth, for buying it or adding it to a
   character.
+- **Crafting** (Mass Effect crafting rules), also written into the item:
+  - *Materials*: half the price (used up whether the check succeeds or not).
+  - *Check*: the skill and the difficulty, half the rarity rounded up (rarity 3: Average, 2 dice;
+    Formidable at most). The skill is Computers for omni-tools and amps (Tech and Biotics weapons)
+    and Mechanics otherwise; choose another (Medicine for medical gear) in *Crafting skill*.
+  - *Time*: 1 hour plus 1 per point of rarity for items of encumbrance 1 or less, otherwise days;
+    half with a fabricator.
+- **Book guidance**: warnings from the Genesys weapon design advice, for example *Stun 6: recommended
+  rank 1–4* (higher can stun a target for the whole fight), Cumbersome or Unwieldy 1 (does nothing),
+  more than four properties, Pierce with Breach, or a critical rating of 1 or 6. They are suggestions:
+  the item can still be made.
 
 **Create** saves**Create** saves the item in the Items sidebar, in the folder **Item Maker › (your user name)**, and
 opens it. You own it and everyone else can view it. Drag it onto a character, or (GMs) into another
@@ -55,12 +66,16 @@ default, and **Reset to defaults** puts the whole table back.
   weapons and gear.
 - **Armour**: soak and defense by point (the 1st, 2nd and 3rd point each have an amount, every
   point from the 4th the same amount), plus an amount when the armour has both.
-- **Item properties**: every property in the world, with a flat amount and an amount per rank.
+- **Item properties**: every property in the world, with a flat amount, an amount per rank, and the
+  recommended ranks (*Min rank* / *Max rank*, 0 for no limit) behind the book guidance warnings.
   Drawbacks are negative (Cumbersome and Unwieldy start at 100 and take 100 off per rank, so rank 1
-  costs nothing). A property not in the table costs the *any other property* amount per rank.
+  costs nothing). A property not in the table costs the *any other property* amount per rank. Also
+  here: how many properties one item may have before a warning (0: no warning).
+- **Crafting**: materials as a percentage of the price (50) and the crafting time with a fabricator
+  (50% of the time).
 
-The defaults are the module's own estimates, checked against the prices of the world's weapons and
-armour: standard pistols, rifles, shotguns, knives, swords and light armour come out close to their
+The defaults follow the Genesys Core weapon and armour design guidance and the Mass Effect crafting
+rules, checked against the prices of the world's weapons and armour: standard pistols, rifles, shotguns, knives, swords and light armour come out close to their
 listed prices. Heavy weapons and setting-specific gear often have features the table cannot see
 (add them as a base price or adjust the table).
 
@@ -79,11 +94,13 @@ the GM's client from the price table, so a player cannot send other item data or
 window says so. GMs browse and create directly.
 
 Created items carry the flag `flags.ffg-azecraft-addon.itemMaker = { createdBy, createdAt, price:
-{ lines: [{label, amount}], total } }`. The
+{ lines: [{label, amount}], total }, crafting: { materials, skill, dice, difficulty, time, fabricator,
+unit } }`. The
 folders are found by their flag (`itemMakerFolder`: `root`, or the creator's user id), so GMs can
 rename or recolour them.
 
 Files: `scripts/item-maker/item-maker-core.js` (rules: types, drafts, item data, similar names, icon
 paths; unit-tested in `tests/item-maker-core.test.js`), `scripts/item-maker/item-prices.js` (price table
-rows, default property prices and the price calculation; `tests/item-prices.test.js`),
+rows, default property prices and recommended ranks, the price, crafting and design warnings;
+`tests/item-prices.test.js`),
 `scripts/item-maker/item-maker.js` (window, socket relay, settings), `templates/item-maker/item-maker.hbs`, `styles/item-maker.css`.

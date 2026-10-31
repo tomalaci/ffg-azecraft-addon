@@ -146,6 +146,8 @@ export function normalizeDraft(raw = {}, { attachmentTypes = ["all", "weapon", "
         soak: int(raw.soak, { max: 99 }),
         defence: int(raw.defence, { max: 99 }),
         singleUse: raw.singleUse === true || raw.singleUse === "true" || raw.singleUse === "on",
+        // The crafting check's skill; "" picks it from the item (item-prices.js craftingPlan).
+        craftSkill: oneOf(raw.craftSkill, ["", "Mechanics", "Computers", "Medicine"], ""),
         attachmentType: oneOf(raw.attachmentType, attachmentTypes, attachmentTypes[0] ?? "all"),
         properties: MAKER_TYPES[type].properties ? properties : []
     };

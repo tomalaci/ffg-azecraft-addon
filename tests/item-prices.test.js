@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { normalizeDraft } from "../scripts/item-maker/item-maker-core.js";
-import { PROPERTY_DEFAULTS, normalizeTable, priceBreakdown, priceHtml, propertyKey, propertyPrice } from "../scripts/item-maker/item-prices.js";
+import { PROPERTY_DEFAULTS, craftingHtml, craftingPlan, designWarnings, normalizeTable, priceBreakdown, priceHtml, propertyKey, propertyPrice } from "../scripts/item-maker/item-prices.js";
 
 const table = normalizeTable();
 const total = (raw, props = [], t = table) => priceBreakdown(normalizeDraft(raw), t, props).total;
@@ -51,8 +51,8 @@ test("the table keeps GM values, falls back to defaults for missing or invalid o
     assert.equal(custom.values.damage4, 80);
     assert.equal(custom.values.meleePercent, 0, "percentages are 0-1000");
     assert.equal(custom.values.crit3, 150, "empty is the default");
-    assert.deepEqual(custom.properties.accurate, { flat: 0, perRank: 400 });
-    assert.deepEqual(custom.properties.phasic, PROPERTY_DEFAULTS.phasic);
+    assert.deepEqual(custom.properties.accurate, { flat: 0, perRank: 400, min: 1, max: 2 });
+    assert.deepEqual(custom.properties.phasic, { ...PROPERTY_DEFAULTS.phasic, min: 0, max: 0 });
     assert.equal(total({ type: "weapon", damage: 4, crit: 5, range: "Short" }, [], custom), 80);
 });
 
@@ -62,4 +62,35 @@ test("the description lists each line and the total, escaped", () => {
     assert.match(html, /&lt;Melee&gt; weapon: −100/);
     assert.match(html, /75 credits, from the Item Maker price table; made by Tomass/);
     assert.equal(priceHtml({ lines: [], total: 0 }), "");
+});
+
+test("design warnings: ranks outside the recommended ones, too many properties, Pierce with Breach, rare crits", () => {
+    const weapon = normalizeDraft({ type: "weapon", damage: 6, crit: 3 });
+    assert.deepEqual(designWarnings(weapon, table, [{ name: "Stun (active)", rank: 4 }, { name: "Accurate", rank: 1 }]), []);
+    const warnings = designWarnings(normalizeDraft({ type: "weapon", crit: 1 }), table, [
+        { name: "Stun (active)", rank: 6 }, { name: "Cumbersome (passive)", rank: 1 }, { name: "Pierce", rank: 2 },
+        { name: "Breach", rank: 1 }, { name: "Blast", rank: 3 }
+    ]);
+    assert.match(warnings[0], /Stun \(active\) 6: recommended rank 1–4/);
+    assert.match(warnings[1], /Cumbersome \(passive\) 1: recommended rank 2 or more \(rank 1 does nothing\)/);
+    assert.ok(warnings.some(w => /5 properties/.test(w)));
+    assert.ok(warnings.some(w => /Pierce and Breach/.test(w)));
+    assert.ok(warnings.some(w => /Critical rating 1/.test(w)));
+    const relaxed = normalizeTable({ properties: { stun: { max: 0 } }, values: { maxProperties: 0 } });
+    assert.deepEqual(designWarnings(weapon, relaxed, [{ name: "Stun", rank: 9 }, ...Array.from({ length: 6 }, (_, i) => ({ name: `X${i}`, rank: 1 }))]), []);
+});
+
+test("crafting: half the price in materials, difficulty from rarity, time in hours or days", () => {
+    const pistol = normalizeDraft({ type: "weapon", skill: "Ranged-Light", rarity: 3, encumbrance: 1 });
+    assert.deepEqual(craftingPlan(pistol, table, 250), { materials: 125, skill: "Mechanics", dice: 2, difficulty: "Average", time: 4, fabricator: 2, unit: "hour" });
+    const rifle = craftingPlan(normalizeDraft({ type: "weapon", rarity: 7, encumbrance: 4 }), table, 1201);
+    assert.deepEqual([rifle.materials, rifle.difficulty, rifle.time, rifle.fabricator, rifle.unit], [601, "Daunting", 8, 4, "day"]);
+    assert.equal(craftingPlan(normalizeDraft({ type: "weapon", skill: "Tech" }), table, 0).skill, "Computers");
+    assert.equal(craftingPlan(normalizeDraft({ type: "gear", craftSkill: "Medicine" }), table, 0).skill, "Medicine");
+    assert.equal(craftingPlan(normalizeDraft({ type: "gear", rarity: 20 }), table, 0).difficulty, "Formidable");
+    assert.equal(craftingPlan(normalizeDraft({ type: "gear" }), table, 0).difficulty, "Simple");
+    const html = craftingHtml(craftingPlan(pistol, table, 250));
+    assert.match(html, /Materials: 125 credits/);
+    assert.match(html, /Check: Mechanics, Average \(2 difficulty dice\)/);
+    assert.match(html, /Time: 4 hours \(2 hours with a fabricator\)/);
 });

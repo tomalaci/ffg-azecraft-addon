@@ -16,20 +16,27 @@
                 <td class="azim-muted">{{row.value}}</td>
             </tr>
             {{/each}}
-            {{#if (eq section.key "properties")}}
-            <tr class="azim-price-subhead"><th scope="col">Property</th><th scope="col">Flat</th><th scope="col">Per rank</th></tr>
+        </tbody>
+    </table>
+    {{#if (eq section.key "properties")}}
+    <table class="azim-price-table azim-prop-table">
+        <thead>
+            <tr><th>Property</th><th>Flat</th><th>Per rank</th><th data-tooltip="Recommended ranks (0: no limit); outside them the form warns">Min rank</th><th>Max rank</th></tr>
+        </thead>
+        <tbody>
             {{#each @root.properties as |prop|}}
             <tr class="{{#if prop.changed}}azim-changed{{/if}}">
                 <th scope="row">{{prop.label}}</th>
-                <td>{{#if @root.isGM}}<input type="number" step="1" value="{{prop.flat}}" data-price-property="{{prop.key}}" data-field="flat" aria-label="{{prop.label}}: flat">{{else}}{{prop.flat}}{{/if}}</td>
-                <td>{{#if @root.isGM}}<input type="number" step="1" value="{{prop.perRank}}" data-price-property="{{prop.key}}" data-field="perRank" aria-label="{{prop.label}}: per rank">{{else}}{{prop.perRank}}{{/if}}</td>
+                {{#each prop.fields as |f|}}
+                <td data-tooltip="Default: {{f.fallback}}">{{#if @root.isGM}}<input type="number" step="1" {{#if f.rank}}min="0" max="99"{{/if}} value="{{f.value}}" data-price-property="{{prop.key}}" data-field="{{f.field}}" aria-label="{{prop.label}}: {{f.label}}">{{else}}{{f.value}}{{/if}}</td>
+                {{/each}}
             </tr>
             {{else}}
-            <tr><td colspan="3" class="azim-muted">No item properties in the world.</td></tr>
+            <tr><td colspan="5" class="azim-muted">No item properties in the world.</td></tr>
             {{/each}}
-            {{/if}}
         </tbody>
     </table>
+    {{/if}}
     {{/each}}
     {{#if isGM}}
     <div class="azim-actions">
@@ -102,6 +109,9 @@
             {{#if canSingleUse}}
             <label class="azim-check" data-tooltip="Used up when used (a grenade, a charge, a stim): priced lower"><input type="checkbox" name="singleUse" {{checked draft.singleUse}}> Single use</label>
             {{/if}}
+            <label data-tooltip="The skill of the crafting check; Auto: Computers for omni-tools and amps (Tech, Biotics), otherwise Mechanics">Crafting skill
+                <select name="craftSkill"><option value="">Auto</option>{{#each craftSkills as |k|}}<option value="{{k}}" {{#if (eq k @root.draft.craftSkill)}}selected{{/if}}>{{k}}</option>{{/each}}</select>
+            </label>
             {{#if groups.weapon}}
             <label class="azim-full">Special <input type="text" name="special" maxlength="{{limits.special}}" value="{{draft.special}}" placeholder="Anything the stats don't cover"></label>
             {{/if}}
@@ -134,6 +144,22 @@
             <ul class="azim-price-lines" data-azim-price-lines></ul>
             <div class="azim-price-total"><span>Price</span><span><strong data-azim-price-total>0</strong> credits</span></div>
             <span class="azim-muted">Worked out from the price table; the item gets this price and the breakdown in its description. Nothing is paid when it is made.</span>
+        </div>
+
+        <div class="azim-price azim-crafting" data-azim-crafting>
+            <span class="azim-label"><i class="fa-solid fa-screwdriver-wrench" inert></i> Crafting</span>
+            <ul class="azim-price-lines">
+                <li><span>Materials</span><span><span data-azim-materials>0</span> credits</span></li>
+                <li><span>Check</span><span data-azim-check></span></li>
+                <li><span>Time</span><span data-azim-time></span></li>
+            </ul>
+            <span class="azim-muted">Materials are used up whether the check succeeds or not. Difficulty is half the rarity, rounded up; time grows with rarity (hours for items of encumbrance 1 or less, days otherwise). Written into the item too.</span>
+        </div>
+
+        <div class="azim-warnings" data-azim-warnings hidden>
+            <span class="azim-label"><i class="fa-solid fa-triangle-exclamation" inert></i> Book guidance</span>
+            <ul></ul>
+            <span class="azim-muted">Suggestions only; the item can still be made.</span>
         </div>
 
         <label class="azim-desc">Description

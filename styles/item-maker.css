@@ -423,6 +423,22 @@
 
 .azim-prices-button { margin-left: auto; }
 
+.azim-warnings {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 157, 66, 0.5);
+    background: rgba(255, 157, 66, 0.08);
+    font-size: 12px;
+}
+
+.azim-warnings[hidden] { display: none; }
+.azim-warnings .azim-label { color: #ff9d42; }
+.azim-warnings ul { margin: 0; padding-left: 18px; }
+.azim-warnings > .azim-muted { font-size: 11px; }
+.azim-prop-table td { width: 6em; }
+
 /* Price table view */
 .azim-prices {
     display: flex;
