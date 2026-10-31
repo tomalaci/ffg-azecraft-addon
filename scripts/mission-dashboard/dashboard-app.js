@@ -11,7 +11,7 @@ import { readSquads, setActiveSquad, setSquadDefaultLedger } from "./squads.js";
 import { htmlToText, textToHtml } from "./actor-adapter.js";
 import { createLedger, createLedgerEntry } from "./ledgers.js";
 import { DashboardHelpApp } from "./help-app.js";
-import { DEFAULT_COLUMNS, LayoutWatcher, fitSceneToFrame, moveDivider } from "./layout.js";
+import { DEFAULT_COLUMNS, FONT_SCALES, LayoutWatcher, fitSceneToFrame, fontScale, moveDivider } from "./layout.js";
 import { artOverflow, artViewStyle, normalizeArtView, panArtView, zoomArtView, DEFAULT_ART_VIEW } from "./art-view.js";
 import { describeCondition, squadGroups } from "../effects/effect-core.js";
 import { EffectPickerApp, readConditions, runConditionOp, runEffectOp } from "../effects/quick-effects.js";
@@ -111,6 +111,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
             configure: MissionDashboardApp.#onConfigure,
             stepRail: MissionDashboardApp.#onStepRail,
             stepLedger: MissionDashboardApp.#onStepLedger,
+            stepFont: MissionDashboardApp.#onStepFont,
             openTracker: MissionDashboardApp.#onOpenTracker,
             showCredits: MissionDashboardApp.#onShowCredits,
             pageEntry: MissionDashboardApp.#onPageEntry,
@@ -411,6 +412,7 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         };
         set(".azd-rail-size", layout.railLevel, 1, 3);
         set(".azd-ledger-size", ledger, 0, 3);
+        set(".azd-font-size", FONT_SCALES.indexOf(fontScale(this.controller.preferences().ledgerFont)), 0, FONT_SCALES.length - 1);
     }
 
     /** Squad effects menu ("N+ Effects") open: kept across header re-renders. */
@@ -505,7 +507,9 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         this.element.classList.toggle("azd--hidden", prefs.hidden);
         this.element.classList.toggle("azd--mission-collapsed", prefs.missionCollapsed);
         this.element.classList.toggle("azd--framed", prefs.style !== "floating");
+        this.element.style.setProperty("--azd-ledger-zoom", String(fontScale(prefs.ledgerFont)));
         this.#layout?.apply();
+        this.#updateSizeControls();
     }
 
     _onClose(options) {
@@ -990,6 +994,13 @@ export class MissionDashboardApp extends HandlebarsApplicationMixin(ApplicationV
         if (next === current) return;
         if (next > 0 && prefs.ledgerLevel !== next) await game.settings.set(MODULE_ID, SETTINGS.ledgerLevel, next);
         if (prefs.missionCollapsed !== (next === 0)) await game.settings.set(MODULE_ID, SETTINGS.missionCollapsed, next === 0);
+    }
+
+    /** Mission panel text size, one step at a time (50% to 150%). */
+    static async #onStepFont(event, target) {
+        const index = FONT_SCALES.indexOf(fontScale(this.controller.preferences().ledgerFont));
+        const next = FONT_SCALES[Math.min(FONT_SCALES.length - 1, Math.max(0, index + Number(target.dataset.step)))];
+        if (next !== FONT_SCALES[index]) await game.settings.set(MODULE_ID, SETTINGS.ledgerFont, next);
     }
 
     static #onOpenTracker(event, target) {

@@ -2171,10 +2171,37 @@
     transform: translate(-50%, -100%);
 }
 
-#azecraft-mission-dashboard .azd-ledger-size {
+/* The panel size arrows and the text size bars, side by side, centred on the mission bar's top edge. */
+#azecraft-mission-dashboard .azd-ledger-controls {
+    position: absolute;
+    z-index: 4;
     left: calc(var(--azd-bar-left) + var(--azd-bar-width) / 2);
     bottom: calc(var(--azd-bottom, 84px) + var(--azd-mission-height, 220px));
-    transform: translate(-50%, 0);
+    display: flex;
+    gap: 8px;
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+
+#azecraft-mission-dashboard .azd-ledger-controls .azd-size {
+    position: relative;
+    transform: none;
+}
+
+#azecraft-mission-dashboard .azd-font-a {
+    font-family: var(--azd-font-heading);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#azecraft-mission-dashboard .azd-font-a--small {
+    font-size: 12px;
+}
+
+/* Text size of the panels' content (zoom scales the fixed pixel sizes of journal text and cards). */
+#azecraft-mission-dashboard :is(.azd-objective-body, .azd-people, .azd-intel-scroll > .azd-journal-content) {
+    zoom: var(--azd-ledger-zoom, 1);
 }
 
 #azecraft-mission-dashboard.azd--hidden .azd-size {

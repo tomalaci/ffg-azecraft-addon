@@ -36,6 +36,7 @@ export const SETTINGS = {
     compact: "dashboardCompact",
     railLevel: "dashboardRailLevel",
     ledgerLevel: "dashboardLedgerLevel",
+    ledgerFont: "dashboardLedgerFont",
     missionCollapsed: "dashboardMissionCollapsed",
     style: "dashboardStyle",
     columns: "dashboardColumns",

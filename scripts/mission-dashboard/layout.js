@@ -73,6 +73,15 @@ function visibleRect(selector) {
 export const RAIL_LEVELS = [1, 2, 3];
 /** Mission panel sizes: 1 normal, 2 half the screen, 3 up to the top bar. */
 export const LEDGER_LEVELS = [1, 2, 3];
+/** Text sizes of the mission panels' content, relative to normal. */
+export const FONT_SCALES = [0.5, 0.75, 1, 1.25, 1.5];
+
+/** The text size closest to `value` (normal for anything unusable). Pure. */
+export function fontScale(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 1;
+    return FONT_SCALES.reduce((best, scale) => (Math.abs(scale - number) < Math.abs(best - number) ? scale : best), 1);
+}
 
 /**
  * The rail and panel levels actually used. Pure. `railLevel` 0 (or anything unknown) means auto:

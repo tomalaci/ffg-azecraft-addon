@@ -74,6 +74,19 @@ function registerSettings() {
         }
     });
 
+    // Text size in the Current Mission and Key Intel panels, also set with the bars beside the
+    // panel size arrows.
+    game.settings.register(MODULE_ID, SETTINGS.ledgerFont, {
+        name: "Mission panel text size",
+        hint: "Text size in Current Mission and Key Intel. Also changed with the A / A bars next to the panel size arrows.",
+        scope: "client",
+        config: true,
+        type: Number,
+        choices: { 0.5: "50%", 0.75: "75%", 1: "100%", 1.25: "125%", 1.5: "150%" },
+        default: 1,
+        onChange: () => controller?.app?.applyPreferences()
+    });
+
     game.settings.register(MODULE_ID, SETTINGS.style, {
         name: "Mission dashboard style",
         hint: "Framed: the squad column and mission bar form a solid frame around the map. Floating: separate panels over the map.",

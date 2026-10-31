@@ -68,6 +68,7 @@ export class DashboardController {
             hidden: game.settings.get(MODULE_ID, SETTINGS.hidden),
             railLevel: game.settings.get(MODULE_ID, SETTINGS.railLevel),
             ledgerLevel: game.settings.get(MODULE_ID, SETTINGS.ledgerLevel),
+            ledgerFont: game.settings.get(MODULE_ID, SETTINGS.ledgerFont),
             missionCollapsed: game.settings.get(MODULE_ID, SETTINGS.missionCollapsed),
             style: game.settings.get(MODULE_ID, SETTINGS.style),
             columns: game.settings.get(MODULE_ID, SETTINGS.columns)

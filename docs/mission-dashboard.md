@@ -194,6 +194,9 @@ These buttons in the dashboard header only affect **your** screen:
   normal otherwise). The same choice is *Squad rail size* in Configure Settings.
 - **Panel size** (▾ ▴ arrows on the top edge of the mission panels): one collapsed bar that still
   shows the current mission, normal, half the screen, or up to the toolbar.
+- **Text size** (A ▮▮▮ A bars next to the panel size arrows): the text and people cards in Current
+  Mission and Key Intel at 50%, 75%, 100%, 125% or 150%. Also *Mission panel text size* in
+  Configure Settings.
 - Toolbar windows (UI Performance, Admin Panel and the like) always open where they would with
   normal cards and panels, over anything expanded.
 

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { clampColumns, computeLayout, frameWindow, moveDivider } from "../scripts/mission-dashboard/layout.js";
+import { FONT_SCALES, clampColumns, computeLayout, fontScale, frameWindow, moveDivider } from "../scripts/mission-dashboard/layout.js";
 
 const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
 
@@ -126,4 +126,13 @@ test("the mission bar spans from the frame to the sidebar and is split by the co
     assert.deepEqual(bar, { left: 544, width: 1016 });
     assert.equal(values["--azd-col-1"], "762px");
     assert.equal(values["--azd-col-2"], "254px");
+});
+
+test("text sizes snap to the nearest step; anything unusable is normal", () => {
+    assert.equal(fontScale(1.25), 1.25);
+    assert.equal(fontScale("0.5"), 0.5);
+    assert.equal(fontScale(0.8), 0.75);
+    assert.equal(fontScale(9), 1.5);
+    assert.equal(fontScale("x"), 1);
+    assert.deepEqual(FONT_SCALES, [0.5, 0.75, 1, 1.25, 1.5]);
 });
