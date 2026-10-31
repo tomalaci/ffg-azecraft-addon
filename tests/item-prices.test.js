@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { normalizeDraft } from "../scripts/item-maker/item-maker-core.js";
-import { PROPERTY_DEFAULTS, craftingHtml, craftingPlan, designWarnings, normalizeTable, priceBreakdown, priceHtml, propertyKey, propertyPrice } from "../scripts/item-maker/item-prices.js";
+import { PROPERTY_DEFAULTS, craftingHtml, craftingPlan, designWarnings, normalizeTable, priceBreakdown, priceHtml, propertyKey, propertyPrice, warningsHtml } from "../scripts/item-maker/item-prices.js";
 
 const table = normalizeTable();
 const total = (raw, props = [], t = table) => priceBreakdown(normalizeDraft(raw), t, props).total;
@@ -93,4 +93,10 @@ test("crafting: half the price in materials, difficulty from rarity, time in hou
     assert.match(html, /Materials: 125 credits/);
     assert.match(html, /Check: Mechanics, Average \(2 difficulty dice\)/);
     assert.match(html, /Time: 4 hours \(2 hours with a fabricator\)/);
+});
+
+test("the description's Warnings section lists the design warnings, escaped; none without warnings", () => {
+    const html = warningsHtml(["Stun (active) 6: recommended rank 1–4.", "<b>x</b>"]);
+    assert.match(html, /<h3>Warnings<\/h3><ul><li>Stun \(active\) 6: recommended rank 1–4\.<\/li><li>&lt;b&gt;x&lt;\/b&gt;<\/li><\/ul>/);
+    assert.equal(warningsHtml([]), "");
 });

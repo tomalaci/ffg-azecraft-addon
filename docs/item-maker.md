@@ -39,7 +39,7 @@ can make an item:
 - **Book guidance**: warnings from the Genesys weapon design advice, for example *Stun 6: recommended
   rank 1–4* (higher can stun a target for the whole fight), Cumbersome or Unwieldy 1 (does nothing),
   more than four properties, Pierce with Breach, or a critical rating of 1 or 6. They are suggestions:
-  the item can still be made.
+  the item can still be made, and its description then ends with a **Warnings** list of them.
 
 **Create** saves**Create** saves the item in the Items sidebar, in the folder **Item Maker › (your user name)**, and
 opens it. You own it and everyone else can view it. Drag it onto a character, or (GMs) into another
@@ -95,7 +95,7 @@ window says so. GMs browse and create directly.
 
 Created items carry the flag `flags.ffg-azecraft-addon.itemMaker = { createdBy, createdAt, price:
 { lines: [{label, amount}], total }, crafting: { materials, skill, dice, difficulty, time, fabricator,
-unit } }`. The
+unit }, warnings: [text] }`. The
 folders are found by their flag (`itemMakerFolder`: `root`, or the creator's user id), so GMs can
 rename or recolour them.
 

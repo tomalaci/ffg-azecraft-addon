@@ -11,7 +11,7 @@
  */
 
 import { SceneSpaceApp } from "../ui/scene-space.js";
-import { CRAFT_SKILLS, PRICE_SECTIONS, craftingHtml, craftingPlan, designWarnings, duration, normalizeTable, priceBreakdown, priceHtml, propertyFallback, propertyKey } from "./item-prices.js";
+import { CRAFT_SKILLS, PRICE_SECTIONS, craftingHtml, craftingPlan, designWarnings, duration, normalizeTable, priceBreakdown, priceHtml, propertyFallback, propertyKey, warningsHtml } from "./item-prices.js";
 import {
     DEFAULT_ICON_PATHS,
     IMAGE_EXTENSIONS,
@@ -216,7 +216,7 @@ async function createFor(rawDraft, user) {
     // Only icons from the allowed folders, or the type's default image.
     if (draft.img && !isWithinRoots(draft.img.split("/").slice(0, -1).join("/"), iconRoots()) && draft.img !== defaultImage(draft.type)) draft.img = "";
 
-    const { price, crafting } = draftDetails(draft);
+    const { price, crafting, warnings } = draftDetails(draft);
     const properties = new Map(propertyItems().filter(item => draft.properties.some(p => p.id === item.id)).map(item => [item.id, item.toObject()]));
     const folder = await makerFolder(user);
     const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER, [user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
@@ -225,12 +225,13 @@ async function createFor(rawDraft, user) {
         newId: () => foundry.utils.randomID(),
         folder: folder.id,
         ownership,
-        price: { total: price.total, html: priceHtml(price, { maker: user.name }) + craftingHtml(crafting) },
+        price: { total: price.total, html: priceHtml(price, { maker: user.name }) + craftingHtml(crafting) + warningsHtml(warnings) },
         flags: { [MODULE_ID]: { [ITEM_FLAG]: {
             createdBy: user.id,
             createdAt: new Date().toISOString(),
             price,
-            crafting
+            crafting,
+            warnings
         } } }
     });
     const item = await Item.implementation.create(data);

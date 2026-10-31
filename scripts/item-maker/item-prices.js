@@ -253,6 +253,13 @@ export function craftingPlan(draft, table, total) {
     };
 }
 
+/** The "Warnings" part of the item description: the design warnings when it was made, escaped. */
+export function warningsHtml(warnings) {
+    if (!warnings.length) return "";
+    const escape = value => String(value).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    return `<h3>Warnings</h3><ul>${warnings.map(text => `<li>${escape(text)}</li>`).join("")}</ul><p><em>Outside the book's design guidance; check with the GM before using it.</em></p>`;
+}
+
 /** "3 days" / "1 hour". */
 export function duration(amount, unit) {
     return `${amount} ${unit}${amount === 1 ? "" : "s"}`;
