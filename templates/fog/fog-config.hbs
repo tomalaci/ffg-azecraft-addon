@@ -1,0 +1,30 @@
+<div class="azfog-config">
+    {{#if scene}}
+    <p class="hint">Only this scene. Values equal to the defaults follow later changes to the defaults.</p>
+    {{/if}}
+    <fieldset>
+        <legend><i class="fa-solid fa-crown"></i> GM view</legend>
+        {{formGroup fields.gmColorTint value=values.gmColorTint rootId=rootId}}
+        {{formGroup fields.gmColorAlpha value=values.gmColorAlpha rootId=rootId}}
+    </fieldset>
+    <fieldset>
+        <legend><i class="fa-solid fa-users"></i> Player view</legend>
+        {{formGroup fields.playerColorTint value=values.playerColorTint rootId=rootId}}
+        {{formGroup fields.playerColorAlpha value=values.playerColorAlpha rootId=rootId}}
+    </fieldset>
+    <fieldset>
+        <legend><i class="fa-solid fa-image"></i> Overlay image</legend>
+        {{formGroup fields.fogImageOverlayFilePath value=values.fogImageOverlayFilePath rootId=rootId}}
+        {{formGroup fields.fogImageOverlayGMAlpha value=values.fogImageOverlayGMAlpha rootId=rootId}}
+        {{formGroup fields.fogImageOverlayPlayerAlpha value=values.fogImageOverlayPlayerAlpha rootId=rootId}}
+        {{formGroup fields.fogImageOverlayZIndex value=values.fogImageOverlayZIndex rootId=rootId}}
+    </fieldset>
+    <fieldset>
+        <legend><i class="fa-solid fa-filter"></i> Edges and fading</legend>
+        {{formGroup fields.blurEnable value=values.blurEnable rootId=rootId}}
+        {{formGroup fields.blurRadius value=values.blurRadius rootId=rootId}}
+        {{formGroup fields.blurQuality value=values.blurQuality rootId=rootId}}
+        {{formGroup fields.transition value=values.transition rootId=rootId}}
+        {{formGroup fields.transitionSpeed value=values.transitionSpeed rootId=rootId}}
+    </fieldset>
+</div>

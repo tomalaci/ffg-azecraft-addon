@@ -7,7 +7,7 @@ import importX from "eslint-plugin-import-x";
 const foundryGlobals = Object.fromEntries([
     "game", "foundry", "Hooks", "ui", "canvas", "CONFIG", "CONST",
     "Actor", "ActiveEffect", "Item", "JournalEntry", "JournalEntryPage", "Folder", "User", "Scene", "Roll", "ChatMessage",
-    "TextEditor", "Handlebars", "loadTemplates", "renderTemplate", "fromUuid", "fromUuidSync"
+    "PIXI", "TextEditor", "Handlebars", "loadTemplates", "renderTemplate", "fromUuid", "fromUuidSync"
 ].map(name => [name, "readonly"]));
 
 export default [

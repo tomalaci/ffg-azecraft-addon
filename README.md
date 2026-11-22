@@ -45,6 +45,9 @@ The module:
   documents, large and unused files); plus a *Reduce visual effects* option. See
   [docs/performance.md](docs/performance.md), [docs/xp-management.md](docs/xp-management.md) and
   [docs/admin-panel.md](docs/admin-panel.md).
+- **Manual fog** (from Simple Fog): GMs paint fog of war with a brush, grid cells, wall-bounded
+  rooms, polygons, rectangles and ellipses; players see only what was revealed. Runs next to the
+  Simple Fog module while switching over. See [docs/fog.md](docs/fog.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).

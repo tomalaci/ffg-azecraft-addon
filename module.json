@@ -39,7 +39,8 @@
         "styles/xp.css",
         "styles/share.css",
         "styles/item-maker.css",
-        "styles/desires.css"
+        "styles/desires.css",
+        "styles/fog.css"
     ],
     "url": "https://github.com/tomalaci/ffg-azecraft-addon",
     "manifest": "https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json",

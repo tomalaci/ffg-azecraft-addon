@@ -22,6 +22,7 @@ import { initShareArchive } from "./scripts/share/share-archive.js";
 import { initQuickEffects } from "./scripts/effects/quick-effects.js";
 import { ItemMakerApp, initItemMaker } from "./scripts/item-maker/item-maker.js";
 import { DesireTrackerApp, initDesireTracker } from "./scripts/desires/desire-tracker.js";
+import { initFog } from "./scripts/fog/fog.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -33,6 +34,7 @@ Hooks.once("init", () => {
     patchRollPowerModifiers();
     initMissionDashboard();
     initStoryPoints();
+    initFog();
     initCharacterSheetTheme();
     initDefaultArt();
     initPowerTabs();
