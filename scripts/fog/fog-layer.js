@@ -90,6 +90,7 @@ export default class FogLayer extends MaskLayer {
 
     /** Show or hide the scene's fog; tools only show while it is on. */
     async toggle() {
+        this.#endInterrupted();
         await super.toggle();
         if (!TOOLS.includes(this.activeTool)) this._changeTool("brush");
         ui.controls.render({ reset: true });
@@ -207,6 +208,10 @@ export default class FogLayer extends MaskLayer {
         if (this.historyBuffer.length > 0) return;
         const p = FogLayer.#point();
         if (!canvas.dimensions.sceneRect.contains(p.x, p.y)) return;
+        if (!this.visible) {
+            ui.notifications.info("Manual fog is off for this scene: switch it on with the eye button first.");
+            return;
+        }
         this.op = true;
         switch (this.activeTool) {
             case "brush": this._pointerDownBrush(p); break;
@@ -236,6 +241,9 @@ export default class FogLayer extends MaskLayer {
     }
 
     _pointerMove(event) {
+        // The button was let go outside the canvas (over the toolbar, another window): end the
+        // drawing there, instead of drawing on without a held button.
+        if (this.op && event?.buttons === 0 && this.activeTool !== "polygon") this.#endInterrupted();
         const p = FogLayer.#point();
         switch (this.activeTool) {
             case "brush": this._pointerMoveBrush(p); break;
@@ -266,6 +274,20 @@ export default class FogLayer extends MaskLayer {
         } else if (event.data.button === 2 && this.activeTool === "polygon" && this.#rightclick) {
             this.clearActiveTool();
         }
+    }
+
+    /** Finish a drawing whose button release the canvas never saw: keep what was drawn, drop drag previews. */
+    #endInterrupted() {
+        if (!this.op) return;
+        if (["box", "ellipse", "room"].includes(this.op)) {
+            this.boxPreview.visible = false;
+            this.polygonPreview.clear();
+            this.polygonPreview.visible = false;
+            if (this.op === "ellipse") this.ellipsePreview.visible = false;
+        }
+        this.op = false;
+        this.#brushPrev = null;
+        this.commitHistory();
     }
 
     /* -------------------------------------------- */

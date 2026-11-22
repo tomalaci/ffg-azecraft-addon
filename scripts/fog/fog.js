@@ -178,7 +178,9 @@ function sceneControls(controls) {
     const tool = fog?.activeTool;
     const shapeTool = ["box", "ellipse", "polygon"].includes(tool);
     let order = 0;
-    const entry = (name, data) => ({ name, order: order++, visible: on, ...data });
+    // Drawing tools always stay listed: Foundry remembers the last one picked and breaks (errors,
+    // stuck controls) if it disappears. Toggles and buttons only show while the fog is on.
+    const entry = (name, data) => ({ name, order: order++, visible: TOOLS.includes(name) || on, ...data });
 
     controls[CONTROL] = {
         name: CONTROL,
@@ -199,11 +201,10 @@ function sceneControls(controls) {
         tools: {
             toggle: entry("toggle", { title: "Manual fog on or off for this scene", icon: "fa-solid fa-eye", visible: true, toggle: true, active: on, onChange: () => toggleFog() }),
             // Always shown: Foundry needs a visible selected tool, also while the fog is off.
-            brush: entry("brush", { title: "Brush", icon: "fa-solid fa-paint-brush", visible: true }),
+            brush: entry("brush", { title: "Brush", icon: "fa-solid fa-paint-brush" }),
             grid: entry("grid", {
-                title: "Grid cells",
-                icon: canvas.grid?.type === CONST.GRID_TYPES.SQUARE ? "fa-solid fa-border-none" : "fa-regular fa-hexagon",
-                visible: on && canvas.grid?.type !== CONST.GRID_TYPES.GRIDLESS
+                title: canvas.grid?.isGridless ? "Grid cells (this scene has no grid)" : "Grid cells",
+                icon: canvas.grid?.type === CONST.GRID_TYPES.SQUARE ? "fa-solid fa-border-none" : "fa-regular fa-hexagon"
             }),
             room: entry("room", { title: "Room: drag out from a point (walls stop it; Shift: open doors too)", icon: "fa-solid fa-block-brick" }),
             polygon: entry("polygon", { title: "Polygon: click the corners, double-click or click the first corner to finish", icon: "fa-solid fa-draw-polygon" }),
