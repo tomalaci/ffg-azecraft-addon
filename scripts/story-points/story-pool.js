@@ -84,3 +84,37 @@ export function toSystemPool(pool) {
 export function fromSystemPool(light, dark) {
     return normalizePool({ squad: light, threat: dark });
 }
+
+/**
+ * Story points per squad. The system's Light/Dark settings always hold the active squad's pool; the
+ * other squads' pools wait in a world setting: { owner: squadId, pools: { [squadId]: pool } }.
+ * `owner` is the squad whose pool is in the system settings now.
+ */
+export function normalizeSquadPools(raw) {
+    const owner = typeof raw?.owner === "string" && raw.owner ? raw.owner : null;
+    const pools = {};
+    for (const [id, pool] of Object.entries(raw?.pools ?? {})) {
+        if (typeof id === "string" && id) pools[id] = normalizePool(pool);
+    }
+    return { owner, pools };
+}
+
+/**
+ * Switch the live pool to `activeId`. Saves `livePool` under the previous owner and returns the
+ * pool to load for the new squad (empty for a squad that never had one), or `pool: null` when
+ * nothing changes. Pools of squads that no longer exist are dropped. The first call (no owner yet)
+ * gives the current pool to the active squad.
+ */
+export function switchSquadPool(stored, livePool, activeId, squadIds = []) {
+    const store = normalizeSquadPools(stored);
+    const keep = new Set([...squadIds, activeId]);
+    const pools = Object.fromEntries(Object.entries(store.pools).filter(([id]) => keep.has(id)));
+    if (!activeId || store.owner === activeId || !store.owner) {
+        const changed = store.owner !== activeId || Object.keys(pools).length !== Object.keys(store.pools).length;
+        return { store: { owner: activeId ?? store.owner, pools }, pool: null, changed };
+    }
+    if (keep.has(store.owner)) pools[store.owner] = normalizePool(livePool);
+    const pool = pools[activeId] ?? { squad: 0, threat: 0 };
+    delete pools[activeId];
+    return { store: { owner: activeId, pools }, pool, changed: true };
+}

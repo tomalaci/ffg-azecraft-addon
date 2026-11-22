@@ -17,6 +17,11 @@ the **Players** button in the toolbar next to the Scene list shows it.
 The bar is a tug of war. Each segment is one point: Destiny fills from the left in blue, Doom
 fills from the right in red. As the players spend Destiny, the blue shrinks and the red grows.
 
+**Each squad has its own pool.** When a GM activates another squad, the bar switches to that
+squad's points; switching back brings the first squad's points back as they were. A squad that never
+had story points starts with an empty pool (use + in the middle to add points). This applies with the
+original tracker too.
+
 ## Using it
 
 - **Players:** click the blue **Destiny** box to spend a Destiny point. A GM must be online, because
@@ -42,8 +47,12 @@ fills from the right in red. As the players spend Destiny, the blue shrinks and 
 
 ## How it works (developers)
 
-- The pool is still the system's world settings `starwarsffg.dPoolLight` and `dPoolDark`.
-  Nothing new is stored.
+- The live pool is still the system's world settings `starwarsffg.dPoolLight` and `dPoolDark`,
+  and always belongs to the active squad. The other squads' pools are in the world setting
+  `storyPointsBySquad` (`{ owner, pools: { [squadId]: { squad, threat } } }`, where `owner` is the
+  squad whose pool is in the system settings). When `activeSquadId` or `squads` changes, and once on
+  `ready`, the active GM files the live pool under `owner` and loads the active squad's
+  (`switchSquadPool`); this is queued with spends. Deleted squads' pools are dropped.
 - The system's `DestinyTracker` keeps running, hidden with CSS; its Star Wars GM menu (Group
   Manager, the Force-die destiny roll) is not offered. Player spends go over the module socket
   (`module.ffg-azecraft-addon`) to the active GM, who applies them one at a time, because players

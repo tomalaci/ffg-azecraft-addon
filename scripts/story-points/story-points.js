@@ -8,10 +8,15 @@
  * settings, so a player's spend goes over the module socket to the active GM, who applies spends one
  * at a time and posts the chat card. The system's own tracker keeps running hidden (its Star Wars
  * GM menu, Group Manager and the Force-die destiny roll, is not offered).
+ *
+ * Each squad has its own pool. The system settings hold the active squad's; when the GMs activate
+ * another squad, the active GM files the pool under the old squad and loads the new one's
+ * (`storyPointsBySquad`, see switchSquadPool).
  */
 
 import { storyPointsBox } from "./story-layout.js";
-import { SIDES, shiftPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
+import { readSquads, readActiveSquad } from "../mission-dashboard/squads.js";
+import { SIDES, shiftPool, switchSquadPool, fromSystemPool, poolCapacity, poolSegments, resizePool, squadShare, toSystemPool, usePoint } from "./story-pool.js";
 
 const MODULE_ID = "ffg-azecraft-addon";
 const SYSTEM_ID = "starwarsffg";
@@ -19,7 +24,8 @@ const TEMPLATE = `modules/${MODULE_ID}/templates/story-points.hbs`;
 const SETTINGS = {
     enabled: "storyPointsEnabled",
     squadName: "storyPointsSquadName",
-    threatName: "storyPointsThreatName"
+    threatName: "storyPointsThreatName",
+    bySquad: "storyPointsBySquad"
 };
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -79,6 +85,25 @@ function applyUse(side, userId) {
                 <div class="azsp-chat-pool"><span class="azsp-squad">${foundry.utils.escapeHTML(label.squad)} ${next.squad}</span> · <span class="azsp-threat">${foundry.utils.escapeHTML(label.threat)} ${next.threat}</span></div>
             </div>`
         });
+    };
+    useQueue = useQueue.then(run, run);
+    return useQueue;
+}
+
+/**
+ * Active GM only: make the system pool the active squad's (file the old squad's pool, load the new
+ * one's). Queued with spends, so a spend never lands on the wrong squad.
+ */
+function syncSquadPool() {
+    const run = async () => {
+        if (game.user !== game.users.activeGM) return;
+        const active = readActiveSquad();
+        if (!active) return;
+        const step = switchSquadPool(game.settings.get(MODULE_ID, SETTINGS.bySquad), readPool(), active.id, readSquads().map(squad => squad.id));
+        if (!step.changed) return;
+        // Save the old pool first: if loading the new one fails, nothing is lost.
+        await game.settings.set(MODULE_ID, SETTINGS.bySquad, step.store);
+        if (step.pool) await writePool(step.pool);
     };
     useQueue = useQueue.then(run, run);
     return useQueue;
@@ -267,6 +292,21 @@ export function initStoryPoints() {
         default: "Doom",
         onChange: reload
     });
+
+    game.settings.register(MODULE_ID, SETTINGS.bySquad, {
+        scope: "world",
+        config: false,
+        type: Object,
+        default: {}
+    });
+
+    // Every squad keeps its own pool, also when the system's own tracker is used.
+    Hooks.once("ready", () => syncSquadPool());
+    for (const hook of ["updateSetting", "createSetting"]) {
+        Hooks.on(hook, setting => {
+            if (setting.key === `${MODULE_ID}.activeSquadId` || setting.key === `${MODULE_ID}.squads`) syncSquadPool();
+        });
+    }
 
     Hooks.once("setup", () => {
         if (!game.settings.get(MODULE_ID, SETTINGS.enabled)) return;
