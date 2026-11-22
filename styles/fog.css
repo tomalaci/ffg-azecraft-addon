@@ -48,7 +48,7 @@
 #scene-controls .azfog-control::before {
     position: relative;
     z-index: 1;
-    transform: translate(-8%, 18%);
+    transform: translate(-14%, 14%);
     /* A dark edge separates the cloud from the eye behind it. */
     -webkit-text-stroke: 2px #0b1220;
     paint-order: stroke fill;
@@ -61,7 +61,7 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    font-size: 0.8em;
-    transform: translate(-25%, -105%);
+    font-size: 0.72em;
+    transform: translate(-2%, -92%);
     z-index: 0;
 }
