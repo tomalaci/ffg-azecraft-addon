@@ -54,11 +54,11 @@ function registerSettings() {
     });
     game.settings.register(MODULE_ID, SETTINGS.autoEnable, {
         name: "Manual fog: on for new scenes",
-        hint: "Switch manual fog on for every new scene (not while the Simple Fog module is active).",
+        hint: "Switch manual fog on for every new scene. Off by default: switch it on per scene with the eye in the fog controls. (Never while the Simple Fog module is active.)",
         scope: "world",
         config: true,
         type: Boolean,
-        default: true
+        default: false
     });
     game.settings.register(MODULE_ID, SETTINGS.defaultTool, {
         name: "Manual fog: tool for the shortcut",
@@ -242,6 +242,29 @@ function previewPlayerView() {
     fog.setFogImageOverlayAlpha(fog.getSetting(asPlayer ? "fogImageOverlayPlayerAlpha" : "fogImageOverlayGMAlpha") / 100, true);
 }
 
+/**
+ * New blank scenes start without Foundry's own fog of war (Token Vision and Fog Exploration off),
+ * unless the setting says otherwise. Duplicated and imported scenes carry their own values and keep
+ * them.
+ */
+function initNewSceneVision() {
+    game.settings.register(MODULE_ID, SETTINGS.newSceneVision, {
+        name: "New scenes: Foundry vision and fog",
+        hint: "Off: new scenes start with Token Vision and Fog Exploration off, so players see the whole map until you switch them on (scene settings, Lighting tab). On: Foundry's default (both on). Duplicated and imported scenes keep their own.",
+        scope: "world",
+        config: true,
+        type: Boolean,
+        default: false
+    });
+    Hooks.on("preCreateScene", (scene, data, options, userId) => {
+        if (userId !== game.user.id || game.settings.get(MODULE_ID, SETTINGS.newSceneVision)) return;
+        const changes = {};
+        if (!("tokenVision" in data)) changes.tokenVision = false;
+        if (foundry.utils.getProperty(data, "fog.exploration") === undefined) changes["fog.exploration"] = false;
+        if (!foundry.utils.isEmpty(changes)) scene.updateSource(changes);
+    });
+}
+
 export function initFog() {
     game.settings.register(MODULE_ID, SETTINGS.enabled, {
         name: "Manual fog",
@@ -252,6 +275,7 @@ export function initFog() {
         default: true,
         requiresReload: true
     });
+    initNewSceneVision();
     if (!game.settings.get(MODULE_ID, SETTINGS.enabled)) return;
 
     registerSettings();

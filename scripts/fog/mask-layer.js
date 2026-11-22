@@ -31,7 +31,8 @@ export const SETTINGS = {
     autoEnable: "fogAutoEnable",
     defaultTool: "fogDefaultTool",
     zIndex: "fogZIndex",
-    previewPlayerView: "fogPreviewPlayerView"
+    previewPlayerView: "fogPreviewPlayerView",
+    newSceneVision: "newSceneFoundryVision"
 };
 
 const UNDO_LIMIT = 50;

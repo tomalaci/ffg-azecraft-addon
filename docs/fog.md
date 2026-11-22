@@ -56,8 +56,12 @@ Configure Settings → FFG Azecraft Addon (world):
   shown in the fogged areas, soft edges (blur) and fading. The cog in the fog controls sets the same
   values for one scene; the scene keeps only what differs from these defaults (*Use the defaults*
   clears it).
-- **Confirm switching off**, **On for new scenes**, **Tool for the shortcut**, **Drawn above**
-  (which canvas layers it covers), **Player view for GMs**.
+- **Confirm switching off**, **On for new scenes** (off by default: fog is opt-in per scene), **Tool
+  for the shortcut**, **Drawn above** (which canvas layers it covers), **Player view for GMs**.
+- **New scenes: Foundry vision and fog** (off by default): new blank scenes start with Foundry's own
+  Token Vision and Fog Exploration off, so players see the whole map until you switch them on in the
+  scene's settings (Lighting tab). On gives Foundry's default (both on). Duplicated and imported
+  scenes keep their own values. This works even with manual fog switched off.
 
 ## Next to the Simple Fog module
 
@@ -66,8 +70,8 @@ own controls (*Simple Fog* and *Manual Fog*), its own fog on each scene and its 
 with both switched on shows both fogs. Scenes drawn with Simple Fog are not converted; switch manual
 fog on and draw again.
 
-- While Simple Fog is active, new scenes do not get manual fog switched on (so they are not fogged
-  twice); Simple Fog's own setting still applies to them.
+- While Simple Fog is active, new scenes never get manual fog switched on (so they are not fogged
+  twice). Simple Fog's own *Auto Enable Scene Fog* setting still decides for Simple Fog.
 - Ctrl+S opens manual fog. Simple Fog 1.4.4's own Ctrl+S does not work on Foundry V13 (it is
   registered with an old key name), so nothing is lost.
 
