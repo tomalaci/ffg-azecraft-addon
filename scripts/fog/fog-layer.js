@@ -9,17 +9,16 @@
 import { Layout } from "./hexagons.js";
 import { BrushControls } from "./brush-controls.js";
 import { CWSPNoDoors } from "./clockwise-sweep.js";
-import { hexToPercent, percentToHex, pointsToPolygon } from "./fog-core.js";
-import MaskLayer, { MODULE_ID, SETTINGS, refreshPerception } from "./mask-layer.js";
+import { pointsToPolygon } from "./fog-core.js";
+import { LEVELS, levelFromPercent } from "./fog-raster.js";
+import MaskLayer, { MODULE_ID, SETTINGS } from "./mask-layer.js";
 
 export const LAYER = "azecraftFog";
 const HIGHLIGHT = "azecraft-fog";
 const HANDLE_SIZE = 20;
 const PREVIEW_ALPHA = 0.4;
 const HANDLE_FILL = 0xff6400;
-const REVEAL = "0x000000";
 export const TOOLS = ["brush", "grid", "room", "polygon", "box", "ellipse"];
-const HIDE = "0xffffff";
 
 export default class FogLayer extends MaskLayer {
     constructor() {
@@ -34,7 +33,8 @@ export default class FogLayer extends MaskLayer {
 
     brushSize = game.settings.get(MODULE_ID, SETTINGS.brushSize);
 
-    brushOpacity = percentToHex(game.settings.get(MODULE_ID, SETTINGS.brushOpacity));
+    /** Opacity level of new strokes: 0 reveals, 20 (100%) hides. */
+    brushLevel = levelFromPercent(game.settings.get(MODULE_ID, SETTINGS.brushOpacity));
 
     /** Room tool: reveal the whole room on click instead of as far as you drag. */
     roomExpand = false;
@@ -92,7 +92,6 @@ export default class FogLayer extends MaskLayer {
     async toggle() {
         await super.toggle();
         if (!TOOLS.includes(this.activeTool)) this._changeTool("brush");
-        refreshPerception();
         ui.controls.render({ reset: true });
     }
 
@@ -102,22 +101,29 @@ export default class FogLayer extends MaskLayer {
     }
 
     get eraser() {
-        return this.brushOpacity === REVEAL;
+        return this.brushLevel === 0;
     }
 
     /* -------------------------------------------- */
     /*  Scene changes                               */
     /* -------------------------------------------- */
 
-    /** Redraw from another client's history change, or rebuild after another GM changes the fog settings. */
+    /**
+     * Another user's change: decode the fog tiles they stored, show or hide the fog, or redraw the
+     * layer after its look or precision changed.
+     */
     _updateScene(scene, changed, options, userId) {
-        if (!scene.isView || !this.maskTexture) return;
-        const flags = changed.flags?.[MODULE_ID]?.fog;
-        if (flags && foundry.utils.hasProperty(flags, "history")) {
-            this.renderStack({ history: scene.getFlag(MODULE_ID, "fog.history") });
-            refreshPerception();
-        } else if (flags && Object.keys(flags).some(key => !key.endsWith("history")) && userId !== game.user.id) {
-            canvas.draw(scene);
+        if (!scene.isView || !this.raster) return;
+        const fog = changed.flags?.[MODULE_ID]?.fog;
+        if (fog && userId !== game.user.id) {
+            const keys = Object.keys(fog);
+            if (keys.some(key => key.replace(/^(-=|==)/, "") === "raster")) this.applyStoredChange(fog);
+            if ("visible" in fog) {
+                this.visible = Boolean(this.getSetting("visible"));
+                ui.controls.render({ reset: true });
+            }
+            const look = keys.filter(key => !["raster", "==raster", "-=raster", "visible"].includes(key));
+            if (look.length) this.draw();
         } else if (game.user.isGM && this.activeTool === "grid" && (changed.grid?.size || changed.grid?.type)) {
             this._initGrid();
         }
@@ -133,7 +139,7 @@ export default class FogLayer extends MaskLayer {
 
     /** Green previews reveal, red ones hide. */
     setPreviewTint() {
-        this.#previewTint = hexToPercent(this.brushOpacity) < 100 ? 0x00ff00 : 0xff0000;
+        this.#previewTint = this.brushLevel < LEVELS ? 0x00ff00 : 0xff0000;
         for (const preview of [this.ellipsePreview, this.boxPreview, this.polygonPreview, this.pointerPreview]) {
             if (preview) preview.tint = this.#previewTint;
         }
@@ -164,7 +170,8 @@ export default class FogLayer extends MaskLayer {
         this.polygon = [];
         this.op = false;
         this.#brushPrev = null;
-        this.historyBuffer = [];
+        // A drawing cut short (tool change, layer change) is stored as it is.
+        if (this.historyBuffer.length) this.commitHistory();
         if (this.activeTool === "room") {
             canvas.walls.objects.visible = false;
             canvas.walls.placeables.forEach(wall => wall.renderFlags.set({ refreshState: true }));
@@ -298,7 +305,7 @@ export default class FogLayer extends MaskLayer {
                 shape: this.BRUSH_TYPES.ELLIPSE,
                 x: Math.round(from.x + dx * t),
                 y: Math.round(from.y + dy * t),
-                fill: this.brushOpacity,
+                level: this.brushLevel,
                 width: this.brushSize,
                 height: this.brushSize
             });
@@ -335,7 +342,7 @@ export default class FogLayer extends MaskLayer {
 
     _pointerUpBox(p, event) {
         const d = this._getDragBounds(p, event);
-        this.renderBrush({ shape: this.BRUSH_TYPES.BOX, x: this.dragStart.x, y: this.dragStart.y, width: d.w, height: d.h, fill: this.brushOpacity });
+        this.renderBrush({ shape: this.BRUSH_TYPES.BOX, x: this.dragStart.x, y: this.dragStart.y, width: d.w, height: d.h, level: this.brushLevel });
         this.boxPreview.visible = false;
     }
 
@@ -352,7 +359,7 @@ export default class FogLayer extends MaskLayer {
 
     _pointerUpEllipse(p, event) {
         const d = this._getDragBounds(p, event);
-        this.renderBrush({ shape: this.BRUSH_TYPES.ELLIPSE, x: this.dragStart.x, y: this.dragStart.y, width: Math.abs(d.w), height: Math.abs(d.h), fill: this.brushOpacity });
+        this.renderBrush({ shape: this.BRUSH_TYPES.ELLIPSE, x: this.dragStart.x, y: this.dragStart.y, width: Math.abs(d.w), height: Math.abs(d.h), level: this.brushLevel });
         this.ellipsePreview.visible = false;
     }
 
@@ -398,7 +405,7 @@ export default class FogLayer extends MaskLayer {
     }
 
     _pointerClosePolygon() {
-        this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, x: 0, y: 0, vertices: pointsToPolygon(this.polygon), fill: this.brushOpacity });
+        this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, x: 0, y: 0, vertices: pointsToPolygon(this.polygon), level: this.brushLevel });
         this.polygonPreview.clear();
         this.polygonPreview.visible = false;
         this.polygonHandle.visible = false;
@@ -471,7 +478,7 @@ export default class FogLayer extends MaskLayer {
 
     #drawRoom(p, event) {
         const vertices = this._getRoomVertices(p, event);
-        if (vertices.length) this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, x: 0, y: 0, vertices, fill: this.brushOpacity });
+        if (vertices.length) this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, x: 0, y: 0, vertices, level: this.brushLevel });
     }
 
     _pointerMoveRoom(p, event) {
@@ -525,7 +532,7 @@ export default class FogLayer extends MaskLayer {
             const cell = `${x},${y}`;
             if (this.dupes.includes(cell)) return;
             this.dupes.push(cell);
-            this.renderBrush({ shape: this.BRUSH_TYPES.BOX, x, y, width: size, height: size, fill: this.brushOpacity });
+            this.renderBrush({ shape: this.BRUSH_TYPES.BOX, x, y, width: size, height: size, level: this.brushLevel });
         } else if (type !== CONST.GRID_TYPES.GRIDLESS) {
             const { x, y } = canvas.grid.getTopLeftPoint(canvas.grid.getOffset(canvas.grid.getCube(canvas.grid.getCenterPoint(p))));
             canvas.interface.grid.highlightPosition(HIGHLIGHT, this.highlightConfig(x, y));
@@ -536,7 +543,7 @@ export default class FogLayer extends MaskLayer {
             if (this.dupes.includes(cell)) return;
             this.dupes.push(cell);
             const vertices = pointsToPolygon(this.gridLayout.polygonCorners({ q: hex.q, r: hex.r }));
-            this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, vertices, x: 0, y: 0, fill: this.brushOpacity });
+            this.renderBrush({ shape: this.BRUSH_TYPES.POLYGON, vertices, x: 0, y: 0, level: this.brushLevel });
         }
     }
 
@@ -577,4 +584,3 @@ export default class FogLayer extends MaskLayer {
     }
 }
 
-export { REVEAL, HIDE };

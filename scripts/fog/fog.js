@@ -12,8 +12,8 @@
 import FogLayer, { LAYER, TOOLS } from "./fog-layer.js";
 import { BRUSH_TEMPLATE } from "./brush-controls.js";
 import { CONFIG_TEMPLATE, FogConfig, registerFogConfig } from "./fog-config.js";
-import { percentToHex } from "./fog-core.js";
-import { FLAG, MODULE_ID, SETTINGS, refreshPerception } from "./mask-layer.js";
+import { levelFromPercent } from "./fog-raster.js";
+import { FLAG, MODULE_ID, SETTINGS } from "./mask-layer.js";
 
 const CONTROL = "azecraft-fog";
 
@@ -34,11 +34,11 @@ function registerSettings() {
     game.settings.register(MODULE_ID, SETTINGS.brushOpacity, {
         scope: "world",
         config: false,
-        type: new NumberField({ required: true, nullable: false, initial: 0, min: 0, max: 100, step: 1, integer: true }),
+        type: new NumberField({ required: true, nullable: false, initial: 0, min: 0, max: 100, step: 5, integer: true }),
         onChange: value => {
             const fog = layer();
             if (!fog) return;
-            fog.brushOpacity = percentToHex(value);
+            fog.brushLevel = levelFromPercent(value);
             fog.setPreviewTint();
             fog.brushControls.render();
             if (isActiveControl()) ui.controls.render({ reset: true });
@@ -237,9 +237,9 @@ function previewPlayerView() {
     const fog = layer();
     if (!fog?.visible || !fog.fogColorLayer || !game.user.isGM || !game.settings.get(MODULE_ID, SETTINGS.previewPlayerView)) return;
     const asPlayer = canvas.tokens.controlled.some(token => token.actor?.hasPlayerOwner);
-    fog.fogColorLayer.alpha = fog.getSetting(asPlayer ? "playerColorAlpha" : "gmColorAlpha") / 100;
+    fog.setColorAlpha(fog.getSetting(asPlayer ? "playerColorAlpha" : "gmColorAlpha"), true);
     fog.setColorTint(fog.getSetting(asPlayer ? "playerColorTint" : "gmColorTint"));
-    fog.fogImageOverlayLayer.alpha = fog.getSetting(asPlayer ? "fogImageOverlayPlayerAlpha" : "fogImageOverlayGMAlpha") / 100;
+    fog.setFogImageOverlayAlpha(fog.getSetting(asPlayer ? "fogImageOverlayPlayerAlpha" : "fogImageOverlayGMAlpha") / 100, true);
 }
 
 export function initFog() {
@@ -267,7 +267,6 @@ export function initFog() {
             ?? game.settings.get(MODULE_ID, SETTINGS.config).fogImageOverlayFilePath;
         if (overlay) canvas.loadTexturesOptions.additionalSources.push(overlay);
     });
-    Hooks.on("canvasReady", () => refreshPerception());
     // Only the GM who made the scene writes the flag (players cannot, and one write is enough).
     Hooks.on("createScene", (scene, options, userId) => {
         if (userId !== game.user.id || simpleFogActive() || !game.settings.get(MODULE_ID, SETTINGS.autoEnable)) return;

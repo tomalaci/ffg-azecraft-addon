@@ -6,7 +6,8 @@
  */
 
 import { hexToWeb, sceneOverrides } from "./fog-core.js";
-import { FLAG, MODULE_ID, SETTINGS, refreshPerception } from "./mask-layer.js";
+import { roundPercent } from "./fog-raster.js";
+import { FLAG, MODULE_ID, SETTINGS } from "./mask-layer.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -15,12 +16,17 @@ export const CONFIG_TEMPLATE = `modules/${MODULE_ID}/templates/fog/fog-config.hb
 /** The world default fog configuration (also the form's fields). */
 export function registerFogConfig() {
     const { BooleanField, ColorField, FilePathField, NumberField, SchemaField } = foundry.data.fields;
-    const percent = (initial, label, hint) => new NumberField({ required: true, nullable: false, initial, min: 0, max: 100, step: 1, integer: true, label, hint });
+    const percent = (initial, label, hint) => new NumberField({ required: true, nullable: false, initial, min: 0, max: 100, step: 5, integer: true, label, hint });
 
     game.settings.register(MODULE_ID, SETTINGS.config, {
         scope: "world",
         config: false,
         type: new SchemaField({
+            precision: new NumberField({
+                required: true, nullable: false, initial: 10, min: 1, max: 200, step: 1, integer: true,
+                label: "Precision (px)",
+                hint: "Size of the smallest piece of fog. Rounded down to fit the scene's grid (10 on a 100 px grid: 10 x 10 pieces per square; the grid size: whole squares). Smaller is finer but bigger to store; huge maps get coarser automatically. Changing it converts the fog already drawn."
+            }),
             gmColorTint: new ColorField({ required: true, nullable: false, initial: "#000000", label: "Colour" }),
             gmColorAlpha: percent(60, "Opacity (%)", "GMs see the map through the fog."),
             playerColorTint: new ColorField({ required: true, nullable: false, initial: "#000000", label: "Colour" }),
@@ -97,10 +103,14 @@ export class FogConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         const fields = game.settings.settings.get(`${MODULE_ID}.${SETTINGS.config}`).type.fields;
         const values = Object.fromEntries(Object.keys(fields).map(key => [key, this.#value(key)]));
         for (const key of ["gmColorTint", "playerColorTint"]) values[key] = hexToWeb(values[key]);
+        for (const key of ["gmColorAlpha", "playerColorAlpha", "fogImageOverlayGMAlpha", "fogImageOverlayPlayerAlpha"]) values[key] = roundPercent(values[key]);
+        const fog = canvas.azecraftFog;
+        const raster = this.scene && this.scene === canvas.scene ? fog?.raster : null;
         return {
             fields,
             values,
             scene: this.scene?.name ?? null,
+            cellNote: raster ? `Now: ${raster.cell} px pieces, ${raster.cols} x ${raster.rows} for this scene.` : "",
             buttons: [
                 { type: "submit", icon: "fa-solid fa-save", label: this.scene ? "Save for this scene" : "Save as default" },
                 { type: "button", action: "reset", icon: "fa-solid fa-undo", label: this.scene ? "Use the defaults" : "Reset defaults" }
@@ -119,17 +129,14 @@ export class FogConfig extends HandlebarsApplicationMixin(ApplicationV2) {
         } else {
             await game.settings.set(MODULE_ID, SETTINGS.config, { ...this.#defaults(), ...values });
         }
-        if (canvas.ready) {
-            refreshPerception();
-            await canvas.draw();
-        }
+        if (canvas.ready) await canvas.azecraftFog?.draw();
     }
 
     static async #onReset() {
         const keys = Object.keys(this.#defaults());
         if (this.scene) {
             await this.scene.update(Object.fromEntries(keys.map(key => [`flags.${MODULE_ID}.${FLAG}.-=${key}`, null])));
-            if (canvas.ready) await canvas.draw();
+            if (canvas.ready) await canvas.azecraftFog?.draw();
         } else {
             await game.settings.set(MODULE_ID, SETTINGS.config, {});
         }

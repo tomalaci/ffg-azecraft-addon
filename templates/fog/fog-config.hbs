@@ -3,6 +3,11 @@
     <p class="hint">Only this scene. Values equal to the defaults follow later changes to the defaults.</p>
     {{/if}}
     <fieldset>
+        <legend><i class="fa-solid fa-border-all"></i> Detail</legend>
+        {{formGroup fields.precision value=values.precision rootId=rootId}}
+        {{#if cellNote}}<p class="hint">{{cellNote}}</p>{{/if}}
+    </fieldset>
+    <fieldset>
         <legend><i class="fa-solid fa-crown"></i> GM view</legend>
         {{formGroup fields.gmColorTint value=values.gmColorTint rootId=rootId}}
         {{formGroup fields.gmColorAlpha value=values.gmColorAlpha rootId=rootId}}

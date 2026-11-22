@@ -27,11 +27,23 @@ on the canvas (again to go back to the tokens).
 - **Snap to the grid** (shown with the rectangle, ellipse and polygon tools): corners land on the
   grid.
 - **Eraser**: on, every tool reveals; off, every tool hides (puts fog back). **T** switches it.
-  The opacity slider in the Fog Brush window gives partial values; 0% reveals, 100% hides.
+  The opacity slider in the Fog Brush window gives partial values in 5% steps; 0% reveals, 100% hides.
 - **Cog**: the fog's look for this scene (see Settings).
 - **Bin**: start the scene over, either **Cover all** (all fog) or **Reveal all** (no fog).
-- **Ctrl+Z** undoes the last action. **[** and **]** make the brush smaller or larger (with
-  **Shift**: smallest or largest).
+- **Ctrl+Z** undoes your last action on this scene (up to 50, until you reload). **[** and **]**
+  make the brush smaller or larger (with **Shift**: smallest or largest).
+
+### Precision
+
+Fog is made of small square pieces. **Precision** is their size in pixels: the default 10 gives
+10 x 10 pieces per square on a 100 px grid; set it to the grid size and the fog covers or reveals
+whole squares; 1 is pixel-exact. It is rounded down to a size that fits the scene's grid evenly (on a
+64 px grid, 10 becomes 8), and on very large maps it is raised so a scene never has more than four
+million pieces. Smaller pieces follow shapes more closely but take more to store and draw. Soft edges
+(blur) are drawn on top, so pieces don't look blocky.
+
+Set the default in *Manual fog: default look*, or for one scene with the cog. Changing it converts the
+fog already drawn on that scene (the active GM stores the conversion when the scene is next shown).
 
 While a GM has a player's token selected, the fog looks the way players see it (a setting).
 
@@ -40,7 +52,7 @@ While a GM has a player's token selected, the fog looks the way players see it (
 Configure Settings → FFG Azecraft Addon (world):
 
 - **Manual fog**: on by default. Off removes it completely (needs a reload).
-- **Manual fog: default look** (*Configure fog*): GM and player colour and opacity, an overlay image
+- **Manual fog: default look** (*Configure fog*): precision, GM and player colour and opacity, an overlay image
   shown in the fogged areas, soft edges (blur) and fading. The cog in the fog controls sets the same
   values for one scene; the scene keeps only what differs from these defaults (*Use the defaults*
   clears it).
@@ -80,17 +92,36 @@ Fixed here:
 - The unused *automatic visibility* options (their code was removed from Simple Fog long ago) are
   gone.
 
+Faster on big maps (the stuttering Simple Fog causes on large, much-edited scenes):
+
+- The fog is stored as pieces (see Precision) in tiles, not as a list of every brush stroke. An action
+  sends only the tiles it changed, in one update; Simple Fog sent its whole stroke list twice per
+  action, and the list only grows (its 5 actions on one of our scenes were 121 KB, sent again with each
+  new action; the same fog here is under 1 KB).
+- Opening a scene decodes the tiles instead of replaying every stroke ever drawn.
+- Soft edges are worked out once when the fog changes, on a small texture, instead of blurring a
+  full-map sprite on every frame; the mask is at most 4096 px instead of the whole canvas.
+- Opacity is kept in 5% steps.
+
 Not taken from 1.5: the brush palette (needs V14's palettes) and fog per scene level (V14 levels).
 
 ## How it works (developers)
 
 - Code in `scripts/fog/`: `fog.js` (settings, key bindings, scene controls, hooks), `fog-layer.js`
-  (the tools), `mask-layer.js` (the mask, its history and drawing), `brush-controls.js`,
+  (the tools), `mask-layer.js` (the pieces, their storage, undo and the mask), `brush-controls.js`,
   `fog-config.js`, `clockwise-sweep.js` (room tool), `hexagons.js` (hex grid maths, CC0) and the pure,
-  unit-tested `fog-core.js`. Templates in `templates/fog/`, styles in `styles/fog.css`.
+  unit-tested `fog-raster.js` (pieces, tiles, encoding, painting shapes) and `fog-core.js`. Templates in `templates/fog/`, styles in `styles/fog.css`.
 - The layer is `canvas.azecraftFog` (interface group), the scene control `azecraft-fog`.
-- A scene's fog is `flags.ffg-azecraft-addon.fog`: `visible`, `history` (`{events, pointer}`,
-  each event the strokes of one action) and any per-scene look values. Every client redraws the mask
-  from the history when it changes. Undo moves the pointer; the next action drops the undone events.
-- The fog is a full-canvas sprite masked by a render texture: white in the mask is fog, black is
-  revealed.
+- A scene's fog is `flags.ffg-azecraft-addon.fog`: `visible`, `raster` and any per-scene look values
+  (including `precision`). `raster` is `{cols, rows, cell, fill, tiles}`: `cell` px per piece, each
+  piece a level 0-20 (5% steps, 20 = fog), in 64 x 64 tiles keyed `"tx_ty"` and run-length encoded
+  (`A`-`U` for the level, then the run length in base 36). A tile equal to `fill` is not stored, so
+  *Cover all* / *Reveal all* store no tiles.
+- An action paints into the pieces at once (the GM sees it while drawing), then stores the touched
+  tiles in one update (`raster.tiles.<key>` or `-=<key>`); other clients decode only those tiles.
+  Replacing everything (fill, precision change, undoing those) uses `==raster`. Undo keeps the tiles'
+  previous text per GM in memory.
+- Drawing: the pieces are a small canvas texture (one pixel each, plus a border repeating the edges so
+  the blur does not fade at the scene's edges), blurred once into the mask render texture whenever
+  they change (at most once per frame). The fog colour sprite and the overlay image use that mask; for
+  players a padding frame covers the area outside the scene.
