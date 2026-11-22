@@ -1,0 +1,27 @@
+/* Range bands configuration window (scripts/range-bands). */
+#azecraft-range-bands-config .azrb-bands {
+    width: 100%;
+    margin: 0.25rem 0 0.5rem;
+}
+
+#azecraft-range-bands-config .azrb-bands th {
+    text-align: left;
+}
+
+#azecraft-range-bands-config .azrb-bands input[type="number"] {
+    width: 6em;
+}
+
+#azecraft-range-bands-config .azrb-bands input[type="color"] {
+    width: 3em;
+    padding: 0;
+}
+
+#azecraft-range-bands-config .azrb-remove {
+    width: 2em;
+}
+
+#azecraft-range-bands-config .hint {
+    opacity: 0.7;
+    font-size: 0.85em;
+}

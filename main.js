@@ -23,6 +23,9 @@ import { initQuickEffects } from "./scripts/effects/quick-effects.js";
 import { ItemMakerApp, initItemMaker } from "./scripts/item-maker/item-maker.js";
 import { DesireTrackerApp, initDesireTracker } from "./scripts/desires/desire-tracker.js";
 import { initFog } from "./scripts/fog/fog.js";
+import { initRangeBands } from "./scripts/range-bands/range-bands.js";
+import { initHealthEstimate } from "./scripts/health-estimate/health-estimate.js";
+import { initPreciseDrawing } from "./scripts/precise-drawing/precise-drawing.js";
 
 Hooks.once("init", () => {
     console.log("Azecraft Addon | Init");
@@ -35,6 +38,9 @@ Hooks.once("init", () => {
     initMissionDashboard();
     initStoryPoints();
     initFog();
+    initRangeBands();
+    initHealthEstimate();
+    initPreciseDrawing();
     initCharacterSheetTheme();
     initDefaultArt();
     initPowerTabs();

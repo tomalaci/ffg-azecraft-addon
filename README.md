@@ -48,6 +48,12 @@ The module:
 - **Manual fog** (from Simple Fog): GMs paint fog of war with a brush, grid cells, wall-bounded
   rooms, polygons, rectangles and ellipses; players see only what was revealed. Runs next to the
   Simple Fog module while switching over. See [docs/fog.md](docs/fog.md).
+- **Range bands** (replaces Combat Distances): toggle Genesys range rings (Engaged ... Extreme) around
+  a token from its HUD or with G, optionally shading the grid. See [docs/range-bands.md](docs/range-bands.md).
+- **Health estimate** (a trimmed port of Health Estimate): a short "Barely Injured" ... "Dead" text
+  over tokens from their wounds or hull trauma. See [docs/health-estimate.md](docs/health-estimate.md).
+- **Precise drawing** (a port of Precise Drawing Tools): finer freehand drawing, an eyedropper (K) and
+  converting drawings to an image tile. See [docs/precise-drawing.md](docs/precise-drawing.md).
 - Replaces the Star Wars placeholder art of new minions, rivals, nemeses, characters and vehicles
   with abstract Mass Effect style art (configurable per type, portrait and token), and can swap the
   placeholders on existing actors. See [docs/default-art.md](docs/default-art.md).

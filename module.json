@@ -40,7 +40,9 @@
         "styles/share.css",
         "styles/item-maker.css",
         "styles/desires.css",
-        "styles/fog.css"
+        "styles/fog.css",
+        "styles/range-bands.css",
+        "styles/precise-drawing.css"
     ],
     "url": "https://github.com/tomalaci/ffg-azecraft-addon",
     "manifest": "https://github.com/tomalaci/ffg-azecraft-addon/releases/latest/download/module.json",

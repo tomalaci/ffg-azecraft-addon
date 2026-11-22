@@ -1,0 +1,12 @@
+/* Precise drawing (scripts/precise-drawing/): the "convert drawings to an image" dialog. */
+
+.azecraft-convert-drawings .azecraft-convert-preview {
+    display: block;
+    max-width: 100%;
+    max-height: 60vh;
+    margin: 0 auto 0.5rem;
+    object-fit: contain;
+    border: none;
+    /* A checkerboard so transparent parts show as transparent. */
+    background: repeating-conic-gradient(#8884 0% 25%, transparent 0% 50%) 0 0 / 16px 16px;
+}

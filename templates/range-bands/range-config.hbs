@@ -1,0 +1,54 @@
+<div class="azrb-config">
+    <fieldset>
+        <legend><i class="fa-regular fa-circle-dot"></i> Bands</legend>
+        <p class="hint">Measured from the token's edge, nearest first. A band without a distance is removed on save.</p>
+        <table class="azrb-bands">
+            <thead>
+                <tr><th>Label</th><th>Distance</th><th>Colour</th><th></th></tr>
+            </thead>
+            <tbody>
+                {{#each bands}}
+                <tr>
+                    <td><input type="text" name="bands.{{index}}.label" value="{{label}}" placeholder="Label"></td>
+                    <td><input type="number" name="bands.{{index}}.distance" value="{{distance}}" min="0" step="any"></td>
+                    <td><input type="color" name="bands.{{index}}.color" value="{{color}}"></td>
+                    <td><button type="button" class="azrb-remove" data-action="removeBand" data-index="{{index}}" data-tooltip="Remove this band"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+        {{#if canAdd}}
+        <button type="button" data-action="addBand"><i class="fa-solid fa-plus"></i> Add a band</button>
+        {{/if}}
+    </fieldset>
+    <fieldset>
+        <legend><i class="fa-solid fa-ruler"></i> Distances</legend>
+        <div class="form-group">
+            <label>Distances in</label>
+            <div class="form-fields">
+                <select name="unit">{{selectOptions units selected=config.unit}}</select>
+            </div>
+            <p class="hint">Grid squares work the same on 5 ft and 1.5 m scenes. Scene units use each scene's grid distance (Scene settings, Grid tab).</p>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend><i class="fa-solid fa-paintbrush"></i> Look</legend>
+        <div class="form-group">
+            <label>Ring width (px)</label>
+            <div class="form-fields"><input type="number" name="lineWidth" value="{{config.lineWidth}}" min="1" max="20" step="1"></div>
+        </div>
+        <div class="form-group">
+            <label>Ring opacity (%)</label>
+            <div class="form-fields"><input type="number" name="lineAlpha" value="{{config.lineAlpha}}" min="0" max="100" step="5"></div>
+        </div>
+        <div class="form-group">
+            <label>Shading opacity (%)</label>
+            <div class="form-fields"><input type="number" name="fillAlpha" value="{{config.fillAlpha}}" min="0" max="100" step="5"></div>
+            <p class="hint">Used when grid shading is on (setting <em>Range bands: grid shading</em>).</p>
+        </div>
+        <div class="form-group">
+            <label>Labels</label>
+            <div class="form-fields"><input type="checkbox" name="labels" {{checked config.labels}}></div>
+        </div>
+    </fieldset>
+</div>
